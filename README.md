@@ -33,9 +33,9 @@ SerializationVersion           1.1.0.1
 ## Usage
 
 To backup path `C:\Users\Ron\Documents` to
-`C:\Users\Ron\iCloudDrive\{mm-dd-yyyy}`, deleting backups older than 7 days in
-the destination, and with dry-run only mode enabled (operations will not be
-performed).
+`C:\Users\Ron\iCloudDrive\{mm-dd-yyyy}\Documents`, deleting backups older than
+7 days in the destination, and with dry-run only mode enabled
+(operations will not be performed).
 
 ```powershell
 Backup-File `
