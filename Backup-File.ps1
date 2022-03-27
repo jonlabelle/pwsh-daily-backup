@@ -16,7 +16,7 @@ function Backup-File
         The root directory path where backup files will be stored.
         NOTE: The current day formatted as 'mm-dd-yyyy' will be prepended to each backup run.
 
-    .PARAMETER DeleteBackupsOldThanDays
+    .PARAMETER DeleteBackupsOlderThanDays
         The number of days to keep a backup archives before deleting.
 
     .EXAMPLE
@@ -69,7 +69,7 @@ function Backup-File
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [int] $DeleteBackupsOldThanDays
+        [int] $DeleteBackupsOlderThanDays
     )
     Begin
     {
@@ -142,7 +142,7 @@ function Backup-File
     End
     {
         Write-Verbose "Backup-File:End> Running post backup operations" -Verbose:$verboseEnabled
-        DeleteOldBackups -Path $Destination -DaysSinceLastModified $DeleteBackupsOldThanDays -Filter *.zip -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        DeleteOldBackups -Path $Destination -DaysSinceLastModified $DeleteBackupsOlderThanDays -Filter *.zip -DryRun $dryRun -VerboseEnabled $verboseEnabled
         DeleteEmptyDirectories -Path $Destination -DryRun $dryRun -VerboseEnabled $verboseEnabled
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
     }

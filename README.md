@@ -41,7 +41,7 @@ performed).
 Backup-File `
     -Path 'C:\Users\Ron\Documents' `
     -Destination 'C:\Users\Ron\iCloudDrive' `
-    -DeleteBackupsOldThanDays 7 `
+    -DeleteBackupsOlderThanDays 7 `
     -WhatIf `
     -Verbose
 ```
