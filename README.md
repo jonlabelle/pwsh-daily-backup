@@ -46,6 +46,9 @@ Backup-File `
     -Verbose
 ```
 
+> NOTE: If running multiple backups on the same day, the previous backup(s)
+> will be destroyed and overwritten with the latest backup.
+
 ## Author
 
 Jon LaBelle

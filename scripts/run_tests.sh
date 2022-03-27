@@ -7,4 +7,4 @@ set -o pipefail
 SCRIPTSDIR="$(cd "$(dirname "${0}")" || exit; echo "$(pwd)")"
 cd "${SCRIPTSDIR}/.." || exit 1
 
-/usr/local/bin/pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -File test/Test.ps1
+pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -File test/Tests.ps1
