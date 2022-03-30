@@ -1,6 +1,6 @@
 $ErrorActionPreference = "SilentlyContinue"
 
-$DefaultFolderDateFormat = 'MM-dd-yyyy'
+$script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 
 <#
 .Backup-File
@@ -97,7 +97,7 @@ function Backup-File
             Write-Verbose "Backup-File:Begin> Dry run is enabled" -Verbose:$verboseEnabled
         }
 
-        $folderName = (Get-Date -Format $DefaultFolderDateFormat)
+        $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
@@ -196,7 +196,7 @@ function DeleteEmptyBackupDirectories
         (Get-ChildItem -Path $Path -Directory -Recurse -Force | Where-Object {
             $_.PSIsContainer -eq $True
         }) | Where-Object { $_.GetFileSystemInfos().Count -eq 0 } |
-            Select-Object FullName
+        Select-Object FullName
     }
     else
     {
@@ -264,8 +264,8 @@ function DeleteOldBackups
     $lastModfiedDate = (Get-Date).AddDays(-$DaysSinceLastModified)
 
     Get-ChildItem -LiteralPath $Path -File -Filter $Filter -Recurse -Force -ErrorAction SilentlyContinue |
-        Where-Object { !$_.PSIsContainer -and $_.LastWriteTime -lt $lastModfiedDate } |
-        Remove-Item -ErrorAction SilentlyContinue -WhatIf:$DryRun -Verbose:$VerboseEnabled
+    Where-Object { !$_.PSIsContainer -and $_.LastWriteTime -lt $lastModfiedDate } |
+    Remove-Item -ErrorAction SilentlyContinue -WhatIf:$DryRun -Verbose:$VerboseEnabled
 }
 
 <#
@@ -340,15 +340,70 @@ function CountExistingBackups
     # in these directories, and ensure the foler name is truly a
     # backup container (e.g. formatted as MM-dd-yyyy)
 
-    $directories = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -Verbose:$VerboseEnabled | Select-Object FullName)
+    $backupCount = 0
+    $directories = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -Verbose:$VerboseEnabled)
+
+    foreach ($dir in $directories)
+    {
+        if (IsValidDateFormat -Date $dir.Name -VerboseEnabled $VerboseEnabled)
+        {
+            $backupCount++
+        }
+    }
 
     $maybePluraize = "directories"
-    if ($directories.Length -eq 1)
+    if ($backupCount -eq 1)
     {
         $maybePluraize = "directory"
     }
 
-    Write-Verbose ("Backup-File:CountExistingBackups> Found {0} top-level {1} in '{2}'" -f $directories.Length.ToString(), $maybePluraize, $Path) -Verbose:$VerboseEnabled
+    Write-Verbose ("Backup-File:CountExistingBackups> Found {0} top-level {1} in '{2}'" -f $backupCount, $maybePluraize, $Path) -Verbose:$VerboseEnabled
 
-    return $directories.Length
+    return $backupCount
+}
+
+<#
+.IsValidDateFormat
+    Determines if the specified value is valid date format.
+
+.SYNOPSIS
+    Determines if the specified value is valid date format.
+
+.DESCRIPTION
+    - Date format: MM-dd-yyyy
+    - Date range: 01-01-1900 through 12-31-2099
+    - Matches invalid dates such as February 31st
+    - Accepts dashes as date separators
+
+.PARAMETER Date
+    The path to count top-level directories.
+
+.PARAMETER VerboseEnabled
+    Whether or not this operation should produce verbose output.
+
+.OUTPUTS
+    System.bool. Returns bool true if the $Date is valid date format, otherwise false.
+#>
+function IsValidDateFormat
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Date,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $VerboseEnabled = $false
+    )
+
+    if ($Date -cmatch '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z')
+    {
+        Write-Verbose ("Backup-File:IsValidDateFormat> '{0}' is a valid date format" -f $Date) -Verbose:$VerboseEnabled
+        return $true
+    }
+    else
+    {
+        Write-Verbose ("Backup-File:IsValidDateFormat> '{0}' is NOT a valid date format" -f $Date) -Verbose:$verboseEnabled
+        return $false
+    }
 }

@@ -2,21 +2,30 @@ $testDir = Split-Path $script:MyInvocation.MyCommand.Path
 $projectRootDir = (Get-Item $testDir).Parent.FullName
 
 $moduleName = "Backup-File"
-$modulePath = (Join-Path "$projectRootDir" "${moduleName}.ps1")
+$modulePath = (Join-Path -Path "$projectRootDir" -ChildPath "$moduleName.ps1")
 
-if ($null -eq (Get-Module -ListAvailable -Name $moduleName))
+$dryRun = $false
+$verboseEnabled = $true
+
+if (-not ($null -eq (Get-ChildItem -Path Function:\$moduleName)))
 {
-    if (-not($Env:CI))
+    Write-Verbose ("Removing old {0} from memory" -f "Function:\$moduleName") -Verbose:$verboseEnabled
+
+    try
     {
-        Write-Output "Removing module: $moduleName"
-        Remove-Module $moduleName
+        Remove-Item -Path Function:\$moduleName
+    }
+    catch
+    {
+        Write-Warning -Message "An error occured attempting to remove Function:\$moduleName from memory"
     }
 }
 
-Import-Module $modulePath
+Write-Verbose ("Loading {0} into memory" -f "Function:\$moduleName") -Verbose:$verboseEnabled
+. $modulePath
 
 $sources = (Join-Path "$projectRootDir" "test" "stubs" "files-to-backup")
 $destination = (Join-Path "$projectRootDir" "test" "stubs" "files-backed-up")
-$dryRun = $false
-$verboseEnabled = $true
+
+Write-Verbose ("Calling {0} cmdlet" -f "$moduleName") -Verbose:$verboseEnabled
 Backup-File -Path $sources -Destination $destination -DeleteBackupsOlderThanDays 7 -WhatIf:$dryRun -Verbose:$verboseEnabled
