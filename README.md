@@ -33,9 +33,10 @@ SerializationVersion           1.1.0.1
 
 ## Usage
 
-To backup `C:\Users\Ron\Documents` and 'C:\Users\Ron\Music' to
-`C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{source_basename}.zip`, keeping only
-the latest 7 backups, and in dry-run only mode (operations will not be performed).
+To backup `C:\Users\Ron\Documents` and `C:\Users\Ron\Music` to
+`C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{basename}.zip`, keeping only the latest
+7 backups, and in dry-run only mode (operations will not be performed) with
+verbose output.
 
 ```powershell
 Backup-File `
@@ -46,8 +47,8 @@ Backup-File `
     -Verbose
 ```
 
-> NOTE: If running multiple backups on the same day, the previous backup(s)
-> will be destroyed and overwritten with the latest backup.
+> **NOTE:** If running multiple backups on the same day, the previous backup(s)
+> will be destroyed and overwritten with the current backup.
 
 ## Author
 
