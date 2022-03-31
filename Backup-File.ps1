@@ -301,7 +301,7 @@ function DeleteBackups
     $deletedBackupCount = 0
 
     # $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Sort-Object -Property { $_.LastWriteTime } | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
-    $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+    $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
 
     if ($qualifiedBackupDirs.Length -le 0)
     {
