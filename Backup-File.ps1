@@ -87,8 +87,6 @@ function DeleteBackups
     )
 
     $deletedBackupCount = 0
-
-    # $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Sort-Object -Property { $_.LastWriteTime } | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
     $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
 
     if ($qualifiedBackupDirs.Length -le 0)
@@ -303,10 +301,7 @@ function Backup-File
     End
     {
         Write-Verbose "Backup-File:End> Running post backup operations" -Verbose:$verboseEnabled
-
-        # DeleteEmptyBackupDirectories -Path $Destination -DryRun $dryRun -VerboseEnabled $verboseEnabled
         DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
-
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
     }
 }
