@@ -11,6 +11,151 @@ $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
 
 <#
+.CompressBackup
+    Creates a compressed archive, or zipped file, from specified files and directories.
+
+.PARAMETER Path
+    The path of the file or directory to compress.
+
+.PARAMETER DestinationPath
+    The destination path of the compressed file.
+
+.PARAMETER DryRun
+    Whether or not to perform the Compress-Archive operation.
+    Internally sets the value of the -WhatIf parameter when running the Compress-Archive cmdlet.
+
+.PARAMETER VerboseEnabled
+    Whether or not to commands will be invoked with the -Verbose parameter.
+#>
+function CompressBackup
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $DestinationPath,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $DryRun = $false,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $VerboseEnabled = $false
+    )
+
+    $baseName = (Split-Path $Path -Leaf)
+    $compressedFilePath = (Join-Path -Path $DestinationPath -ChildPath $baseName)
+
+    if ((Test-Path -Path "$compressedFilePath.zip"))
+    {
+        $randomFileName = (GenerateRandomFileName)
+        $compressedFilePath = ("{0}__{1}" -f $compressedFilePath, $randomFileName)
+        Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
+    }
+
+    if ($DryRun -eq $true)
+    {
+        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be backed up to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
+    }
+    else
+    {
+        Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
+        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -ErrorAction Continue -WhatIf:$DryRun
+    }
+}
+
+function DeleteBackups
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [int] $BackupsToKeep,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $DryRun = $false,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $VerboseEnabled = $false
+    )
+
+    $deletedBackupCount = 0
+
+    # $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Sort-Object -Property { $_.LastWriteTime } | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+    $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+
+    if ($qualifiedBackupDirs.Length -le 0)
+    {
+        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}" -f $Path) -Verbose:$VerboseEnabled
+        return
+    }
+
+    # Create a hashtable so we can sort backup directories based on
+    # their dated folder name ('MM-dd-yyyy')
+    $backups = @{}
+    foreach ($backupDir in $qualifiedBackupDirs)
+    {
+        $backups.Add($backupDir.FullName, [System.DateTime]$backupDir.Name)
+    }
+
+    $sortedBackupPaths = ($backups.GetEnumerator() |
+        Sort-Object -Property Value | ForEach-Object { $_.Key })
+
+    if ($sortedBackupPaths.Length -gt $BackupsToKeep)
+    {
+        for ($backup = 0; $backup -lt ($sortedBackupPaths.Length - $BackupsToKeep); $backup++)
+        {
+            $backupPath = $sortedBackupPaths[$backup]
+
+            if ($DryRun -eq $true)
+            {
+                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
+            }
+            else
+            {
+                Write-Verbose ("Backup-File:DeleteBackups> Deleting backup: {0}" -f $backupPath) -Verbose:$VerboseEnabled
+                Remove-Item -LiteralPath $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
+            }
+
+            $deletedBackupCount++
+        }
+    }
+    else
+    {
+        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete" -Verbose:$VerboseEnabled
+    }
+
+    if ($DryRun -eq $true)
+    {
+        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted" -f $deletedBackupCount) -Verbose:$VerboseEnabled
+    }
+    else
+    {
+        Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
+    }
+}
+
+<#
+.SYNOPSIS
+    Generates a random file name without the file extension.
+
+.OUTPUTS
+    System.string. The random generated file name.
+#>
+function GenerateRandomFileName
+{
+    $randomFileName = [System.IO.Path]::GetRandomFileName()
+    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
+}
+
+<#
 .Backup-File
     PowerShell script to backup files.
 
@@ -164,149 +309,4 @@ function Backup-File
 
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
     }
-}
-
-<#
-.CompressBackup
-    Creates a compressed archive, or zipped file, from specified files and directories.
-
-.PARAMETER Path
-    The path of the file or directory to compress.
-
-.PARAMETER DestinationPath
-    The destination path of the compressed file.
-
-.PARAMETER DryRun
-    Whether or not to perform the Compress-Archive operation.
-    Internally sets the value of the -WhatIf parameter when running the Compress-Archive cmdlet.
-
-.PARAMETER VerboseEnabled
-    Whether or not to commands will be invoked with the -Verbose parameter.
-#>
-function CompressBackup
-{
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $DestinationPath,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
-    )
-
-    $baseName = (Split-Path $Path -Leaf)
-    $compressedFilePath = (Join-Path -Path $DestinationPath -ChildPath $baseName)
-
-    if ((Test-Path -Path "$compressedFilePath.zip"))
-    {
-        $randomFileName = (GenerateRandomFileName)
-        $compressedFilePath = ("{0}__{1}" -f $compressedFilePath, $randomFileName)
-        Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
-    }
-
-    if ($DryRun -eq $true)
-    {
-        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be backed up to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
-    }
-    else
-    {
-        Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
-        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -ErrorAction Continue -WhatIf:$DryRun -Verbose:$VerboseEnabled
-    }
-}
-
-function DeleteBackups
-{
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [int] $BackupsToKeep,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
-    )
-
-    $deletedBackupCount = 0
-
-    # $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Sort-Object -Property { $_.LastWriteTime } | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
-    $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
-
-    if ($qualifiedBackupDirs.Length -le 0)
-    {
-        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}" -f $Path) -Verbose:$VerboseEnabled
-        return
-    }
-
-    # Create a hashtable so we can sort backup directories based on
-    # their dated folder name ('MM-dd-yyyy')
-    $backups = @{}
-    foreach ($backupDir in $qualifiedBackupDirs)
-    {
-        $backups.Add($backupDir.FullName, [System.DateTime]$backupDir.Name)
-    }
-
-    $sortedBackupPaths = ($backups.GetEnumerator() |
-        Sort-Object -Property Value | ForEach-Object { $_.Key })
-
-    if ($sortedBackupPaths.Length -gt $BackupsToKeep)
-    {
-        for ($backup = 0; $backup -lt ($sortedBackupPaths.Length - $BackupsToKeep); $backup++)
-        {
-            $backupPath = $sortedBackupPaths[$backup]
-
-            if ($DryRun -eq $true)
-            {
-                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
-            }
-            else
-            {
-                Write-Verbose ("Backup-File:DeleteBackups> Deleting backup: {0}" -f $backupPath) -Verbose:$VerboseEnabled
-                Remove-Item -LiteralPath $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
-            }
-
-            $deletedBackupCount++
-        }
-    }
-    else
-    {
-        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete" -Verbose:$VerboseEnabled
-    }
-
-    if ($DryRun -eq $true)
-    {
-        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted" -f $deletedBackupCount) -Verbose:$VerboseEnabled
-    }
-    else
-    {
-        Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
-    }
-}
-
-<#
-.SYNOPSIS
-    Generates a random file name without the file extension.
-
-.OUTPUTS
-    System.string. The random generated file name.
-#>
-function GenerateRandomFileName
-{
-    $randomFileName = [System.IO.Path]::GetRandomFileName()
-    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
