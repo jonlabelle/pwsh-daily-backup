@@ -1,6 +1,5 @@
-$ErrorActionPreference = 'Stop'
-
-$script:DefaultFolderDateFormat = 'MM-dd-yyyy'
+$script:ErrorActionPreference = 'Stop'
+$script:ProgressPreference = 'SilentlyContinue'
 
 # -----------------------------------------------
 # - Date format: MM-dd-yyyy
@@ -8,6 +7,7 @@ $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 # - Matches invalid dates such as February 31st
 # - Accepts dashes as date separators
 # -----------------------------------------------
+$script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
 
 <#
@@ -142,8 +142,8 @@ function Backup-File
 
                 if (!(Test-Path -Path $item))
                 {
-                    Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item)
-                    exit 1
+                    Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item) -ErrorAction Continue
+                    Continue
                 }
 
                 $item = (Resolve-Path $item).ProviderPath
@@ -163,62 +163,6 @@ function Backup-File
         DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
 
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
-    }
-}
-
-<#
-.DeleteEmptyBackupDirectories
-    Delete old files and empty directories.
-
-.PARAMETER Path
-    The path containing empty directories.
-
-.PARAMETER DryRun
-    Whether or not to perform the Remove-Item operation.
-    Internally sets the value of the -WhatIf parameter when running the Remove-Item cmdlet.
-
-.PARAMETER VerboseEnabled
-    Whether or not to commands will be invoked with the -Verbose parameter.
-#>
-function DeleteEmptyBackupDirectories
-{
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
-    )
-
-    Write-Verbose ("Backup-File:DeleteEmptyBackupDirectories> Deleting empty directories in {0}" -f $Path) -Verbose:$VerboseEnabled
-
-    if ($DryRun -eq $true)
-    {
-        Write-Verbose "Backup-File:DeleteEmptyBackupDirectories> Only searching for empty directories, nothing will be deleted Dry-run is enabled" -Verbose:$VerboseEnabled
-
-        # Just list the directories in dry-run mode
-        (Get-ChildItem -Path $Path -Directory -Recurse -Force | Where-Object {
-            $_.PSIsContainer -eq $True
-        }) | Where-Object { $_.GetFileSystemInfos().Count -eq 0 } |
-        Select-Object FullName
-    }
-    else
-    {
-        # This operation will loop indefinately if run if -WhatIf is $true,
-        # so it has its own seperate (non chained) command block
-        # See: https://stackoverflow.com/a/28631669
-        do
-        {
-            $emptyDirs = Get-ChildItem $Path -Directory -Recurse | Where-Object {
-                (Get-ChildItem $_.fullName -Force).count -eq 0
-            } | Select-Object -ExpandProperty FullName
-            $emptyDirs | ForEach-Object { Remove-Item $_ -Verbose:$VerboseEnabled }
-        } while ($emptyDirs.count -gt 0)
     }
 }
 
@@ -275,7 +219,7 @@ function CompressBackup
     else
     {
         Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
-        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled
+        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -ErrorAction Continue -WhatIf:$DryRun -Verbose:$VerboseEnabled
     }
 }
 
