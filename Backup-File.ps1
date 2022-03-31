@@ -1,6 +1,14 @@
-$ErrorActionPreference = "SilentlyContinue"
+$ErrorActionPreference = 'Stop'
 
 $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
+
+# -----------------------------------------------
+# - Date format: MM-dd-yyyy
+# - Date range: 01-01-1900 through 12-31-2099
+# - Matches invalid dates such as February 31st
+# - Accepts dashes as date separators
+# -----------------------------------------------
+$script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
 
 <#
 .Backup-File
@@ -16,8 +24,9 @@ $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
     The root directory path where backup files will be stored.
     NOTE: The current day formatted as 'MM-dd-yyyy' will be prepended to each backup run.
 
-.PARAMETER DeleteBackupsOlderThanDays
-    The number of days to keep a backup archives before deleting.
+.PARAMETER DailyBackupsToKeep
+    The number of daily backups to keep.
+    The value cannot be less than zero.
 
 .EXAMPLE
     To import the Backup-File module in your session:
@@ -71,11 +80,7 @@ function Backup-File
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [int] $DeleteBackupsOlderThanDays,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
-        [int] $DaysOfBackupsRetained
+        [int] $DailyBackupsToKeep
     )
     Begin
     {
@@ -97,12 +102,18 @@ function Backup-File
             Write-Verbose "Backup-File:Begin> Dry run is enabled" -Verbose:$verboseEnabled
         }
 
+        if ($DailyBackupsToKeep -lt 0)
+        {
+            Write-Error ("Backup-File:Begin> DailyBackupsToKeep parameter cannot be less than zero." -f $DailyBackupsToKeep)
+            exit 1
+        }
+
         $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ("Backup-File:Begin> Removing existing destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
-            Remove-Item -Path $datedDestinationDir -ItemType Directory -Force -Recurse -WhatIf:$dryRun -Verbose:$verboseEnabled
+            Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled
         }
 
         Write-Verbose ("Backup-File:Begin> Creating destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
@@ -148,10 +159,10 @@ function Backup-File
     {
         Write-Verbose "Backup-File:End> Running post backup operations" -Verbose:$verboseEnabled
 
-        $existingBackupCount = (CountExistingBackups -Path $Destination -VerboseEnabled $verboseEnabled)
+        # DeleteOldBackups -Path $Destination -DaysSinceLastModified $DailyBackupsToKeep -Filter *.zip -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        # DeleteEmptyBackupDirectories -Path $Destination -DryRun $dryRun -VerboseEnabled $verboseEnabled
 
-        DeleteOldBackups -Path $Destination -DaysSinceLastModified $DeleteBackupsOlderThanDays -Filter *.zip -DryRun $dryRun -VerboseEnabled $verboseEnabled
-        DeleteEmptyBackupDirectories -Path $Destination -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
 
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
     }
@@ -307,24 +318,18 @@ function CompressBackup
     $baseName = (Split-Path $Path -Leaf)
     $compressedFilePath = (Join-Path -Path $DestinationPath -ChildPath $baseName)
 
-    Write-Verbose ("Backup-File:CompressBackup> Compressing '{0}' to '{1}'" -f $Path, "${compressedFilePath}.zip") -Verbose:$VerboseEnabled
-    Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled
+    if ($DryRun -eq $true)
+    {
+        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be compressed to '{1}'" -f $Path, "${compressedFilePath}.zip") -Verbose:$VerboseEnabled
+    }
+    else
+    {
+        Write-Verbose ("Backup-File:CompressBackup> Compressing '{0}' to '{1}'" -f $Path, "${compressedFilePath}.zip") -Verbose:$VerboseEnabled
+        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled
+    }
 }
 
-<#
-.CountExistingBackups
-    Counts the number of top-level directories in the specified path.
-
-.PARAMETER Path
-    The path to count top-level directories.
-
-.PARAMETER VerboseEnabled
-    Whether or not to commands will be invoked with the -Verbose parameter.
-
-.OUTPUTS
-    System.Int32. CountExistingBackups returns an integer count of the top-level directories.
-#>
-function CountExistingBackups
+function DeleteBackups
 {
     param
     (
@@ -332,78 +337,69 @@ function CountExistingBackups
         [ValidateNotNullOrEmpty()]
         [string] $Path,
 
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
-    )
-
-    # TODO: probably need to count for existing backup archives
-    # in these directories, and ensure the foler name is truly a
-    # backup container (e.g. formatted as MM-dd-yyyy)
-
-    $backupCount = 0
-    $directories = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -Verbose:$VerboseEnabled)
-
-    foreach ($dir in $directories)
-    {
-        if (IsValidDateFormat -Date $dir.Name -VerboseEnabled $VerboseEnabled)
-        {
-            $backupCount++
-        }
-    }
-
-    $maybePluraize = "directories"
-    if ($backupCount -eq 1)
-    {
-        $maybePluraize = "directory"
-    }
-
-    Write-Verbose ("Backup-File:CountExistingBackups> Found {0} top-level {1} in '{2}'" -f $backupCount, $maybePluraize, $Path) -Verbose:$VerboseEnabled
-
-    return $backupCount
-}
-
-<#
-.IsValidDateFormat
-    Determines if the specified value is valid date format.
-
-.SYNOPSIS
-    Determines if the specified value is valid date format.
-
-.DESCRIPTION
-    - Date format: MM-dd-yyyy
-    - Date range: 01-01-1900 through 12-31-2099
-    - Matches invalid dates such as February 31st
-    - Accepts dashes as date separators
-
-.PARAMETER Date
-    The path to count top-level directories.
-
-.PARAMETER VerboseEnabled
-    Whether or not this operation should produce verbose output.
-
-.OUTPUTS
-    System.bool. Returns bool true if the $Date is valid date format, otherwise false.
-#>
-function IsValidDateFormat
-{
-    param
-    (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Date,
+        [int] $BackupsToKeep,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $DryRun = $false,
 
         [Parameter(Mandatory = $false)]
         [bool] $VerboseEnabled = $false
     )
 
-    if ($Date -cmatch '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z')
+    $deletedBackupCount = 0
+
+    # $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Sort-Object -Property { $_.LastWriteTime } | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+    $qualifiedBackupDirs = (Get-ChildItem -LiteralPath $Path -Directory -Depth 1 | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+
+    if ($qualifiedBackupDirs.Length -le 0)
     {
-        Write-Verbose ("Backup-File:IsValidDateFormat> '{0}' is a valid date format" -f $Date) -Verbose:$VerboseEnabled
-        return $true
+        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were found in: {0}" -f $Path) -Verbose:$VerboseEnabled
+        return
+    }
+
+    # Create a hashtable so we can sort backup directories based on
+    # their dated folder name ('MM-dd-yyyy')
+    $backups = @{}
+    foreach ($backupDir in $qualifiedBackupDirs)
+    {
+        $backups.Add($backupDir.FullName, [System.DateTime]$backupDir.Name)
+    }
+
+    $sortedBackupPaths = ($backups.GetEnumerator() |
+        Sort-Object -Property Value | ForEach-Object { $_.Key })
+
+    if ($sortedBackupPaths.Length -gt $BackupsToKeep)
+    {
+        for ($backup = 0; $backup -lt ($sortedBackupPaths.Length - $BackupsToKeep); $backup++)
+        {
+            $backupPath = $sortedBackupPaths[$backup]
+
+            if ($DryRun -eq $true)
+            {
+                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup {0} would be deleted" -f $backupPath) -Verbose:$VerboseEnabled
+            }
+            else
+            {
+                Write-Verbose ("Backup-File:DeleteBackups> Deleting backup: {0}" -f $backupPath) -Verbose:$VerboseEnabled
+                Remove-Item -LiteralPath $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
+            }
+
+            $deletedBackupCount++
+        }
     }
     else
     {
-        Write-Verbose ("Backup-File:IsValidDateFormat> '{0}' is NOT a valid date format" -f $Date) -Verbose:$verboseEnabled
-        return $false
+        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete." -Verbose:$VerboseEnabled
+    }
+
+    if ($DryRun -eq $true)
+    {
+        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted." -f $deletedBackupCount) -Verbose:$VerboseEnabled
+    }
+    else
+    {
+        Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
 }
