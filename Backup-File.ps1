@@ -193,13 +193,31 @@ function GenerateRandomFileName
 #>
 function Backup-File
 {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(
+        DefaultParameterSetName = 'File',
+        SupportsShouldProcess)]
     Param(
-        [Parameter(Position = 0, Mandatory = $true, ValueFromPipelineByPropertyName = $true, ValueFromPipeline = $True)]
+        [Parameter(
+            ParameterSetName = 'File',
+            Position = 0,
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipeline = $True)
+        ]
         [Alias("PSPath", "FullName", "SourcePath")]
         [string[]] $Path,
 
-        [Parameter(Position = 1, Mandatory = $true)]
+        [Parameter(
+            ParameterSetName = 'String',
+            Position = 0,
+            Mandatory = $true)
+        ]
+        [string[]] $String,
+
+        [Parameter(
+            Position = 1,
+            Mandatory = $true)
+        ]
         [Alias("DestinationPath", "TargetPath")]
         [string] $Destination,
 
@@ -246,24 +264,55 @@ function Backup-File
     }
     Process
     {
-        $items = $Path
+        if ($PSCmdlet.ParameterSetName -eq 'File')
+        {
+            $items = $Path
+        }
+        elseif ($PSCmdlet.ParameterSetName -eq 'String')
+        {
+            $items = $String
+        }
 
         foreach ($item in $items)
         {
-            if (-not [System.IO.Path]::IsPathRooted($item))
+            if ($PSCmdlet.ParameterSetName -eq 'File')
             {
-                Write-Verbose ("Backup-File:Process> {0} is not a full path, prepending current directory: {1}" -f $item, $pwd) -Verbose:$verboseEnabled
-                $item = (Join-Path -Path $pwd -ChildPath $item)
-            }
+                if (-not [System.IO.Path]::IsPathRooted($item))
+                {
+                    Write-Verbose ("Backup-File:Process> {0} is not a full path, prepending current directory: {1}" -f $item, $pwd) -Verbose:$verboseEnabled
+                    $item = (Join-Path -Path $pwd -ChildPath $item)
+                }
 
-            if (!(Test-Path -Path $item))
+                $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
+                if ($null -eq $resolvedPath)
+                {
+                    Write-Warning ("Backup-File:Process> Failed to resolve path for: {0}" -f $item)
+                    Continue
+                }
+
+                if ($resolvedPath.Count -gt 1)
+                {
+                    foreach ($globItem in $resolvedPath)
+                    {
+                        CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    }
+                }
+                else
+                {
+                    if (!(Test-Path -Path $resolvedPath -IsValid))
+                    {
+                        Write-Warning ("Backup-File:Process> Backup source path does not exist: {0}" -f $resolvedPath)
+                    }
+                    else
+                    {
+                        CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    }
+                }
+            }
+            elseif ($PSCmdlet.ParameterSetName -eq 'String')
             {
-                Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item) -ErrorAction Continue
-                Continue
+                CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
             }
-
-            $item = (Resolve-Path $item).ProviderPath
-            CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
         }
     }
     End
