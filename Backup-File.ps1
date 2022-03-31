@@ -142,7 +142,7 @@ function Backup-File
 
                 if (!(Test-Path -Path $item))
                 {
-                    Write-Host "Backup-File:Process> Backup source path does not exist: $item" -ForegroundColor Red
+                    Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item)
                     exit 1
                 }
 
@@ -159,9 +159,7 @@ function Backup-File
     {
         Write-Verbose "Backup-File:End> Running post backup operations" -Verbose:$verboseEnabled
 
-        # DeleteOldBackups -Path $Destination -DaysSinceLastModified $DailyBackupsToKeep -Filter *.zip -DryRun $dryRun -VerboseEnabled $verboseEnabled
         # DeleteEmptyBackupDirectories -Path $Destination -DryRun $dryRun -VerboseEnabled $verboseEnabled
-
         DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
 
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
@@ -222,61 +220,6 @@ function DeleteEmptyBackupDirectories
             $emptyDirs | ForEach-Object { Remove-Item $_ -Verbose:$VerboseEnabled }
         } while ($emptyDirs.count -gt 0)
     }
-}
-
-<#
-.DeleteOldBackups
-    Delete old files and empty directories.
-
-.PARAMETER Path
-    The root path to delete files.
-
-.PARAMETER Filter
-    The file filter. e.g. '*.zip'
-
-.PARAMETER DaysSinceLastModified
-    The number of days since a file was last modified before it can be deleted.
-
-.PARAMETER DryRun
-    Whether or not to perform the Remove-Item operation.
-    Internally sets the value of the -WhatIf parameter when running the Remove-Item cmdlet.
-
-.PARAMETER VerboseEnabled
-    Whether or not to commands will be invoked with the -Verbose parameter.
-
-.LINK
-    https://social.technet.microsoft.com/Forums/en-US/c59d77c6-ee9e-4ea4-be63-5eb24b8ceeab/remove-old-files-and-empty-folders?forum=winserverpowershell
-#>
-function DeleteOldBackups
-{
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Filter,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [int] $DaysSinceLastModified,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
-    )
-
-    Write-Verbose ("Backup-File:DeleteOldBackups> Deleting {0} files older than {1} days from {2}" -f $Filter, $DaysSinceLastModified, $Path) -Verbose:$VerboseEnabled
-
-    $lastModfiedDate = (Get-Date).AddDays(-$DaysSinceLastModified)
-
-    Get-ChildItem -LiteralPath $Path -File -Filter $Filter -Recurse -Force -ErrorAction SilentlyContinue |
-    Where-Object { !$_.PSIsContainer -and $_.LastWriteTime -lt $lastModfiedDate } |
-    Remove-Item -ErrorAction SilentlyContinue -WhatIf:$DryRun -Verbose:$VerboseEnabled
 }
 
 <#
