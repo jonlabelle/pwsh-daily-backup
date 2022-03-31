@@ -112,11 +112,11 @@ function Backup-File
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
-            Write-Verbose ("Backup-File:Begin> Removing existing destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
+            Write-Verbose ("Backup-File:Begin> Removing existing backup destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
             Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue'
         }
 
-        Write-Verbose ("Backup-File:Begin> Creating destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
+        Write-Verbose ("Backup-File:Begin> Creating backup destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
         New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
     }
     Process
