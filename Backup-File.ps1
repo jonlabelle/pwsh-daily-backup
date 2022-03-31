@@ -328,7 +328,7 @@ function DeleteBackups
 
             if ($DryRun -eq $true)
             {
-                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup {0} would be deleted" -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
             }
             else
             {
@@ -341,12 +341,12 @@ function DeleteBackups
     }
     else
     {
-        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete." -Verbose:$VerboseEnabled
+        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete" -Verbose:$VerboseEnabled
     }
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted." -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted" -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
     else
     {
