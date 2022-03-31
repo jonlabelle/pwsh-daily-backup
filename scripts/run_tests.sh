@@ -12,7 +12,7 @@ run_test_script() {
     echo " Running test script"
     echo "----------------------------"
     echo ""
-    /usr/local/bin/pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -File test/Tests.ps1
+    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -File test/Tests.ps1
     echo ""
     echo "Finished running test script."
     echo ""
@@ -23,7 +23,7 @@ run_test_command() {
     echo " Running test command"
     echo "----------------------------"
     echo ""
-    /usr/local/bin/pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command '. ./Backup-File.ps1; Backup-File -Path ".github" -Destination "tmp2/test" -DailyBackupsToKeep 2 -WhatIf -Verbose'
+    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command '. ./Backup-File.ps1; Backup-File -Path ".github" -Destination "tmp2/test" -DailyBackupsToKeep 2 -WhatIf -Verbose'
     echo ""
     echo "Finished running test command."
     echo ""
