@@ -265,7 +265,7 @@ function CompressBackup
     {
         $randomFileName = (GenerateRandomFileName)
         $compressedFilePath = ("{0}__{1}" -f $compressedFilePath, $randomFileName)
-        Write-Warning ("Backup-File:CompressBackup> An backup with the same name '{0}' already exists the destination path '{1}' so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
+        Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
     }
 
     if ($DryRun -eq $true)
