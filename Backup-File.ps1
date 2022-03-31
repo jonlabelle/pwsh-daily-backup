@@ -270,11 +270,11 @@ function CompressBackup
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be compressed to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be backed up to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ("Backup-File:CompressBackup> Compressing '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
         Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled
     }
 }
