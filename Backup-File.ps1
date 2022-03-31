@@ -305,7 +305,7 @@ function DeleteBackups
 
     if ($qualifiedBackupDirs.Length -le 0)
     {
-        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were found in: {0}" -f $Path) -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}" -f $Path) -Verbose:$VerboseEnabled
         return
     }
 
