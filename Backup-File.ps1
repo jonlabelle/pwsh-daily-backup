@@ -193,31 +193,13 @@ function GenerateRandomFileName
 #>
 function Backup-File
 {
-    [CmdletBinding(
-        DefaultParameterSetName = 'File',
-        SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess)]
     Param(
-        [Parameter(
-            ParameterSetName = 'File',
-            Position = 0,
-            Mandatory = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ValueFromPipeline = $True)
-        ]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipelineByPropertyName = $true, ValueFromPipeline = $True)]
         [Alias("PSPath", "FullName", "SourcePath")]
         [string[]] $Path,
 
-        [Parameter(
-            ParameterSetName = 'String',
-            Position = 0,
-            Mandatory = $true)
-        ]
-        [string[]] $String,
-
-        [Parameter(
-            Position = 1,
-            Mandatory = $true)
-        ]
+        [Parameter(Position = 1, Mandatory = $true)]
         [Alias("DestinationPath", "TargetPath")]
         [string] $Destination,
 
@@ -264,38 +246,24 @@ function Backup-File
     }
     Process
     {
-        if ($PSCmdlet.ParameterSetName -eq 'File')
-        {
-            $items = $Path
-        }
-        elseif ($PSCmdlet.ParameterSetName -eq 'String')
-        {
-            $items = $String
-        }
+        $items = $Path
 
         foreach ($item in $items)
         {
-            if ($PSCmdlet.ParameterSetName -eq 'File')
+            if (-not [System.IO.Path]::IsPathRooted($item))
             {
-                if (-not [System.IO.Path]::IsPathRooted($item))
-                {
-                    Write-Verbose ("Backup-File:Process> {0} is not a full path, prepending current directory: {1}" -f $item, $pwd) -Verbose:$verboseEnabled
-                    $item = (Join-Path -Path $pwd -ChildPath $item)
-                }
-
-                if (!(Test-Path -Path $item))
-                {
-                    Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item) -ErrorAction Continue
-                    Continue
-                }
-
-                $item = (Resolve-Path $item).ProviderPath
-                CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                Write-Verbose ("Backup-File:Process> {0} is not a full path, prepending current directory: {1}" -f $item, $pwd) -Verbose:$verboseEnabled
+                $item = (Join-Path -Path $pwd -ChildPath $item)
             }
-            elseif ($PSCmdlet.ParameterSetName -eq 'String')
+
+            if (!(Test-Path -Path $item))
             {
-                CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                Write-Error ("Backup-File:Process> Backup source path does not exist: {0}" -f $item) -ErrorAction Continue
+                Continue
             }
+
+            $item = (Resolve-Path $item).ProviderPath
+            CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
         }
     }
     End
