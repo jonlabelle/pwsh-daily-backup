@@ -27,18 +27,19 @@ SerializationVersion           1.1.0.1
 
 ### Backup parameters
 
-- Source path: `C:\Users\Ron\Documents`
+- Source path(s):
+  - `C:\Users\Ron\Documents`
 - Destination path: `C:\Users\Ron\iCloudDrive`
 
 ## Usage
 
-To backup path `C:\Users\Ron\Documents` to
-`C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\Documents`, keeping only the latest 7
-backups, and with dry-run only mode enabled (operations will not be performed).
+To backup `C:\Users\Ron\Documents` and 'C:\Users\Ron\Music' to
+`C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{source_basename}.zip`, keeping only
+the latest 7 backups, and in dry-run only mode (operations will not be performed).
 
 ```powershell
 Backup-File `
-    -Path 'C:\Users\Ron\Documents' `
+    -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
     -Destination 'C:\Users\Ron\iCloudDrive' `
     -DailyBackupsToKeep 7 `
     -WhatIf `

@@ -4,7 +4,7 @@ $projectRootDir = (Get-Item $testDir).Parent.FullName
 $moduleName = "Backup-File"
 $modulePath = (Join-Path -Path "$projectRootDir" -ChildPath "$moduleName.ps1")
 
-$dryRun = $false
+$dryRun = $true
 $verboseEnabled = $true
 
 if (-not ($null -eq (Get-ChildItem -Path Function:\$moduleName -ErrorAction 'SilentlyContinue')))
@@ -24,8 +24,10 @@ if (-not ($null -eq (Get-ChildItem -Path Function:\$moduleName -ErrorAction 'Sil
 Write-Verbose ("Loading {0} into memory" -f "Function:\$moduleName") -Verbose:$verboseEnabled
 . $modulePath
 
-$sources = (Join-Path "$projectRootDir" "test" "stubs" "files-to-backup")
+$path1 = (Join-Path "$projectRootDir" "test" "stubs" "files-to-backup")
+$path2 = (Join-Path "$projectRootDir" ".github")
+
 $destination = (Join-Path "$projectRootDir" "test" "stubs" "files-backed-up")
 
 Write-Verbose ("Calling {0} cmdlet" -f "$moduleName") -Verbose:$verboseEnabled
-Backup-File -Path $sources -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
+Backup-File -Path $path1, $path2 -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled

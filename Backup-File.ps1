@@ -37,7 +37,7 @@ $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])
     Backup-Files -Path $('source/path/1', 'source/path/2') -Destination destination/path -Verbose
 
 .EXAMPLE
-    To see what would happen if files were backed up (e.g. dry run):
+    To see what would happen if files were backed up (e.g. Dry-run):
     Backup-Files -Path source/path -Destination destination/path -WhatIf
 
 .NOTES
@@ -92,14 +92,14 @@ function Backup-File
         }
 
         $dryRun = $true
-        if ( $PSCmdlet.ShouldProcess($Path))
+        if ( $PSCmdlet.ShouldProcess($Path) -and (-not($Env:CI)))
         {
-            Write-Verbose "Backup-File:Begin> Dry run was not be enabled" -Verbose:$verboseEnabled
+            Write-Verbose "Backup-File:Begin> Dry-run is not enabled" -Verbose:$verboseEnabled
             $dryRun = $false
         }
         else
         {
-            Write-Verbose "Backup-File:Begin> Dry run is enabled" -Verbose:$verboseEnabled
+            Write-Verbose "Backup-File:Begin> Dry-run is enabled" -Verbose:$verboseEnabled
         }
 
         if ($DailyBackupsToKeep -lt 0)
@@ -113,11 +113,11 @@ function Backup-File
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ("Backup-File:Begin> Removing existing destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
-            Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled
+            Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue'
         }
 
         Write-Verbose ("Backup-File:Begin> Creating destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
-        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$dryRun -Verbose:$verboseEnabled | Out-Null
+        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
     }
     Process
     {
@@ -199,7 +199,7 @@ function DeleteEmptyBackupDirectories
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose "Backup-File:DeleteEmptyBackupDirectories> Only searching for empty directories, nothing will be deleted dry run is enabled" -Verbose:$VerboseEnabled
+        Write-Verbose "Backup-File:DeleteEmptyBackupDirectories> Only searching for empty directories, nothing will be deleted Dry-run is enabled" -Verbose:$VerboseEnabled
 
         # Just list the directories in dry-run mode
         (Get-ChildItem -Path $Path -Directory -Recurse -Force | Where-Object {
@@ -261,13 +261,20 @@ function CompressBackup
     $baseName = (Split-Path $Path -Leaf)
     $compressedFilePath = (Join-Path -Path $DestinationPath -ChildPath $baseName)
 
+    if ((Test-Path -Path "$compressedFilePath.zip"))
+    {
+        $randomFileName = (GenerateRandomFileName)
+        $compressedFilePath = ("{0}__{1}" -f $compressedFilePath, $randomFileName)
+        Write-Warning ("Backup-File:CompressBackup> An backup with the same name '{0}' already exists the destination path '{1}' so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
+    }
+
     if ($DryRun -eq $true)
     {
-        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be compressed to '{1}'" -f $Path, "${compressedFilePath}.zip") -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be compressed to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ("Backup-File:CompressBackup> Compressing '{0}' to '{1}'" -f $Path, "${compressedFilePath}.zip") -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:CompressBackup> Compressing '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
         Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled
     }
 }
@@ -345,4 +352,17 @@ function DeleteBackups
     {
         Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
+}
+
+<#
+.SYNOPSIS
+    Generates a random file name without the file extension.
+
+.OUTPUTS
+    System.string. The random generated file name.
+#>
+function GenerateRandomFileName
+{
+    $randomFileName = [System.IO.Path]::GetRandomFileName()
+    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
