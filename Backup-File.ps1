@@ -1,6 +1,8 @@
 $script:ErrorActionPreference = 'Stop'
 $script:ProgressPreference = 'SilentlyContinue'
 
+$script:DirectorySeperator = [IO.Path]::DirectorySeparatorChar
+
 # -----------------------------------------------
 # - Date format: MM-dd-yyyy
 # - Date range: 01-01-1900 through 12-31-2099
@@ -9,6 +11,60 @@ $script:ProgressPreference = 'SilentlyContinue'
 # -----------------------------------------------
 $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
+
+<#
+.SYNOPSIS
+    Generates a random file name without the file extension.
+
+.OUTPUTS
+    System.string. The random generated file name.
+#>
+function GetRandomFileName
+{
+    $randomFileName = [System.IO.Path]::GetRandomFileName()
+    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
+}
+
+<#
+.SYNOPSIS
+    Generates a backup file name by replacing directory seperator
+    characters and spaces with underscores.
+
+.PARAMETER Path
+    The source path for the backup.
+
+.PARAMETER VerboseEnabled
+    Whether or not to enable verbose output.
+
+.OUTPUTS
+    System.string. The backup name (without the file extension).
+#>
+function GenerateBackupName
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $VerboseEnabled = $false
+    )
+
+    $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
+    $pathSegments = $pathWithoutPrefix -split $script:DirectorySeperator
+
+    $backupName = [System.Text.StringBuilder]::new()
+
+    foreach ($segment in $pathSegments)
+    {
+        $segment = $segment.replace(' ', '_').Trim('_')
+
+        [void]$backupName.Append("{0}_" -f $segment)
+    }
+
+    return $backupName.ToString().Trim('_')
+}
 
 <#
 .CompressBackup
@@ -46,24 +102,28 @@ function CompressBackup
         [bool] $VerboseEnabled = $false
     )
 
-    $baseName = (Split-Path $Path -Leaf)
-    $compressedFilePath = (Join-Path -Path $DestinationPath -ChildPath $baseName)
+    # $backupName = (Split-Path -Path $Path -Leaf)
+    # $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
 
-    if ((Test-Path -Path "$compressedFilePath.zip"))
+    $backupName = (GenerateBackupName -Path $Path -VerboseEnabled $VerboseEnabled)
+    $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
+
+    if ((Test-Path -Path "$backupPath.zip"))
     {
-        $randomFileName = (GenerateRandomFileName)
-        $compressedFilePath = ("{0}__{1}" -f $compressedFilePath, $randomFileName)
-        Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$baseName.zip", $DestinationPath, $randomFileName)
+        $randomFileName = (GetRandomFileName)
+        $backupPath = ("{0}_{1}" -f $backupPath, $randomFileName)
+
+        Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
     }
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be backed up to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
+        Write-Verbose ("Backup-File:CompressBackup> Dry-run only, otherwise '{0}' would be backed up to '{1}'" -f $Path, "$backupPath.zip") -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$compressedFilePath.zip") -Verbose:$VerboseEnabled
-        Compress-Archive -LiteralPath $Path -DestinationPath "$compressedFilePath.zip" -ErrorAction Continue -WhatIf:$DryRun
+        Write-Verbose ("Backup-File:CompressBackup> Compressing backup '{0}' to '{1}'" -f $Path, "$backupPath.zip") -Verbose:$VerboseEnabled
+        Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -ErrorAction Continue -WhatIf:$DryRun
     }
 }
 
@@ -106,9 +166,9 @@ function DeleteBackups
     $sortedBackupPaths = ($backups.GetEnumerator() |
         Sort-Object -Property Value | ForEach-Object { $_.Key })
 
-    if ($sortedBackupPaths.Length -gt $BackupsToKeep)
+    if ($sortedBackupPaths.Count -gt $BackupsToKeep)
     {
-        for ($backup = 0; $backup -lt ($sortedBackupPaths.Length - $BackupsToKeep); $backup++)
+        for ($backup = 0; $backup -lt ($sortedBackupPaths.Count - $BackupsToKeep); $backup++)
         {
             $backupPath = $sortedBackupPaths[$backup]
 
@@ -119,7 +179,7 @@ function DeleteBackups
             else
             {
                 Write-Verbose ("Backup-File:DeleteBackups> Deleting backup: {0}" -f $backupPath) -Verbose:$VerboseEnabled
-                Remove-Item -LiteralPath $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
+                Remove-Item -Path $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
             }
 
             $deletedBackupCount++
@@ -138,19 +198,6 @@ function DeleteBackups
     {
         Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
-}
-
-<#
-.SYNOPSIS
-    Generates a random file name without the file extension.
-
-.OUTPUTS
-    System.string. The random generated file name.
-#>
-function GenerateRandomFileName
-{
-    $randomFileName = [System.IO.Path]::GetRandomFileName()
-    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
 
 <#
