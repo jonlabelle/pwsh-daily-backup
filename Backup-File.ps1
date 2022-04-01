@@ -49,7 +49,7 @@ function GenerateBackupName
     )
 
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
-    $pathSegments = $pathWithoutPrefix -split $script:DirectorySeperator
+    $pathSegments = $pathWithoutPrefix -split "$script:DirectorySeperator"
 
     $backupName = [System.Text.StringBuilder]::new()
 
