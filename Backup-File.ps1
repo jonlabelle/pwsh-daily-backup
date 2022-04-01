@@ -45,10 +45,7 @@ function GenerateBackupName
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Path,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
+        [string] $Path
     )
 
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
@@ -105,7 +102,7 @@ function CompressBackup
     # $backupName = (Split-Path -Path $Path -Leaf)
     # $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
 
-    $backupName = (GenerateBackupName -Path $Path -VerboseEnabled $VerboseEnabled)
+    $backupName = (GenerateBackupName -Path $Path)
     $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
 
     if ((Test-Path -Path "$backupPath.zip"))
