@@ -22,7 +22,7 @@ $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])
 function GetRandomFileName
 {
     $randomFileName = [System.IO.Path]::GetRandomFileName()
-    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
+    return $randomFileName.Substring(0,$randomFileName.IndexOf('.'))
 }
 
 <#
@@ -49,7 +49,16 @@ function GenerateBackupName
     )
 
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
-    $pathSegments = $pathWithoutPrefix -split "$script:DirectorySeperator"
+
+    if ($script:DirectorySeperator -eq '\')
+    {
+        # Needs an extra escape slash on Windows
+        $pathSegments = $pathWithoutPrefix -split "\\"
+    }
+    else
+    {
+        $pathSegments = $pathWithoutPrefix -split "$script:DirectorySeperator"
+    }
 
     $backupName = [System.Text.StringBuilder]::new()
 
@@ -154,7 +163,7 @@ function DeleteBackups
 
     # Create a hashtable so we can sort backup directories based on
     # their dated folder name ('MM-dd-yyyy')
-    $backups = @{}
+    $backups = @{ }
     foreach ($backupDir in $qualifiedBackupDirs)
     {
         $backups.Add($backupDir.FullName, [System.DateTime]$backupDir.Name)
@@ -279,7 +288,7 @@ function Backup-File
         }
 
         $dryRun = $true
-        if ( $PSCmdlet.ShouldProcess($Path) -and (-not($Env:CI)))
+        if ($PSCmdlet.ShouldProcess($Path) -and (-not($Env:CI)))
         {
             Write-Verbose "Backup-File:Begin> Dry-run is not enabled" -Verbose:$verboseEnabled
             $dryRun = $false
