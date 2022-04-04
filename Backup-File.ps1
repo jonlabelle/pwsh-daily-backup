@@ -22,7 +22,7 @@ $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])
 function GetRandomFileName
 {
     $randomFileName = [System.IO.Path]::GetRandomFileName()
-    return $randomFileName.Substring(0,$randomFileName.IndexOf('.'))
+    return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
 
 <#
@@ -217,7 +217,7 @@ function DeleteBackups
     The files or directories to backup.
 
 .PARAMETER Destination
-    The root directory path where backup files will be stored.
+    The root directory path where backup files/archives will be stored.
     NOTE: The current day formatted as 'MM-dd-yyyy' will be prepended to each backup run.
 
 .PARAMETER DailyBackupsToKeep
@@ -248,14 +248,16 @@ function Backup-File
 {
     [CmdletBinding(
         DefaultParameterSetName = 'File',
-        SupportsShouldProcess)]
+        SupportsShouldProcess,
+        HelpUri = "https://github.com/jonlabelle/dad-backup")]
     Param(
         [Parameter(
             ParameterSetName = 'File',
             Position = 0,
             Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
-            ValueFromPipeline = $True)
+            ValueFromPipeline = $True,
+            HelpMessage = "The files or directories to backup.")
         ]
         [Alias("PSPath", "FullName", "SourcePath")]
         [string[]] $Path,
@@ -263,18 +265,23 @@ function Backup-File
         [Parameter(
             ParameterSetName = 'String',
             Position = 0,
-            Mandatory = $true)
+            Mandatory = $true,
+            HelpMessage = "The files or directories to backup.")
         ]
         [string[]] $String,
 
         [Parameter(
             Position = 1,
-            Mandatory = $true)
+            Mandatory = $true,
+            HelpMessage = "The root directory path where backup files/archives will be stored.")
         ]
         [Alias("DestinationPath", "TargetPath")]
         [string] $Destination,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(
+            Mandatory = $true,
+            HelpMessage = "The number of daily backups to keep."
+        )]
         [ValidateNotNullOrEmpty()]
         [int] $DailyBackupsToKeep
     )
