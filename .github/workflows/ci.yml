@@ -8,10 +8,16 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    name: Build on ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout Git repository
@@ -37,4 +43,4 @@ jobs:
 
       - name: Running tests
         shell: pwsh
-        run: .\test\Tests.ps1
+        run: ./test/Tests.ps1
