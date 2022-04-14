@@ -2,6 +2,11 @@ $script:ErrorActionPreference = 'Stop'
 $script:ProgressPreference = 'SilentlyContinue'
 
 $script:DirectorySeperator = [IO.Path]::DirectorySeparatorChar
+$script:IsWindowsPlatform = $false
+if ($script:DirectorySeperator -eq '\')
+{
+    $script:IsWindowsPlatform = $true
+}
 
 # -----------------------------------------------
 # - Date format: MM-dd-yyyy
@@ -50,9 +55,9 @@ function GenerateBackupName
 
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
 
-    if ($script:DirectorySeperator -eq '\')
+    if ($script:IsWindowsPlatform -eq $true)
     {
-        # Needs an extra escape slash on Windows
+        # Need to escape the back-slash on Windows
         $pathSegments = $pathWithoutPrefix -split "\\"
     }
     else
