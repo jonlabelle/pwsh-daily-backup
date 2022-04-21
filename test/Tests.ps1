@@ -1,9 +1,9 @@
-# [cmdletbinding()]
-# param(
-#     [Alias('DryRun', 'NoOp')]
-#     [Switch]
-#     $WhatIf = $false
-# )
+[cmdletbinding()]
+param(
+    [Alias('DryRun', 'NoOp')]
+    [Switch]
+    $WhatIf = $false
+)
 
 $projectRootDir = (Join-Path -Path $PSScriptRoot -ChildPath "..")
 $moduleName = "Backup-File"
@@ -17,4 +17,4 @@ $path2 = (Join-Path "$projectRootDir" ".github")
 $destination = (Join-Path "$projectRootDir" "test" "stubs" "files-backed-up")
 
 Write-Verbose ("Running: {0}" -f "$moduleName") -Verbose:$verboseEnabled
-Backup-File -Path $path1, $path2 -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$false -Verbose:$Verbose
+Backup-File -Path $path1, $path2 -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$WhatIf -Verbose:$Verbose

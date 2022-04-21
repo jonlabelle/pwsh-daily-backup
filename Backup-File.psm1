@@ -300,7 +300,7 @@ function Backup-File
         }
 
         $dryRun = $true
-        if ($PSCmdlet.ShouldProcess($Path) -and (-not($Env:CI)))
+        if ($PSCmdlet.ShouldProcess($Path))
         {
             Write-Verbose "Backup-File:Begin> Dry-run is not enabled" -Verbose:$verboseEnabled
             $dryRun = $false
