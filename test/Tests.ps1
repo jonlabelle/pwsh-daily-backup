@@ -16,5 +16,11 @@ $path1 = (Join-Path "$projectRootDir" "test" "stubs" "files-to-backup")
 $path2 = (Join-Path "$projectRootDir" ".github")
 $destination = (Join-Path "$projectRootDir" "test" "stubs" "files-backed-up")
 
+$dryRun = $true
+if (-not $WhatIf)
+{
+    dryRun = $false
+}
+
 Write-Verbose ("Running: {0}" -f "$moduleName") -Verbose:$verboseEnabled
-Backup-File -Path $path1, $path2 -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$WhatIf -Verbose:$Verbose
+Backup-File -Path $path1, $path2 -Destination $destination -DailyBackupsToKeep 2 -WhatIf:$dryRun -Verbose:$Verbose
