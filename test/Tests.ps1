@@ -19,7 +19,7 @@ $destination = (Join-Path "$projectRootDir" "test" "stubs" "files-backed-up")
 $dryRun = $true
 if (-not $WhatIf)
 {
-    dryRun = $false
+    $dryRun = $false
 }
 
 Write-Verbose ("Running: {0}" -f "$moduleName") -Verbose:$verboseEnabled
