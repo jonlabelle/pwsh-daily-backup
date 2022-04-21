@@ -39,6 +39,8 @@ To backup `C:\Users\Ron\Documents` and `C:\Users\Ron\Music` to
 verbose output.
 
 ```powershell
+Import-Module Backup-File
+
 Backup-File `
     -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
     -Destination 'C:\Users\Ron\iCloudDrive' `
