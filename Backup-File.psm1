@@ -387,3 +387,5 @@ function Backup-File
         Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
     }
 }
+
+Export-ModuleMember -Function Backup-File
