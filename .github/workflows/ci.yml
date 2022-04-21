@@ -43,4 +43,4 @@ jobs:
 
       - name: Running tests
         shell: pwsh
-        run: ./test/Tests.ps1
+        run: ./test/Tests.ps1 -WhatIf -Verbose
