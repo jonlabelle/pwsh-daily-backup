@@ -23,7 +23,7 @@ run_test_command() {
     echo " Running test command"
     echo "----------------------------"
     echo ""
-    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command '. ./Backup-File.ps1; Backup-File -Path ".github" -Destination "tmp2/test" -DailyBackupsToKeep 2 -WhatIf -Verbose'
+    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command 'Import-Module ./Backup-File; Backup-File -Path ".github" -Destination "tmp2/test" -DailyBackupsToKeep 2 -WhatIf -Verbose'
     echo ""
     echo "Finished running test command."
     echo ""
