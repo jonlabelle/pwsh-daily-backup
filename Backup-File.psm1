@@ -17,35 +17,41 @@ if ($script:DirectorySeperator -eq '\')
 $script:DefaultFolderDateFormat = 'MM-dd-yyyy'
 $script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
 
-<#
-.SYNOPSIS
-    Generates a random file name without the file extension.
-
-.OUTPUTS
-    System.string. The random generated file name.
-#>
 function GetRandomFileName
 {
+    <#
+    .SYNOPSIS
+        Generates a random file name.
+
+    .DESCRIPTION
+        Generates a random file name without the file extension.
+
+    .OUTPUTS
+        [String]
+    #>
     $randomFileName = [System.IO.Path]::GetRandomFileName()
     return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
 
-<#
-.SYNOPSIS
-    Generates a backup file name by replacing directory seperator
-    characters and spaces with underscores.
-
-.PARAMETER Path
-    The source path for the backup.
-
-.PARAMETER VerboseEnabled
-    Whether or not to enable verbose output.
-
-.OUTPUTS
-    System.string. The backup name (without the file extension).
-#>
 function GenerateBackupName
 {
+    <#
+    .SYNOPSIS
+        Generates a backup file name.
+
+    .DESCRIPTION
+        Generates a backup file name by replacing directory seperator
+        characters and spaces with underscores.
+
+    .PARAMETER Path
+        The source path for the backup.
+
+    .PARAMETER VerboseEnabled
+        Whether or not invoke commands with the -Verbose parameter.
+
+    .OUTPUTS
+        [String]
+    #>
     param
     (
         [Parameter(Mandatory = $true)]
@@ -65,37 +71,40 @@ function GenerateBackupName
         $pathSegments = $pathWithoutPrefix -split "$script:DirectorySeperator"
     }
 
-    $backupName = [System.Text.StringBuilder]::new()
+    $backupName = New-Object -TypeName 'System.Text.StringBuilder'
 
     foreach ($segment in $pathSegments)
     {
         $segment = $segment.replace(' ', '_').Trim('_')
-
         [void]$backupName.Append('{0}_' -f $segment)
     }
 
     return $backupName.ToString().Trim('_')
 }
 
-<#
-.CompressBackup
-    Creates a compressed archive, or zipped file, from specified files and directories.
-
-.PARAMETER Path
-    The path of the file or directory to compress.
-
-.PARAMETER DestinationPath
-    The destination path of the compressed file.
-
-.PARAMETER DryRun
-    Whether or not to perform the Compress-Archive operation.
-    Internally sets the value of the -WhatIf parameter when running the Compress-Archive cmdlet.
-
-.PARAMETER VerboseEnabled
-    Whether or not to commands will be invoked with the -Verbose parameter.
-#>
 function CompressBackup
 {
+    <#
+    .SYNOPSIS
+        Creates a compressed archive.
+
+    .DESCRIPTION
+        Creates a compressed archive, or zipped file, from specified files
+        and or directories.
+
+    .PARAMETER Path
+        The path of the file or directory to compress.
+
+    .PARAMETER DestinationPath
+        The destination path of the compressed file.
+
+    .PARAMETER DryRun
+        Whether or not to perform the Compress-Archive operation.
+        Internally sets the value of the -WhatIf parameter when running the Compress-Archive cmdlet.
+
+    .PARAMETER VerboseEnabled
+        Whether or not invoke commands with the -Verbose parameter.
+    #>
     param
     (
         [Parameter(Mandatory = $true)]
@@ -138,8 +147,33 @@ function CompressBackup
     }
 }
 
-function DeleteBackups
+function RemoveBackup
 {
+    <#
+    .SYNOPSIS
+        Delete backups.
+
+    .DESCRIPTION
+        Delete backups with an option to keep minimum number of previous
+        backups, deleting the oldest backups first.
+
+    .PARAMETER Path
+        The root path where backups are stored.
+
+    .PARAMETER BackupsToKeep
+        The minimum number of backups to keep before deleting.
+
+    .PARAMETER VerboseEnabled
+        Whether or not to commands will be invoked with the -Verbose parameter.
+        The oldest backups will be deleted first.
+
+    .PARAMETER DryRun
+        Whether or not to perform the actual delete operation.
+        Internally sets the value of the -WhatIf parameter when running the Remove-Item cmdlet.
+
+    .PARAMETER VerboseEnabled
+        Whether or not invoke commands with the -Verbose parameter.
+    #>
     param
     (
         [Parameter(Mandatory = $true)]
@@ -162,7 +196,7 @@ function DeleteBackups
 
     if ($qualifiedBackupDirs.Length -le 0)
     {
-        Write-Verbose ('Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:RemoveBackup> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
         return
     }
 
@@ -185,11 +219,11 @@ function DeleteBackups
 
             if ($DryRun -eq $true)
             {
-                Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose ("Backup-File:RemoveBackup> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
             }
             else
             {
-                Write-Verbose ('Backup-File:DeleteBackups> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose ('Backup-File:RemoveBackup> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
                 Remove-Item -Path $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
             }
 
@@ -198,63 +232,62 @@ function DeleteBackups
     }
     else
     {
-        Write-Verbose 'Backup-File:DeleteBackups> No surplus backups to delete' -Verbose:$VerboseEnabled
+        Write-Verbose 'Backup-File:RemoveBackup> No surplus backups to delete' -Verbose:$VerboseEnabled
     }
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ('Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted' -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:RemoveBackup> Dry-run only, otherwise {0} backup(s) would have been deleted' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ('Backup-File:DeleteBackups> Total backups deleted: {0}' -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:RemoveBackup> Total backups deleted: {0}' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
 }
 
-<#
-.Backup-File
-    PowerShell script to backup files.
-
-.SYNOPSIS
-    PowerShell script to backup files.
-
-.PARAMETER Path
-    The files or directories to backup.
-
-.PARAMETER Destination
-    The root directory path where backup files/archives will be stored.
-    NOTE: The current day formatted as 'MM-dd-yyyy' will be prepended to each backup run.
-
-.PARAMETER DailyBackupsToKeep
-    The number of daily backups to keep.
-    The value cannot be less than zero.
-
-.EXAMPLE
-    To import the Backup-File module in your session:
-    Import-Module Backup-File.ps1
-
-.EXAMPLE
-    To backup a list of paths:
-    Backup-Files -Path $('source/path/1', 'source/path/2') -Destination destination/path -Verbose
-
-.EXAMPLE
-    To see what would happen if files were backed up (e.g. Dry-run):
-    Backup-Files -Path source/path -Destination destination/path -WhatIf
-
-.NOTES
-    Version: 1.0.0
-    Date: March 26, 2022
-    Author: Jon LaBelle
-
-.LINK
-    https://github.com/jonlabelle/dad-backup
-#>
 function Backup-File
 {
+    <#
+    .SYNOPSIS
+        PowerShell script to backup files.
+
+    .PARAMETER Path
+        The files or directories to backup.
+
+    .PARAMETER Destination
+        The root directory path where backup files/archives will be stored.
+
+        NOTE: The current day formatted as 'MM-dd-yyyy' will be prepended
+        to each backup run.
+
+    .PARAMETER DailyBackupsToKeep
+        The number of daily backups to keep.
+        The value cannot be less than zero.
+
+    .EXAMPLE
+        To import the Backup-File module in your session:
+        Import-Module Backup-File.ps1
+
+    .EXAMPLE
+        To backup a list of paths:
+        Backup-Files -Path $('source/path/1', 'source/path/2') -Destination destination/path -Verbose
+
+    .EXAMPLE
+        To see what would happen if files were backed up (e.g. Dry-run):
+        Backup-Files -Path source/path -Destination destination/path -WhatIf
+
+    .NOTES
+        Version: 1.0.0
+        Date: March 26, 2022
+        Author: Jon LaBelle
+
+    .LINK
+        https://github.com/jonlabelle/dad-backup
+    #>
     [CmdletBinding(
         DefaultParameterSetName = 'File',
-        SupportsShouldProcess,
-        HelpUri = 'https://github.com/jonlabelle/dad-backup')]
+        SupportsShouldProcess)
+    ]
     Param(
         [Parameter(
             ParameterSetName = 'File',
@@ -383,7 +416,7 @@ function Backup-File
     end
     {
         Write-Verbose 'Backup-File:End> Running post backup operations' -Verbose:$verboseEnabled
-        DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        RemoveBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
         Write-Verbose 'Backup-File:End> Finished' -Verbose:$verboseEnabled
     }
 }
