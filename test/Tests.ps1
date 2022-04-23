@@ -10,7 +10,7 @@ $moduleName = "Backup-File"
 $modulePath = (Join-Path -Path $PSScriptRoot -ChildPath ".." -AdditionalChildPath $moduleName)
 
 Get-Module $moduleName | Remove-Module -Verbose -ErrorAction SilentlyContinue
-Import-Module $modulePath
+Import-Module "$modulePath" -Verbose
 
 $path1 = (Join-Path "$projectRootDir" "test" "stubs" "files-to-backup")
 $path2 = (Join-Path "$projectRootDir" ".github")
