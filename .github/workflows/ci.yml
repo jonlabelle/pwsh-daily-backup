@@ -28,7 +28,6 @@ jobs:
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -ErrorAction Stop
-          Update-Module -Name PSScriptAnalyzer
 
       - name: Run PSScriptAnalyzer
         shell: pwsh
