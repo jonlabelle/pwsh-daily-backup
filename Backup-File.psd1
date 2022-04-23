@@ -87,10 +87,10 @@
   # DscResourcesToExport = @()
 
   # List of all modules packaged with this module
-  # ModuleList = @()
+  ModuleList = @('Backup-File.psm1')
 
   # List of all files packaged with this module
-  # FileList = @()
+  FileList = @('Backup-File.psm1', 'Backup-File.psd1', 'README.md')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData = @{
