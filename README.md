@@ -1,56 +1,27 @@
-# Dad's PowerShell Backup Script
+# PowerShell Daily Backup
 
-[![ci](https://github.com/jonlabelle/dad-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/jonlabelle/dad-backup/actions/workflows/ci.yml)
+[![ci](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml)
 
-## Laptop specs
-
-### Platform
-
-Windows 10 Professional
-
-### PowerShell
-
-```powershell
-PS C:\Users\Ron> $PSVersionTable
-
-Name                           Value
-----                           -----
-PSVersion                      5.1.19041.1320
-PSEdition                      Desktop
-PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0...}
-BuildVersion                   10.0.19041.1320
-CLRVersion                     4.0.30319.42000
-WSManStackVersion              3.0
-PSRemotingProtocolVersion      2.3
-SerializationVersion           1.1.0.1
-```
-
-### Backup parameters
-
-- Source path(s):
-  - `C:\Users\Ron\Documents`
-- Destination path: `C:\Users\Ron\iCloudDrive`
+> PowerShell module for performing simple daily backups.
 
 ## Usage
 
-To backup `C:\Users\Ron\Documents` and `C:\Users\Ron\Music` to
-`C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{basename}.zip`, keeping only the latest
-7 backups, and in dry-run only mode (operations will not be performed) with
-verbose output.
+To perform a daily backup of directories `C:\Users\Ron\Documents` and
+`C:\Users\Ron\Music`, and store them as `C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{basename}.zip`,
+keeping only the latest 7 backups.
 
 ```powershell
-Import-Module Backup-File
+Import-Module DailyBackup
 
-Backup-File `
+New-DailyBackup `
     -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
     -Destination 'C:\Users\Ron\iCloudDrive' `
     -DailyBackupsToKeep 7 `
-    -WhatIf `
-    -Verbose
 ```
 
-> **NOTE:** If running multiple backups on the same day, the previous backup(s)
+> **NOTE** If running multiple backups on the same day, the previous backup(s)
 > will be destroyed and overwritten with the current backup.
+> TODO: Maybe consider using the -Force option instead.
 
 ## Author
 
