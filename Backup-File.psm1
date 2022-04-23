@@ -58,7 +58,7 @@ function GenerateBackupName
     if ($script:IsWindowsPlatform -eq $true)
     {
         # Need to escape the back-slash on Windows
-        $pathSegments = $pathWithoutPrefix -split "\\"
+        $pathSegments = $pathWithoutPrefix -split '\\'
     }
     else
     {
@@ -71,7 +71,7 @@ function GenerateBackupName
     {
         $segment = $segment.replace(' ', '_').Trim('_')
 
-        [void]$backupName.Append("{0}_" -f $segment)
+        [void]$backupName.Append('{0}_' -f $segment)
     }
 
     return $backupName.ToString().Trim('_')
@@ -122,7 +122,7 @@ function CompressBackup
     if ((Test-Path -Path "$backupPath.zip"))
     {
         $randomFileName = (GetRandomFileName)
-        $backupPath = ("{0}_{1}" -f $backupPath, $randomFileName)
+        $backupPath = ('{0}_{1}' -f $backupPath, $randomFileName)
 
         Write-Warning ("Backup-File:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
     }
@@ -162,7 +162,7 @@ function DeleteBackups
 
     if ($qualifiedBackupDirs.Length -le 0)
     {
-        Write-Verbose ("Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}" -f $Path) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:DeleteBackups> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
         return
     }
 
@@ -189,7 +189,7 @@ function DeleteBackups
             }
             else
             {
-                Write-Verbose ("Backup-File:DeleteBackups> Deleting backup: {0}" -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose ('Backup-File:DeleteBackups> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
                 Remove-Item -Path $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
             }
 
@@ -198,16 +198,16 @@ function DeleteBackups
     }
     else
     {
-        Write-Verbose "Backup-File:DeleteBackups> No surplus backups to delete" -Verbose:$VerboseEnabled
+        Write-Verbose 'Backup-File:DeleteBackups> No surplus backups to delete' -Verbose:$VerboseEnabled
     }
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ("Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted" -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:DeleteBackups> Dry-run only, otherwise {0} backup(s) would have been deleted' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ("Backup-File:DeleteBackups> Total backups deleted: {0}" -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('Backup-File:DeleteBackups> Total backups deleted: {0}' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
 }
 
@@ -254,7 +254,7 @@ function Backup-File
     [CmdletBinding(
         DefaultParameterSetName = 'File',
         SupportsShouldProcess,
-        HelpUri = "https://github.com/jonlabelle/dad-backup")]
+        HelpUri = 'https://github.com/jonlabelle/dad-backup')]
     Param(
         [Parameter(
             ParameterSetName = 'File',
@@ -262,57 +262,57 @@ function Backup-File
             Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromPipeline = $True,
-            HelpMessage = "The files or directories to backup.")
+            HelpMessage = 'The files or directories to backup.')
         ]
-        [Alias("PSPath", "FullName", "SourcePath")]
+        [Alias('PSPath', 'FullName', 'SourcePath')]
         [string[]] $Path,
 
         [Parameter(
             ParameterSetName = 'String',
             Position = 0,
             Mandatory = $true,
-            HelpMessage = "The files or directories to backup.")
+            HelpMessage = 'The files or directories to backup.')
         ]
         [string[]] $String,
 
         [Parameter(
             Position = 1,
             Mandatory = $true,
-            HelpMessage = "The root directory path where backup files/archives will be stored.")
+            HelpMessage = 'The root directory path where backup files/archives will be stored.')
         ]
-        [Alias("DestinationPath", "TargetPath")]
+        [Alias('DestinationPath', 'TargetPath')]
         [string] $Destination,
 
         [Parameter(
             Mandatory = $true,
-            HelpMessage = "The number of daily backups to keep."
+            HelpMessage = 'The number of daily backups to keep.'
         )]
         [ValidateNotNullOrEmpty()]
         [int] $DailyBackupsToKeep
     )
-    Begin
+    begin
     {
         $verboseEnabled = $false
         if ($VerbosePreference -eq 'Continue')
         {
             $verboseEnabled = $true
-            Write-Verbose "Backup-File:Begin> Verbose mode is enabled" -Verbose:$verboseEnabled
+            Write-Verbose 'Backup-File:Begin> Verbose mode is enabled' -Verbose:$verboseEnabled
         }
 
         $dryRun = $true
         if ($PSCmdlet.ShouldProcess($Path))
         {
-            Write-Verbose "Backup-File:Begin> Dry-run is not enabled" -Verbose:$verboseEnabled
+            Write-Verbose 'Backup-File:Begin> Dry-run is not enabled' -Verbose:$verboseEnabled
             $dryRun = $false
         }
         else
         {
-            Write-Verbose "Backup-File:Begin> Dry-run is enabled" -Verbose:$verboseEnabled
+            Write-Verbose 'Backup-File:Begin> Dry-run is enabled' -Verbose:$verboseEnabled
         }
 
         if ($DailyBackupsToKeep -lt 0)
         {
-            Write-Error ("Backup-File:Begin> DailyBackupsToKeep parameter cannot be less than zero." -f $DailyBackupsToKeep)
+            Write-Error ('Backup-File:Begin> DailyBackupsToKeep parameter cannot be less than zero.' -f $DailyBackupsToKeep)
             exit 1
         }
 
@@ -320,14 +320,14 @@ function Backup-File
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
-            Write-Verbose ("Backup-File:Begin> Removing existing backup destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
+            Write-Verbose ('Backup-File:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
             Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue'
         }
 
-        Write-Verbose ("Backup-File:Begin> Creating backup destination directory: {0}" -f $datedDestinationDir) -Verbose:$verboseEnabled
+        Write-Verbose ('Backup-File:Begin> Creating backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
         New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
     }
-    Process
+    process
     {
         if ($PSCmdlet.ParameterSetName -eq 'File')
         {
@@ -344,14 +344,14 @@ function Backup-File
             {
                 if (-not [System.IO.Path]::IsPathRooted($item))
                 {
-                    Write-Verbose ("Backup-File:Process> {0} is not a full path, prepending current directory: {1}" -f $item, $pwd) -Verbose:$verboseEnabled
+                    Write-Verbose ('Backup-File:Process> {0} is not a full path, prepending current directory: {1}' -f $item, $pwd) -Verbose:$verboseEnabled
                     $item = (Join-Path -Path $pwd -ChildPath $item)
                 }
 
                 $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
                 if ($null -eq $resolvedPath)
                 {
-                    Write-Warning ("Backup-File:Process> Failed to resolve path for: {0}" -f $item)
+                    Write-Warning ('Backup-File:Process> Failed to resolve path for: {0}' -f $item)
                     Continue
                 }
 
@@ -366,7 +366,7 @@ function Backup-File
                 {
                     if (!(Test-Path -Path $resolvedPath -IsValid))
                     {
-                        Write-Warning ("Backup-File:Process> Backup source path does not exist: {0}" -f $resolvedPath)
+                        Write-Warning ('Backup-File:Process> Backup source path does not exist: {0}' -f $resolvedPath)
                     }
                     else
                     {
@@ -380,11 +380,11 @@ function Backup-File
             }
         }
     }
-    End
+    end
     {
-        Write-Verbose "Backup-File:End> Running post backup operations" -Verbose:$verboseEnabled
+        Write-Verbose 'Backup-File:End> Running post backup operations' -Verbose:$verboseEnabled
         DeleteBackups -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
-        Write-Verbose "Backup-File:End> Finished" -Verbose:$verboseEnabled
+        Write-Verbose 'Backup-File:End> Finished' -Verbose:$verboseEnabled
     }
 }
 
