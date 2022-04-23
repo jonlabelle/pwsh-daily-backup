@@ -1,6 +1,10 @@
 # PSScriptAnalyzerSettings.psd1
+#
 # Settings for PSScriptAnalyzer invocation.
 # All default rules are also enabled.
+#
+# Example usage:
+# Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerSettings.psd1 -Path . -Recurse
 @{
   Rules = @{
     PSUseCompatibleSyntax = @{
