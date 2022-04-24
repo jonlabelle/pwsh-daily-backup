@@ -1,0 +1,19 @@
+{
+    "editor.rulers": [80, 120],
+
+    "[powershell]": {
+        "files.trimTrailingWhitespace": true
+    },
+
+    "powershell.codeFormatting.preset": "Allman",
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.codeFormatting.whitespaceAroundOperator": true,
+    "powershell.codeFormatting.alignPropertyValuePairs": false,
+    "powershell.promptToUpdatePowerShell": false,
+    "powershell.codeFormatting.whitespaceInsideBrace": false,
+    "powershell.codeFormatting.openBraceOnSameLine": false,
+    "powershell.codeFormatting.useConstantStrings": true
+}
