@@ -28,13 +28,13 @@
   Author = 'Jon LaBelle'
 
   # Company or vendor of this module
-  CompanyName = 'Jon LaBelle'
+  CompanyName = ''
 
   # Copyright statement for this module
   Copyright = '(c) Jon LaBelle. All rights reserved.'
 
   # Description of the functionality provided by this module
-  Description = 'Performs simple daily backups.'
+  Description = 'Perform simple, daily backups.'
 
   # Minimum version of the PowerShell engine required by this module
   PowerShellVersion = '4.0'
@@ -91,7 +91,7 @@
   ModuleList = @('DailyBackup.psm1')
 
   # List of all files packaged with this module
-  FileList = @('DailyBackup.psm1', 'DailyBackup.psd1', 'README.md')
+  FileList = @('DailyBackup.psm1', 'DailyBackup.psd1')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData = @{
