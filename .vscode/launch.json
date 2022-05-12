@@ -6,20 +6,57 @@
 
     "configurations": [
         {
-            // Run this launch config and then set breakpoints in your module.
-            // Then you can `Import-Module -Force ./DailyBackup.psd1`
-            // and run a function that will hit the breakpoint.
-            "name": "PowerShell: Interactive Session",
+            "name": "PowerShell: Run tests",
             "type": "PowerShell",
             "request": "launch",
-            "cwd": ""
+            "script": "./test/Tests.ps1",
+            "args": ["-Verbose"],
+            "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell Launch Current File",
+            "name": "PowerShell: Run tests (dry-run)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./test/Tests.ps1",
+            "args": ["-Verbose", "-WhatIf"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Bash: Run bash tests",
+            "type": "node",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**"],
+            "preLaunchTask": "Bash tests",
+            "stopOnEntry": false
+        },
+        {
+            "name": "PowerShell: Run PSScriptAnalyzer",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "Invoke-ScriptAnalyzer",
+            // prettier-ignore
+            "args": [
+                "-Settings", "PSScriptAnalyzerSettings.psd1",
+                "-Path", ".",
+                "-Recurse"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell: Run current file",
             "type": "PowerShell",
             "request": "launch",
             "script": "${file}",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            // Run this launch config and then set breakpoints in your module.
+            // Then you can `Import-Module -Force ./DailyBackup.psd1`
+            // and run a function that will hit the breakpoint.
+            "name": "PowerShell: Interactive session",
+            "type": "PowerShell",
+            "request": "launch",
+            "cwd": ""
         }
     ]
 }

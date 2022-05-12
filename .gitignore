@@ -27,6 +27,7 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/launch.json
 !.vscode/settings.json
+!.vscode/tasks.json
 
 tmp/
 *.code-workspace
