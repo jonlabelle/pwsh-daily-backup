@@ -22,7 +22,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Bash: Run bash tests",
+            "name": "Bash: Run tests",
             "type": "node",
             "request": "launch",
             "skipFiles": ["<node_internals>/**"],
