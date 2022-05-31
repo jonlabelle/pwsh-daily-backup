@@ -9,13 +9,14 @@ if ($script:DirectorySeperator -eq '\')
 }
 
 # -----------------------------------------------
-# - Date format: MM-dd-yyyy
-# - Date range: 01-01-1900 through 12-31-2099
+# - Date format: yyyy-mm-dd
+# - Date range: 1900-01-01 through 2099-12-31
 # - Matches invalid dates such as February 31st
-# - Accepts dashes as date separators
+# - Accepts dashes, forward slashes and dots as date separators.
 # -----------------------------------------------
-$script:DefaultFolderDateFormat = 'MM-dd-yyyy'
-$script:DefaultFolderDateRegex = '\A\b(0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])[-](19|20)[0-9]{2}\b\z'
+$script:DefaultFolderDateFormat = 'yyyy-MM-dd'
+$script:DefaultFolderDateRegex = '\b(19|20)[0-9]{2}[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])\b'
+# -----------------------------------------------
 
 function GetRandomFileName
 {
