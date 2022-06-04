@@ -148,6 +148,86 @@ function CompressBackup
     }
 }
 
+function Remove-ItemAlternative
+{
+    <#
+    .SYNOPSIS
+        Removes all files and folders within given path.
+    .DESCRIPTION
+        Removes all files and folders within given path.
+        Workaround for Access to the cloud file is denied issue.
+    .PARAMETER Path
+        Path to file/folder
+    .PARAMETER SkipFolder
+        Do not delete top level folder
+    .EXAMPLE
+        Remove-ItemAlternative -Path "C:\Support\GitHub\GpoZaurr\Docs"
+    .EXAMPLE
+        Remove-ItemAlternative -Path "C:\Support\GitHub\GpoZaurr\Docs"
+    .NOTES
+        https://evotec.xyz/remove-item-access-to-the-cloud-file-is-denied-while-deleting-files-from-onedrive/
+    #>
+    param(
+        [alias('LiteralPath')][string] $Path,
+        [switch] $SkipFolder,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $DryRun = $false,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $VerboseEnabled = $false
+    )
+
+    if ($Path -and (Test-Path -LiteralPath $Path))
+    {
+        $Items = Get-ChildItem -LiteralPath $Path -Recurse
+        foreach ($Item in $Items)
+        {
+            if ($Item.PSIsContainer -eq $false)
+            {
+                try
+                {
+                    $Item.Delete()
+                }
+                catch
+                {
+                    Write-Warning "Remove-ItemAlternative - Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+                }
+            }
+        }
+
+        $Items = Get-ChildItem -LiteralPath $Path -Recurse
+        foreach ($Item in $Items)
+        {
+            try
+            {
+                $Item.Delete()
+            }
+            catch
+            {
+                Write-Warning "Remove-ItemAlternative - Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+            }
+        }
+
+        if (-not $SkipFolder)
+        {
+            $Item = Get-Item -LiteralPath $Path
+            try
+            {
+                $Item.Delete($true)
+            }
+            catch
+            {
+                Write-Warning "Remove-ItemAlternative - Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+            }
+        }
+    }
+    else
+    {
+        Write-Warning "Remove-ItemAlternative - Path $Path doesn't exists. Skipping. "
+    }
+}
+
 function RemoveBackup
 {
     <#
@@ -225,7 +305,8 @@ function RemoveBackup
             else
             {
                 Write-Verbose ('New-DailyBackup:RemoveBackup> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
-                Remove-Item -Path $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
+                # Remove-Item -Path $backupPath -Force -Recurse -WhatIf:$DryRun -Verbose:$VerboseEnabled
+                Remove-ItemAlternative -Path $backupPath
             }
 
             $deletedBackupCount++
@@ -355,7 +436,8 @@ function New-DailyBackup
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ('New-DailyBackup:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
-            Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue'
+            # Remove-Item -LiteralPath $datedDestinationDir -Recurse -Force -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue'
+            Remove-ItemAlternative -Path $datedDestinationDir
         }
 
         Write-Verbose ('New-DailyBackup:Begin> Creating backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
