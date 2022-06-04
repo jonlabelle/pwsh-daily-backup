@@ -148,20 +148,25 @@ function CompressBackup
     }
 }
 
-function Remove-ItemAlternative
+function RemoveItemAlternative
 {
     <#
     .SYNOPSIS
         Removes all files and folders within given path.
+
     .DESCRIPTION
         Removes all files and folders within given path.
-        Workaround for Access to the cloud file is denied issue.
+        A workaround for the access denied issue when attempting to Remove-Item(s) from an Apple iCloud path.
+
     .PARAMETER Path
         Path to file/folder.
-    .PARAMETER SkipFolder
-        Do not delete top level folder.
+
+    .PARAMETER SkipTopLevelFolder
+        Do not delete the top-level folder.
+
     .EXAMPLE
-        Remove-ItemAlternative -Path "C:\Support\GitHub\GpoZaurr\Docs"
+        RemoveItemAlternative -Path "C:\Support\GitHub\GpoZaurr\Docs"
+
     .NOTES
         https://evotec.xyz/remove-item-access-to-the-cloud-file-is-denied-while-deleting-files-from-onedrive/
     #>
@@ -170,7 +175,7 @@ function Remove-ItemAlternative
         [string] $Path,
 
         [Parameter(Mandatory = $false)]
-        [switch] $SkipFolder,
+        [switch] $SkipTopLevelFolder,
 
         [Parameter(Mandatory = $false)]
         [bool] $DryRun = $false,
@@ -190,7 +195,7 @@ function Remove-ItemAlternative
                 {
                     if ($DryRun)
                     {
-                        Write-Verbose ("New-DailyBackup:Remove-ItemAlternative> Dry-run only, otherwise file '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
+                        Write-Verbose ("New-DailyBackup:RemoveItemAlternative> Dry-run only, otherwise file '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
                     }
                     else
                     {
@@ -199,7 +204,7 @@ function Remove-ItemAlternative
                 }
                 catch
                 {
-                    Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+                    Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
                 }
             }
         }
@@ -211,7 +216,7 @@ function Remove-ItemAlternative
             {
                 if ($DryRun)
                 {
-                    Write-Verbose ("New-DailyBackup:Remove-ItemAlternative> Dry-run only, otherwise file '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
+                    Write-Verbose ("New-DailyBackup:RemoveItemAlternative> Dry-run only, otherwise file '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
                 }
                 else
                 {
@@ -220,18 +225,18 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+                Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete '$($Item.FullName)', Error: $($_.Exception.Message)"
             }
         }
 
-        if (-not $SkipFolder)
+        if (-not $SkipTopLevelFolder)
         {
             $Item = Get-Item -LiteralPath $Path
             try
             {
                 if ($DryRun)
                 {
-                    Write-Verbose ("New-DailyBackup:Remove-ItemAlternative> Dry-run only, otherwise directory '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
+                    Write-Verbose ("New-DailyBackup:RemoveItemAlternative> Dry-run only, otherwise directory '{0}' would be deleted" -f $Item.FullName) -Verbose:$VerboseEnabled
                 }
                 else
                 {
@@ -240,24 +245,24 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete $($Item.FullName), error: $($_.Exception.Message)"
+                Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete '$($Item.FullName)', Error: $($_.Exception.Message)"
             }
         }
     }
     else
     {
-        Write-Warning "New-DailyBackup:Remove-ItemAlternative> Path $Path doesn't exist. Skipping."
+        Write-Warning "New-DailyBackup:RemoveItemAlternative> Path '$Path' doesn't exist. Skipping."
     }
 }
 
-function RemoveBackup
+function RemoveDailyBackup
 {
     <#
     .SYNOPSIS
-        Delete backups.
+        Delete daily backups.
 
     .DESCRIPTION
-        Delete backups with an option to keep minimum number of previous
+        Delete daily backups with an option to keep minimum number of previous
         backups, deleting the oldest backups first.
 
     .PARAMETER Path
@@ -265,10 +270,6 @@ function RemoveBackup
 
     .PARAMETER BackupsToKeep
         The minimum number of backups to keep before deleting.
-
-    .PARAMETER VerboseEnabled
-        Whether or not to commands will be invoked with the -Verbose parameter.
-        The oldest backups will be deleted first.
 
     .PARAMETER DryRun
         Whether or not to perform the actual delete operation.
@@ -299,12 +300,11 @@ function RemoveBackup
 
     if ($qualifiedBackupDirs.Length -le 0)
     {
-        Write-Verbose ('New-DailyBackup:RemoveBackup> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
+        Write-Verbose ('New-DailyBackup:RemoveDailyBackup> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
         return
     }
 
-    # Create a hashtable so we can sort backup directories based on
-    # their dated folder name ('MM-dd-yyyy')
+    # Create a hashtable so we can sort backup directories based on their date-formatted folder name ('yyyy-MM-dd')
     $backups = @{ }
     foreach ($backupDir in $qualifiedBackupDirs)
     {
@@ -322,12 +322,12 @@ function RemoveBackup
 
             if ($DryRun -eq $true)
             {
-                Write-Verbose ("New-DailyBackup:RemoveBackup> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose ("New-DailyBackup:RemoveDailyBackup> Dry-run only, otherwise backup '{0}' would have been deleted" -f $backupPath) -Verbose:$VerboseEnabled
             }
             else
             {
-                Write-Verbose ('New-DailyBackup:RemoveBackup> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
-                Remove-ItemAlternative -Path $backupPath -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Deleting backup: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+                RemoveItemAlternative -Path $backupPath -DryRun $dryRun -VerboseEnabled $verboseEnabled
             }
 
             $deletedBackupCount++
@@ -335,16 +335,16 @@ function RemoveBackup
     }
     else
     {
-        Write-Verbose 'New-DailyBackup:RemoveBackup> No surplus backups to delete' -Verbose:$VerboseEnabled
+        Write-Verbose 'New-DailyBackup:RemoveDailyBackup> No surplus daily backups to delete' -Verbose:$VerboseEnabled
     }
 
     if ($DryRun -eq $true)
     {
-        Write-Verbose ('New-DailyBackup:RemoveBackup> Dry-run only, otherwise {0} backup(s) would have been deleted' -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Dry-run only, otherwise {0} backup(s) would have been deleted' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
     else
     {
-        Write-Verbose ('New-DailyBackup:RemoveBackup> Total backups deleted: {0}' -f $deletedBackupCount) -Verbose:$VerboseEnabled
+        Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Total backups deleted: {0}' -f $deletedBackupCount) -Verbose:$VerboseEnabled
     }
 }
 
@@ -356,7 +356,7 @@ function New-DailyBackup
 
     .DESCRIPTION
         Create a new daily backup storing the compressed (.zip) contents in
-        a destination folder formatted by day ('MM-dd-yyyy').
+        a destination folder formatted by day ('yyyy-MM-dd').
 
     .PARAMETER Path
         The source files or directory path(s) to backup.
@@ -448,7 +448,7 @@ function New-DailyBackup
 
         if ($DailyBackupsToKeep -lt 0)
         {
-            Write-Error ('New-DailyBackup:Begin> DailyBackupsToKeep parameter cannot be less than zero.' -f $DailyBackupsToKeep)
+            Write-Error ('New-DailyBackup:Begin> DailyBackupsToKeep parameter cannot be less than zero' -f $DailyBackupsToKeep)
             exit 1
         }
 
@@ -457,7 +457,7 @@ function New-DailyBackup
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ('New-DailyBackup:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
-            Remove-ItemAlternative -Path $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+            RemoveItemAlternative -Path $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
         }
 
         Write-Verbose ('New-DailyBackup:Begin> Creating backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
@@ -519,7 +519,7 @@ function New-DailyBackup
     end
     {
         Write-Verbose 'New-DailyBackup:End> Running post backup operations' -Verbose:$verboseEnabled
-        RemoveBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
         Write-Verbose 'New-DailyBackup:End> Finished' -Verbose:$verboseEnabled
     }
 }

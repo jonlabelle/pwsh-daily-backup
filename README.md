@@ -26,13 +26,13 @@ SYNTAX
 
 DESCRIPTION
     Create a new daily backup storing the compressed (.zip) contents in
-    a destination folder formatted by day ('MM-dd-yyyy').
+    a destination folder formatted by day ('yyyy-MM-dd').
 ```
 
 ## Examples
 
 To perform a daily backup of directories `C:\Users\Ron\Documents` and
-`C:\Users\Ron\Music`, and store them as `C:\Users\Ron\iCloudDrive\{MM-dd-yyyy}\{basename}.zip`,
+`C:\Users\Ron\Music`, and store them as `C:\Users\Ron\iCloudDrive\{yyyy-MM-dd}\{basename}.zip`,
 keeping only the latest 7 backups.
 
 ```powershell
