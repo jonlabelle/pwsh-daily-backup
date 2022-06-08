@@ -156,13 +156,19 @@ function RemoveItemAlternative
 
     .DESCRIPTION
         Removes all files and folders within given path.
-        A workaround for the access denied issue when attempting to Remove-Item(s) from an Apple iCloud path.
+        A workaround for the access denied issue when attempting to Remove-Item(s) from an Apple iCloud or OneDrive path.
 
     .PARAMETER Path
         Path to file/folder.
 
     .PARAMETER SkipTopLevelFolder
         Do not delete the top-level folder.
+
+    .PARAMETER DryRun
+        Whether or not to perform the actual delete operation.
+
+    .PARAMETER VerboseEnabled
+        Whether or not invoke commands with the -Verbose parameter.
 
     .EXAMPLE
         RemoveItemAlternative -Path "C:\Support\GitHub\GpoZaurr\Docs"
