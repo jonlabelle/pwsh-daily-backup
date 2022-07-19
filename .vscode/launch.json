@@ -10,6 +10,7 @@
             "type": "PowerShell",
             "request": "launch",
             "script": "./test/Tests.ps1",
+            // prettier-ignore
             "args": ["-Verbose"],
             "cwd": "${workspaceFolder}"
         },
@@ -18,7 +19,11 @@
             "type": "PowerShell",
             "request": "launch",
             "script": "./test/Tests.ps1",
-            "args": ["-Verbose", "-WhatIf"],
+            // prettier-ignore
+            "args": [
+                "-WhatIf",
+                "-Verbose"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {
