@@ -48,6 +48,20 @@ New-DailyBackup `
 > will be destroyed and overwritten with the current backup.
 > TODO: Maybe consider using the -Force option instead.
 
+### To remove the all instances of the previous module and force reload
+
+```powershell
+$modulePath = '/Users/jon/projects/pwsh-daily-backup'
+$moduleName = 'DailyBackup.psd1'
+$moduleAbsolutePath = Join-Path -Path $modulePath -ChildPath $moduleName
+
+Get-Module -Name $moduleAbsolutePath -ListAvailable -All | Remove-Module -Force
+$module = Get-Module -Name $moduleAbsolutePath -ListAvailable
+Import-Module -Name $module.Path -Force -ErrorAction Stop
+```
+
+> **Reference:** [The Pester Book](https://leanpub.com/pesterbook), *Modules and Dot-Sourced Script Gotchas:Importing Modules*
+
 ## Author
 
 Jon LaBelle
