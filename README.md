@@ -9,8 +9,6 @@
 ### New-DailyBackup
 
 ```console
-PS /> Get-Help New-DailyBackup
-
 NAME
     New-DailyBackup
 
@@ -18,15 +16,55 @@ SYNOPSIS
     Perform a daily backup.
 
 SYNTAX
-    New-DailyBackup [-Path] <String[]> [-Destination] <String> -DailyBackupsToKeep <Int32> [-WhatIf] [-Confirm]
-    [<CommonParameters>]
-
-    New-DailyBackup [-String] <String[]> [-Destination] <String> -DailyBackupsToKeep <Int32> [-WhatIf] [-Confirm]
-    [<CommonParameters>]
+    New-DailyBackup [-Path] <String[]> [-Destination] <String> -DailyBackupsToKeep <Int32> [-WhatIf] [-Verbose]
 
 DESCRIPTION
-    Create a new daily backup storing the compressed (.zip) contents in
-    a destination folder formatted by day ('yyyy-MM-dd').
+    Create a new daily backup storing the compressed (.zip) contents in a
+    destination folder formatted by day ('yyyy-MM-dd').
+
+PARAMETERS
+    -Path <String[]>
+        The source files or directory path(s) to backup.
+
+        Required?                    true
+        Position?                    1
+        Default value
+        Accept pipeline input?       true (ByValue, ByPropertyName)
+        Accept wildcard characters?  false
+
+    -Destination <String>
+        The root directory path where daily backups will be stored.
+
+        Required?                    true
+        Position?                    2
+        Default value
+        Accept pipeline input?       false
+        Accept wildcard characters?  false
+
+    -DailyBackupsToKeep <Int32>
+        The number of daily backups to keep when purging old backups.
+        The oldest backups will be deleted first.
+        This value cannot be less than zero.
+
+        Required?                    true
+        Position?                    named
+        Default value                0
+        Accept pipeline input?       false
+        Accept wildcard characters?  false
+
+    -WhatIf [<SwitchParameter>]
+
+        Required?                    false
+        Position?                    named
+        Default value
+        Accept pipeline input?       false
+        Accept wildcard characters?  false
+
+    <CommonParameters>
+        This cmdlet supports the common parameters: Verbose, Debug,
+        ErrorAction, ErrorVariable, WarningAction, WarningVariable,
+        OutBuffer, PipelineVariable, and OutVariable. For more information, see
+        about_CommonParameters (https://go.microsoft.com/fwlink/?LinkID=113216).
 ```
 
 ## Examples

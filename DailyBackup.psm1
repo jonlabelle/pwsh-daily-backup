@@ -335,7 +335,7 @@ function New-DailyBackup
     .EXAMPLE
         To create a new daily backup from a list of paths:
 
-        New-DailyBackup -Path $('source/path/1', 'source/path/2') -Destination destination/path -Verbose
+        New-DailyBackup -Path $('source/path/1', 'source/path/2') -Destination 'root/destination/directory' -Verbose
 
     .EXAMPLE
         To perform a dry-run of the daily backup operation:
@@ -345,29 +345,17 @@ function New-DailyBackup
     .LINK
         https://github.com/jonlabelle/pwsh-daily-backup
     #>
-    [CmdletBinding(
-        DefaultParameterSetName = 'File',
-        SupportsShouldProcess)
-    ]
-    Param(
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
         [Parameter(
-            ParameterSetName = 'File',
             Position = 0,
             Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
-            ValueFromPipeline = $True,
+            ValueFromPipeline = $true,
             HelpMessage = 'The source files or directory path(s) to backup.')
         ]
         [Alias('PSPath', 'FullName', 'SourcePath')]
         [string[]] $Path,
-
-        [Parameter(
-            ParameterSetName = 'String',
-            Position = 0,
-            Mandatory = $true,
-            HelpMessage = 'The source files or directory path(s) to backup.')
-        ]
-        [string[]] $String,
 
         [Parameter(
             Position = 1,
@@ -394,7 +382,7 @@ function New-DailyBackup
         }
 
         $dryRun = $true
-        if ($PSCmdlet.ShouldProcess($Path) -or $WhatIfPreference -eq $false)
+        if (-not $WhatIfPreference)
         {
             Write-Verbose 'New-DailyBackup:Begin> Dry-run is not enabled' -Verbose:$verboseEnabled
             $dryRun = $false
@@ -423,54 +411,38 @@ function New-DailyBackup
     }
     process
     {
-        if ($PSCmdlet.ParameterSetName -eq 'File')
+        foreach ($item in $Path)
         {
-            $items = $Path
-        }
-        elseif ($PSCmdlet.ParameterSetName -eq 'String')
-        {
-            $items = $String
-        }
-
-        foreach ($item in $items)
-        {
-            if ($PSCmdlet.ParameterSetName -eq 'File')
+            if (-not [System.IO.Path]::IsPathRooted($item))
             {
-                if (-not [System.IO.Path]::IsPathRooted($item))
-                {
-                    Write-Verbose ('New-DailyBackup:Process> {0} is not a full path, prepending current directory: {1}' -f $item, $pwd) -Verbose:$verboseEnabled
-                    $item = (Join-Path -Path $pwd -ChildPath $item)
-                }
+                Write-Verbose ('New-DailyBackup:Process> {0} is not a full path, prepending current directory: {1}' -f $item, $pwd) -Verbose:$verboseEnabled
+                $item = (Join-Path -Path $pwd -ChildPath $item)
+            }
 
-                $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
-                if ($null -eq $resolvedPath)
-                {
-                    Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
-                    Continue
-                }
+            $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
+            if ($null -eq $resolvedPath)
+            {
+                Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
+                Continue
+            }
 
-                if ($resolvedPath.Count -gt 1)
+            if ($resolvedPath.Count -gt 1)
+            {
+                foreach ($globItem in $resolvedPath)
                 {
-                    foreach ($globItem in $resolvedPath)
-                    {
-                        CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
-                    }
+                    CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                }
+            }
+            else
+            {
+                if (!(Test-Path -Path $resolvedPath -IsValid))
+                {
+                    Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
                 }
                 else
                 {
-                    if (!(Test-Path -Path $resolvedPath -IsValid))
-                    {
-                        Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
-                    }
-                    else
-                    {
-                        CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
-                    }
+                    CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
                 }
-            }
-            elseif ($PSCmdlet.ParameterSetName -eq 'String')
-            {
-                CompressBackup -Path $item -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
             }
         }
     }
