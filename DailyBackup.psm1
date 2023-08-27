@@ -76,8 +76,11 @@ function GenerateBackupName
 
     foreach ($segment in $pathSegments)
     {
-        $segment = $segment.replace(' ', '_').Trim('_')
-        [void]$backupName.Append('{0}_' -f $segment)
+        if (-not [string]::IsNullOrWhiteSpace($segment))
+        {
+            $segment = $segment.replace(' ', '-').Trim('-')
+            [void]$backupName.Append('{0}_' -f $segment)
+        }
     }
 
     return $backupName.ToString().Trim('_')
