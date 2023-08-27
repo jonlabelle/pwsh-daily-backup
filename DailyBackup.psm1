@@ -146,6 +146,7 @@ function CompressBackup
     }
     else
     {
+        Write-Verbose ('New-DailyBackup:CompressBackup> Compressing backup ''{0}''' -f "$backupPath.zip")
         Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled -ErrorAction Continue
     }
 }
