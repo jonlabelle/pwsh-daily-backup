@@ -74,7 +74,7 @@ To perform a daily backup of directories `C:\Users\Ron\Documents` and
 keeping only the latest 7 backups.
 
 ```powershell
-Import-Module DailyBackup
+Import-Module C:\pwsh-daily-backup\DailyBackup
 
 New-DailyBackup `
     -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
@@ -98,7 +98,7 @@ $module = Get-Module -Name $moduleAbsolutePath -ListAvailable
 Import-Module -Name $module.Path -Force -ErrorAction Stop
 ```
 
-> **Reference:** [The Pester Book](https://leanpub.com/pesterbook), *Modules and Dot-Sourced Script Gotchas:Importing Modules*
+> **Reference:** [The Pester Book](https://leanpub.com/pesterbook), _Modules and Dot-Sourced Script Gotchas:Importing Modules_
 
 ## Author
 
