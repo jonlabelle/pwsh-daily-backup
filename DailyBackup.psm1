@@ -137,7 +137,14 @@ function CompressBackup
         Write-Warning ("New-DailyBackup:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
     }
 
-    Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled -ErrorAction Continue
+    if ($DryRun)
+    {
+        Write-Verbose ('New-DailyBackup:CompressBackup> Dry-run only, backup ''{0}'' will not be created' -f "$backupPath.zip")
+    }
+    else
+    {
+        Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled -ErrorAction Continue
+    }
 }
 
 function Remove-ItemAlternative
