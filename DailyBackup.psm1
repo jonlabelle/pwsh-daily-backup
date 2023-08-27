@@ -126,9 +126,6 @@ function CompressBackup
         [bool] $VerboseEnabled = $false
     )
 
-    # $backupName = (Split-Path -Path $Path -Leaf)
-    # $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
-
     $backupName = (GenerateBackupName -Path $Path)
     $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
 
