@@ -367,6 +367,7 @@ function New-DailyBackup
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
         )]
         [ValidateNotNullOrEmpty()]
+        [Alias('Keep')]
         [int] $DailyBackupsToKeep
     )
     begin
