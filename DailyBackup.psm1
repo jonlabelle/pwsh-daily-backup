@@ -1,13 +1,6 @@
 $script:ErrorActionPreference = 'Stop'
 $script:ProgressPreference = 'SilentlyContinue'
 
-$script:DirectorySeperator = [IO.Path]::DirectorySeparatorChar
-$script:IsWindowsPlatform = $false
-if ($script:DirectorySeperator -eq '\')
-{
-    $script:IsWindowsPlatform = $true
-}
-
 # -----------------------------------------------
 # - Date format: yyyy-mm-dd
 # - Date range: 1900-01-01 through 2099-12-31
@@ -60,30 +53,13 @@ function GenerateBackupName
         [string] $Path
     )
 
+    # Removes the drive part (e.g. 'C:')
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
 
-    if ($script:IsWindowsPlatform -eq $true)
-    {
-        # Need to escape the back-slash on Windows
-        $pathSegments = $pathWithoutPrefix -split '\\'
-    }
-    else
-    {
-        $pathSegments = $pathWithoutPrefix -split "$script:DirectorySeperator"
-    }
+    # replace directory seperators with underscores
+    $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
 
-    $backupName = New-Object -TypeName 'System.Text.StringBuilder'
-
-    foreach ($segment in $pathSegments)
-    {
-        if (-not [string]::IsNullOrWhiteSpace($segment))
-        {
-            $segment = $segment.replace(' ', '-').Trim('-')
-            [void]$backupName.Append('{0}_' -f $segment)
-        }
-    }
-
-    return $backupName.ToString().Trim('_')
+    return $backupName
 }
 
 function CompressBackup
@@ -126,15 +102,20 @@ function CompressBackup
         [bool] $VerboseEnabled = $false
     )
 
-    $backupName = (GenerateBackupName -Path $Path)
-    $backupPath = (Join-Path -Path $DestinationPath -ChildPath $backupName)
+    $backupName = GenerateBackupName -Path $Path
+    $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
 
     if ((Test-Path -Path "$backupPath.zip"))
     {
         $randomFileName = (GetRandomFileName)
-        $backupPath = ('{0}_{1}' -f $backupPath, $randomFileName)
+        $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
 
-        Write-Warning ("New-DailyBackup:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '__{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
+        Write-Warning ("New-DailyBackup:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
+    }
+
+    if ($backupPath.Length -ge 255)
+    {
+        Write-Error ('The backup file path ''{0}'' is greater than or equal the maximum allowed filename length (255)' -f $backupPath) -ErrorAction Stop
     }
 
     if ($DryRun)
