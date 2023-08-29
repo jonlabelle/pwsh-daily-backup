@@ -16,13 +16,13 @@
   RootModule = 'DailyBackup.psm1'
 
   # Version number of this module.
-  ModuleVersion = '0.0.1'
+  ModuleVersion = '1.0.2'
 
   # Supported PSEditions
   # CompatiblePSEditions = @()
 
   # ID used to uniquely identify this module
-  GUID = '73c82ab7-267a-4624-8148-2f5a7de629e8'
+  GUID = '015396f2-c652-4dfd-a53a-5a761c32a6d1'
 
   # Author of this module
   Author = 'Jon LaBelle'
@@ -88,10 +88,10 @@
   # DscResourcesToExport = @()
 
   # List of all modules packaged with this module
-  ModuleList = @('DailyBackup.psm1')
+  # ModuleList = @('DailyBackup.psm1')
 
   # List of all files packaged with this module
-  FileList = @('DailyBackup.psm1', 'DailyBackup.psd1', 'README.md')
+  FileList = @('DailyBackup.psm1', 'DailyBackup.psd1', 'README.md', 'LICENSE.txt')
 
   # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
   PrivateData = @{
