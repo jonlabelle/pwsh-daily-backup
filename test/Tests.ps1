@@ -25,12 +25,13 @@ Import-Module -Name $modulePath -Force -Verbose:$verboseEnabled
 
 $path1 = [System.IO.Path]::Combine($projectRootDir, 'test', 'stubs', 'files-to-backup')
 $path2 = [System.IO.Path]::Combine($projectRootDir, '.github')
+$path3 = [System.IO.Path]::Combine($projectRootDir, '.github')
 $destination = [System.IO.Path]::Combine($projectRootDir, 'test', 'stubs', 'files-backed-up')
 
 Write-Verbose ('Running: {0}' -f $ModuleName)
 
 New-DailyBackup `
-    -Path $path1, $path2 `
+    -Path $path1, $path2, $path3 `
     -Destination $destination `
     -DailyBackupsToKeep 2 `
     -WhatIf:$dryRun `
