@@ -47,3 +47,18 @@ jobs:
       - name: Running integration tests
         shell: pwsh
         run: ./test/Tests.ps1 -Verbose
+
+  publish:
+    needs: build
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@v3
+
+      - name: Publish to PSGallery
+        shell: pwsh
+        run: |
+          New-Item -Path (Join-Path -Path $pwd -ChildPath 'dist') -ItemType Directory
+          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination 'dist'
+          Publish-Module -Name (Join-Path -Path $pwd -ChildPath 'dist' -AdditionalChildPath 'DailyBackup.psd1') -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose
