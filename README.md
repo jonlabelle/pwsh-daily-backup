@@ -1,6 +1,6 @@
 # PowerShell Daily Backup
 
-[![ci](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml)
+[![ci/cd](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
 
 > PowerShell module for performing simple daily backups.
 
@@ -80,7 +80,7 @@ To perform a daily backup of directories `C:\Users\Ron\Documents` and
 keeping only the latest 7 backups.
 
 ```powershell
-Import-Module C:\pwsh-daily-backup\DailyBackup
+Import-Module DailyBackup
 
 New-DailyBackup `
     -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
