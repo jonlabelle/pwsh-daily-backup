@@ -27,7 +27,7 @@ function GetRandomFileName
     return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
 
-function GenerateBackupName
+function GenerateBackupPath
 {
     <#
     .SYNOPSIS
@@ -40,6 +40,9 @@ function GenerateBackupName
     .PARAMETER Path
         The source path for the backup.
 
+    .PARAMETER DestinationPath
+        The destination path of the compressed file.
+
     .PARAMETER VerboseEnabled
         Whether or not invoke commands with the -Verbose parameter.
 
@@ -50,7 +53,11 @@ function GenerateBackupName
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Path
+        [string] $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $DestinationPath
     )
 
     # Removes the drive part (e.g. 'C:')
@@ -59,7 +66,22 @@ function GenerateBackupName
     # replace directory seperators with underscores
     $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
 
-    return $backupName
+    $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
+
+    if ((Test-Path -Path "$backupPath.zip"))
+    {
+        $randomFileName = (GetRandomFileName)
+        $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
+
+        Write-Warning ("New-DailyBackup:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
+    }
+
+    if ($backupPath.Length -ge 255)
+    {
+        Write-Error ('The backup file path ''{0}'' is greater than or equal the maximum allowed filename length (255)' -f $backupPath) -ErrorAction Stop
+    }
+
+    return $backupPath
 }
 
 function CompressBackup
@@ -102,21 +124,7 @@ function CompressBackup
         [bool] $VerboseEnabled = $false
     )
 
-    $backupName = GenerateBackupName -Path $Path
-    $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
-
-    if ((Test-Path -Path "$backupPath.zip"))
-    {
-        $randomFileName = (GetRandomFileName)
-        $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
-
-        Write-Warning ("New-DailyBackup:CompressBackup> A backup with the same name '{0}' already exists the destination '{1}', so '{2}' was automatically appended to its name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
-    }
-
-    if ($backupPath.Length -ge 255)
-    {
-        Write-Error ('The backup file path ''{0}'' is greater than or equal the maximum allowed filename length (255)' -f $backupPath) -ErrorAction Stop
-    }
+    $backupPath = GenerateBackupPath -Path $Path -DestinationPath $DestinationPath
 
     if ($DryRun)
     {
