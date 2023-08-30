@@ -11,6 +11,12 @@
 Install-Module -Name DailyBackup
 ```
 
+## Updating
+
+```powershell
+Update-Module -Name DailyBackup
+```
+
 ## Usage
 
 ### New-DailyBackup
