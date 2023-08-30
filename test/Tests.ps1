@@ -12,7 +12,7 @@ if ($VerbosePreference -eq 'Continue')
 }
 
 $dryRun = $true
-if ($PSCmdlet.ShouldProcess($ModuleName) -or $WhatIfPreference -eq $false)
+if ($PSCmdlet.ShouldProcess($ModuleName))
 {
     $dryRun = $false
 }
@@ -33,6 +33,6 @@ Write-Verbose ('Running: {0}' -f $ModuleName)
 New-DailyBackup `
     -Path $path1, $path2, $path3 `
     -Destination $destination `
-    -DailyBackupsToKeep 2 `
+    -DailyBackupsToKeep 3 `
     -WhatIf:$dryRun `
     -Verbose:$verboseEnabled

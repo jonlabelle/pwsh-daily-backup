@@ -323,6 +323,7 @@ function New-DailyBackup
         The number of daily backups to keep when purging old backups.
         The oldest backups will be deleted first.
         This value cannot be less than zero.
+        The default value is 0, which will not remove any backups.
 
     .EXAMPLE
         To import the DailyBackup module in your session:
@@ -363,12 +364,11 @@ function New-DailyBackup
         [string] $Destination,
 
         [Parameter(
-            Mandatory = $true,
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
         )]
         [ValidateNotNullOrEmpty()]
         [Alias('Keep')]
-        [int] $DailyBackupsToKeep
+        [int] $DailyBackupsToKeep = 0
     )
     begin
     {
@@ -388,12 +388,6 @@ function New-DailyBackup
         else
         {
             Write-Verbose 'New-DailyBackup:Begin> Dry-run is enabled' -Verbose:$verboseEnabled
-        }
-
-        if ($DailyBackupsToKeep -lt 0)
-        {
-            Write-Error ('New-DailyBackup:Begin> DailyBackupsToKeep parameter cannot be less than zero' -f $DailyBackupsToKeep)
-            exit 1
         }
 
         $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
@@ -447,7 +441,12 @@ function New-DailyBackup
     end
     {
         Write-Verbose 'New-DailyBackup:End> Running post backup operations' -Verbose:$verboseEnabled
-        RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
+
+        if ($DailyBackupsToKeep -gt 0)
+        {
+            RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
+        }
+
         Write-Verbose 'New-DailyBackup:End> Finished' -Verbose:$verboseEnabled
     }
 }

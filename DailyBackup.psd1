@@ -16,7 +16,7 @@
   RootModule = 'DailyBackup.psm1'
 
   # Version number of this module.
-  ModuleVersion = '1.0.4'
+  ModuleVersion = '1.1.0'
 
   # Supported PSEditions
   # CompatiblePSEditions = @()
@@ -111,7 +111,7 @@
       # IconUri = ''
 
       # ReleaseNotes of this module
-      ReleaseNotes = 'Internal updates.'
+      ReleaseNotes = 'Routine updates and maintenance.'
 
       # Prerelease string of this module
       # Prerelease = ''

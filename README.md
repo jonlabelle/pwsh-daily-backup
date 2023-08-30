@@ -52,6 +52,7 @@ PARAMETERS
         The number of daily backups to keep when purging old backups.
         The oldest backups will be deleted first.
         This value cannot be less than zero.
+        The default value is 0, which will not remove any backups.
 
         Required?                    true
         Position?                    named
