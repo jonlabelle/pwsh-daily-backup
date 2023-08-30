@@ -3,11 +3,12 @@ name: ci/cd
 on:
   push:
     branches: [main]
-      paths-ignore:
-        - '.github/**'
-        - 'README.md'
-        - 'scripts/**'
-        - 'test/**'
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'README.md'
+      - 'scripts/**'
+      - 'test/**'
   pull_request:
     branches: [main]
   workflow_dispatch:
