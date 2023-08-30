@@ -380,7 +380,7 @@ function New-DailyBackup
         }
 
         $dryRun = $true
-        if (-not $WhatIfPreference)
+        if ($PSCmdlet.ShouldProcess('New-DailyBackup', 'Begin'))
         {
             Write-Verbose 'New-DailyBackup:Begin> Dry-run is not enabled' -Verbose:$verboseEnabled
             $dryRun = $false
