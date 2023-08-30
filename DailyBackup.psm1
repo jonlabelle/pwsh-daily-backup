@@ -73,7 +73,7 @@ function GenerateBackupPath
         $randomFileName = (GetRandomFileName)
         $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
 
-        Write-Warning ("New-DailyBackup:GenerateBackupPath> A backup with the same name '{0}' already exists in destination path '{1}', '{2}' was automatically appended to the backup name for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
+        Write-Warning ("New-DailyBackup:GenerateBackupPath> A backup with the same filename '{0}' already exists in destination path '{1}', '{2}' was automatically appended to the backup filename for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
     }
 
     if ($backupPath.Length -ge 255)
