@@ -1,6 +1,7 @@
 # PowerShell Daily Backup
 
 [![ci/cd](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/DailyBackup)](https://www.powershellgallery.com/packages/DailyBackup)
 
 > PowerShell module for performing simple daily backups.
 
