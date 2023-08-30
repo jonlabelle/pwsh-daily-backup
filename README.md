@@ -19,8 +19,6 @@ Update-Module -Name DailyBackup
 
 ## Usage
 
-### New-DailyBackup
-
 ```console
 NAME
     New-DailyBackup
