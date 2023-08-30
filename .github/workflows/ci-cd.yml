@@ -1,11 +1,13 @@
 name: ci/cd
 
-# Building and testing PowerShell
-# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-powershell
-
 on:
   push:
     branches: [main]
+      paths-ignore:
+        - '.github/**'
+        - 'README.md'
+        - 'scripts/**'
+        - 'test/**'
   pull_request:
     branches: [main]
   workflow_dispatch:
