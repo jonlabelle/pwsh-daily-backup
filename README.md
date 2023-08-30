@@ -60,13 +60,14 @@ PARAMETERS
         This value cannot be less than zero.
         The default value is 0, which will not remove any backups.
 
-        Required?                    true
+        Required?                    false
         Position?                    named
         Default value                0
         Accept pipeline input?       false
         Accept wildcard characters?  false
 
     -WhatIf [<SwitchParameter>]
+        When present, backup operations will not be performed.
 
         Required?                    false
         Position?                    named
