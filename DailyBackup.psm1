@@ -137,7 +137,65 @@ function CompressBackup
     }
 }
 
-function Remove-ItemAlternative
+function ResolveUnverifiedPath
+{
+    <#
+    .SYNOPSIS
+        A wrapper around Resolve-Path that works for paths that exist as well
+        as for paths that don't (Resolve-Path normally throws an exception if
+        the path doesn't exist.)
+
+    .DESCRIPTION
+        A wrapper around Resolve-Path that works for paths that exist as well
+        as for paths that don't (Resolve-Path normally throws an exception if
+        the path doesn't exist.)
+
+        The Git repo for this module can be found here:
+        https://aka.ms/PowerShellForGitHub
+
+    .EXAMPLE
+        ResolveUnverifiedPath -Path 'c:\windows\notepad.exe'
+
+        Returns the string 'c:\windows\notepad.exe'.
+
+    .EXAMPLE
+        ResolveUnverifiedPath -Path '..\notepad.exe'
+
+        Returns the string 'c:\windows\notepad.exe', assuming that it's
+        executed from within 'c:\windows\system32' or some other sub-directory.
+
+    .EXAMPLE
+        ResolveUnverifiedPath -Path '..\foo.exe'
+
+        Returns the string 'c:\windows\foo.exe', assuming that it's executed
+        from within 'c:\windows\system32' or some other sub-directory, evenÎ
+        though this file doesn't exist.
+
+    .OUTPUTS
+        [String]. The fully resolved path
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline)]
+        [string] $Path
+    )
+
+    process
+    {
+        $resolvedPath = Resolve-Path -Path $Path -ErrorVariable resolvePathError -ErrorAction SilentlyContinue
+
+        if ($null -eq $resolvedPath)
+        {
+            Write-Output -InputObject ($resolvePathError[0].TargetObject)
+        }
+        else
+        {
+            Write-Output -InputObject ($resolvedPath.ProviderPath)
+        }
+    }
+}
+
+function RemoveItemAlternative
 {
     <#
     .SYNOPSIS
@@ -158,7 +216,7 @@ function Remove-ItemAlternative
         If present, the top-level folder will not be deleted.
 
     .EXAMPLE
-        Remove-ItemAlternative -LiteralPath "C:\Support\GitHub\GpoZaurr\Docs"
+        RemoveItemAlternative -LiteralPath "C:\Support\GitHub\GpoZaurr\Docs"
 
     .NOTES
         https://evotec.xyz/remove-item-access-to-the-cloud-file-is-denied-while-deleting-files-from-onedrive/
@@ -191,7 +249,7 @@ function Remove-ItemAlternative
                 }
                 catch
                 {
-                    Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete $($item.FullName), error: $($_.Exception.Message)"
+                    Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete $($item.FullName), error: $($_.Exception.Message)"
                 }
             }
         }
@@ -208,7 +266,7 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
             }
         }
 
@@ -224,13 +282,13 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "New-DailyBackup:RemoveItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
             }
         }
     }
     else
     {
-        Write-Warning "New-DailyBackup:Remove-ItemAlternative> Path '$Path' doesn't exist. Skipping."
+        Write-Warning "New-DailyBackup:RemoveItemAlternative> Path '$Path' doesn't exist. Skipping."
     }
 }
 
@@ -294,7 +352,7 @@ function RemoveDailyBackup
         for ($backup = 0; $backup -lt ($sortedBackupPaths.Count - $BackupsToKeep); $backup++)
         {
             $backupPath = $sortedBackupPaths[$backup]
-            Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$dryRun -Verbose:$verboseEnabled
+            RemoveItemAlternative -LiteralPath $backupPath -WhatIf:$dryRun -Verbose:$verboseEnabled
         }
     }
     else
@@ -314,10 +372,11 @@ function New-DailyBackup
         a destination folder formatted by day ('yyyy-MM-dd').
 
     .PARAMETER Path
-        The source files or directory path(s) to backup.
+        The source file or directory path(s) to backup.
 
     .PARAMETER Destination
         The root directory path where daily backups will be stored.
+        The default destination is the current working directory.
 
     .PARAMETER DailyBackupsToKeep
         The number of daily backups to keep when purging old backups.
@@ -333,12 +392,22 @@ function New-DailyBackup
     .EXAMPLE
         To create a new daily backup from a list of paths:
 
-        New-DailyBackup -Path $('source/path/1', 'source/path/2') -Destination 'root/destination/directory' -Verbose
+        New-DailyBackup -Path 'source/path/1', 'source/path/2' -Destination 'root/destination/directory' -Verbose
 
     .EXAMPLE
-        To perform a dry-run of the daily backup operation:
+        To perform a dry-run/what-if of the daily backup operations:
 
         New-DailyBackup -Path source/path -Destination destination/path -WhatIf
+
+    .EXAMPLE
+        To delete old backups, keeping only the last 3 folder/dates of backup:
+
+        New-DailyBackup -Path source/path -Destination destination/path -Keep 3
+
+    .EXAMPLE
+        To backup files to the current working directory:
+
+        New-DailyBackup -Path source/path
 
     .LINK
         https://github.com/jonlabelle/pwsh-daily-backup
@@ -350,18 +419,17 @@ function New-DailyBackup
             Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromPipeline = $true,
-            HelpMessage = 'The source files or directory path(s) to backup.')
+            HelpMessage = 'The source file or directory path(s) to backup.')
         ]
         [Alias('PSPath', 'FullName', 'SourcePath')]
         [string[]] $Path,
 
         [Parameter(
             Position = 1,
-            Mandatory = $true,
             HelpMessage = 'The root directory path where daily backups will be stored.')
         ]
         [Alias('DestinationPath', 'TargetPath')]
-        [string] $Destination,
+        [string] $Destination = '.',
 
         [Parameter(
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
@@ -390,12 +458,13 @@ function New-DailyBackup
             Write-Verbose 'New-DailyBackup:Begin> Dry-run is enabled' -Verbose:$verboseEnabled
         }
 
+        $Destination = ResolveUnverifiedPath -Path $Destination
         $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ('New-DailyBackup:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
-            Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$dryRun -Verbose:$verboseEnabled
+            RemoveItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$dryRun -Verbose:$verboseEnabled
         }
 
         Write-Verbose ('New-DailyBackup:Begin> Creating backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
@@ -415,7 +484,7 @@ function New-DailyBackup
             if ($null -eq $resolvedPath)
             {
                 Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
-                Continue
+                continue
             }
 
             if ($resolvedPath.Count -gt 1)

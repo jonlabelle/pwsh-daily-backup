@@ -35,7 +35,7 @@ DESCRIPTION
 
 PARAMETERS
     -Path <String[]>
-        The source files or directory path(s) to backup.
+        The source file or directory path(s) to backup.
 
         Required?                    true
         Position?                    1
@@ -45,10 +45,11 @@ PARAMETERS
 
     -Destination <String>
         The root directory path where daily backups will be stored.
+        The default destination is the current working directory.
 
-        Required?                    true
+        Required?                    false
         Position?                    2
-        Default value
+        Default value                .
         Accept pipeline input?       false
         Accept wildcard characters?  false
 
