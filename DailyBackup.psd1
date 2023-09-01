@@ -16,10 +16,10 @@
   RootModule = 'DailyBackup.psm1'
 
   # Version number of this module.
-  ModuleVersion = '1.2.0'
+  ModuleVersion = '1.2.1'
 
   # Supported PSEditions
-  # CompatiblePSEditions = @()
+  CompatiblePSEditions = @('Desktop', 'Core')
 
   # ID used to uniquely identify this module
   GUID = '015396f2-c652-4dfd-a53a-5a761c32a6d1'
