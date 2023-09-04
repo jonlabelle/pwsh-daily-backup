@@ -62,6 +62,6 @@ jobs:
       - name: Publish to PSGallery
         shell: pwsh
         run: |
-          New-Item -Path (Join-Path -Path $pwd -ChildPath 'dist') -ItemType Directory
+          New-Item -Path $pwd -Name 'dist' -ItemType Directory -Force
           Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination 'dist'
           Publish-Module -Name (Join-Path -Path $pwd -ChildPath 'dist' -AdditionalChildPath 'DailyBackup.psd1') -NuGetApiKey ${{ secrets.NUGET_API_KEY }}
