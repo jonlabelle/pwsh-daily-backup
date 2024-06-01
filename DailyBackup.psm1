@@ -332,7 +332,7 @@ function RemoveDailyBackup
         [bool] $VerboseEnabled = $false
     )
 
-    $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -Depth 1 -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+    $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
     if ($qualifiedBackupDirs.Length -eq 0)
     {
         Write-Verbose ('New-DailyBackup:RemoveDailyBackup> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
@@ -349,9 +349,9 @@ function RemoveDailyBackup
     $sortedBackupPaths = ($backups.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
     if ($sortedBackupPaths.Count -gt $BackupsToKeep)
     {
-        for ($backup = 0; $backup -lt ($sortedBackupPaths.Count - $BackupsToKeep); $backup++)
+        for ($i = 0; $i -lt ($sortedBackupPaths.Count - $BackupsToKeep); $i++)
         {
-            $backupPath = $sortedBackupPaths[$backup]
+            $backupPath = $sortedBackupPaths[$i]
             RemoveItemAlternative -LiteralPath $backupPath -WhatIf:$dryRun -Verbose:$verboseEnabled
         }
     }
@@ -461,6 +461,7 @@ function New-DailyBackup
         $Destination = ResolveUnverifiedPath -Path $Destination
         $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
+
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ('New-DailyBackup:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled

@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
 
       - name: Install PSScriptAnalyzer module
         shell: pwsh
@@ -38,12 +38,10 @@ jobs:
           Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerSettings.psd1 -Path . -Recurse -OutVariable issues
           $errors = $issues.Where({$_.Severity -eq 'Error'})
           $warnings = $issues.Where({$_.Severity -eq 'Warning'})
-          if ($errors)
-          {
+          if ($errors) {
               Write-Error "There were $($errors.Count) errors and $($warnings.Count) warnings total." -ErrorAction Stop
           }
-          else
-          {
+          else {
               Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
           }
 
@@ -57,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
 
       - name: Publish to PSGallery
         shell: pwsh
