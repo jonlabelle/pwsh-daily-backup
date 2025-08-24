@@ -46,11 +46,11 @@ Update-Module -Name DailyBackup
 
 ### Complete Reference
 
-- **[📚 Full Documentation](docs/HELP.md)** - Comprehensive user guide with examples and troubleshooting
-- **[�️ Development Guide](docs/DEVELOPMENT.md)** - Testing, contributing, and development setup
-- **[�📋 Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
-- **[🔧 Configuration Guide](DailyBackup.config.psd1)** - Advanced configuration options
-- **[📝 Changelog](CHANGELOG.md)** - Version history and improvements
+- **[Full Documentation](docs/HELP.md)** - Comprehensive user guide with examples and troubleshooting
+- **[Development Guide](docs/DEVELOPMENT.md)** - Testing, contributing, and development setup
+- **[Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
+- **[Configuration Guide](DailyBackup.config.psd1)** - Advanced configuration options
+- **[Changelog](CHANGELOG.md)** - Version history and improvements
 
 ### Command Reference
 
@@ -196,4 +196,4 @@ Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE.txt) - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE.txt).
