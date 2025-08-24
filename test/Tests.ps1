@@ -33,6 +33,6 @@ Write-Verbose ('Running: {0}' -f $ModuleName)
 New-DailyBackup `
     -Path $path1, $path2, $path3 `
     -Destination $destination `
-    -DailyBackupsToKeep 3 `
+    -Keep 3 `
     -WhatIf:$dryRun `
     -Verbose:$verboseEnabled

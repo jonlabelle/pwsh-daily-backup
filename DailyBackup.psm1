@@ -541,10 +541,12 @@ function New-DailyBackup
         named with today's date (yyyy-MM-dd) will be created to store the backup archives.
         Defaults to the current working directory if not specified.
 
-    .PARAMETER DailyBackupsToKeep
+    .PARAMETER Keep
         The number of daily backup folders to retain when cleaning up old backups.
         Older backup folders beyond this number will be automatically deleted.
         Set to 0 (default) to disable automatic cleanup. Must be 0 or greater.
+
+        Note: DailyBackupsToKeep is an alias for this parameter.
 
     .INPUTS
         [String[]]
@@ -575,7 +577,7 @@ function New-DailyBackup
         Backs up multiple paths with detailed output
 
     .EXAMPLE
-        PS > New-DailyBackup -Path 'C:\Data' -Destination 'D:\Backups' -DailyBackupsToKeep 7
+        PS > New-DailyBackup -Path 'C:\Data' -Destination 'D:\Backups' -Keep 7
 
         Creates backup and keeps only the last 7 days of backups
 
@@ -620,8 +622,8 @@ function New-DailyBackup
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
         )]
         [ValidateRange(0, [int]::MaxValue)]
-        [Alias('Keep')]
-        [int] $DailyBackupsToKeep = 0
+        [Alias('DailyBackupsToKeep')]
+        [int] $Keep = 0
     )
     begin
     {
@@ -712,9 +714,9 @@ function New-DailyBackup
     {
         Write-Verbose 'New-DailyBackup:End> Running post backup operations' -Verbose:$verboseEnabled
 
-        if ($DailyBackupsToKeep -gt 0)
+        if ($Keep -gt 0)
         {
-            RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+            RemoveDailyBackup -Path $Destination -BackupsToKeep $Keep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
         }
 
         Write-Verbose 'New-DailyBackup:End> Finished' -Verbose:$verboseEnabled

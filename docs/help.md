@@ -76,7 +76,7 @@ New-DailyBackup -Path @("C:\Documents", "C:\Pictures", "C:\Projects") -Destinati
 Keep only the last 7 backups:
 
 ```powershell
-New-DailyBackup -Path "C:\Important" -Destination "C:\Backups" -DailyBackupsToKeep 7
+New-DailyBackup -Path "C:\Important" -Destination "C:\Backups" -Keep 7
 ```
 
 ### Test Run
@@ -95,7 +95,7 @@ New-DailyBackup -Path "C:\Data" -Destination "C:\Backups" -WhatIf
 New-DailyBackup
     -Path <String[]>
     [-Destination <String>]
-    [-DailyBackupsToKeep <Int32>]
+    [-Keep <Int32>]
     [-WhatIf]
     [-Verbose]
     [<CommonParameters>]
@@ -136,11 +136,11 @@ Specifies the source file or directory path(s) to backup. Supports:
 
 The root directory where daily backup folders will be created. Each backup session creates a subfolder named with the current date (YYYY-MM-DD format).
 
-### -DailyBackupsToKeep
+### -Keep
 
 **Type**: `Int32`
 **Default**: `0` (keep all backups)
-**Alias**: `Keep`
+**Alias**: `DailyBackupsToKeep`
 
 Number of daily backup folders to retain. When exceeded, the oldest backups are deleted first. Set to 0 to keep all backups indefinitely.
 
@@ -165,7 +165,7 @@ The cmdlet supports all PowerShell common parameters:
 
 ```powershell
 # Backup documents folder daily, keeping last 30 days
-New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups\Documents" -DailyBackupsToKeep 30 -Verbose
+New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups\Documents" -Keep 30 -Verbose
 ```
 
 ### Example 2: Multiple Project Folders
@@ -178,7 +178,7 @@ $ProjectPaths = @(
     "C:\Development\Project3"
 )
 
-New-DailyBackup -Path $ProjectPaths -Destination "E:\ProjectBackups" -DailyBackupsToKeep 14
+New-DailyBackup -Path $ProjectPaths -Destination "E:\ProjectBackups" -Keep 14
 ```
 
 ### Example 3: System Configuration Backup
@@ -191,7 +191,7 @@ $SystemPaths = @(
     "$env:USERPROFILE\.gitconfig"
 )
 
-New-DailyBackup -Path $SystemPaths -Destination "C:\SystemBackups" -DailyBackupsToKeep 7 -Verbose
+New-DailyBackup -Path $SystemPaths -Destination "C:\SystemBackups" -Keep 7 -Verbose
 ```
 
 ### Example 4: Scheduled Task Integration
@@ -200,7 +200,7 @@ Create a scheduled task to run daily backups:
 
 ```powershell
 # Create a scheduled task for daily backups
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -DailyBackupsToKeep 30`""
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30`""
 $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger -Description "Automated daily backup using DailyBackup module"
 ```
@@ -215,14 +215,14 @@ $HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
     $env:HOME
 }
 
-New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -DailyBackupsToKeep 7
+New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -Keep 7
 ```
 
 ### Example 6: Error Handling
 
 ```powershell
 try {
-    New-DailyBackup -Path "C:\ImportantData" -Destination "D:\Backups" -DailyBackupsToKeep 30 -ErrorAction Stop
+    New-DailyBackup -Path "C:\ImportantData" -Destination "D:\Backups" -Keep 30 -ErrorAction Stop
     Write-Host "Backup completed successfully!" -ForegroundColor Green
 }
 catch {
@@ -348,7 +348,7 @@ foreach ($Path in $BackupPaths) {
 ### 3. Storage Management
 
 - **Monitor Disk Space**: Regularly check backup destination free space
-- **Retention Policy**: Set appropriate `DailyBackupsToKeep` values
+- **Retention Policy**: Set appropriate `Keep` values
 - **Compression**: ZIP compression is automatic but consider external tools for better compression
 
 ### 4. Security
@@ -366,7 +366,7 @@ foreach ($Path in $BackupPaths) {
 ```powershell
 # Example: Backup with notification
 try {
-    New-DailyBackup -Path "C:\Important" -Destination "D:\Backup" -DailyBackupsToKeep 7
+    New-DailyBackup -Path "C:\Important" -Destination "D:\Backup" -Keep 7
     # Send success notification
 }
 catch {
@@ -433,7 +433,7 @@ Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 # PowerShell Scheduled Job
 Register-ScheduledJob -Name "DailyBackup" -ScriptBlock {
     Import-Module DailyBackup
-    New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -DailyBackupsToKeep 30
+    New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -Keep 30
 } -Trigger (New-JobTrigger -Daily -At "3:00 AM")
 ```
 

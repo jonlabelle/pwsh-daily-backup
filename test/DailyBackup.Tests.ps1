@@ -49,7 +49,7 @@ Describe 'DailyBackup Module' {
             $Command = Get-Command New-DailyBackup
             $Command.Parameters.ContainsKey('Path') | Should Be $true
             $Command.Parameters.ContainsKey('Destination') | Should Be $true
-            $Command.Parameters.ContainsKey('DailyBackupsToKeep') | Should Be $true
+            $Command.Parameters.ContainsKey('Keep') | Should Be $true
         }
 
         It 'Should support WhatIf parameter' {
@@ -91,7 +91,7 @@ Describe 'DailyBackup Module' {
             { New-DailyBackup -Path @($Path1, $Path2) -Destination $script:BackupDir } | Should Not Throw
         }
 
-        It 'Should clean up old backups when DailyBackupsToKeep is specified' {
+        It 'Should clean up old backups when Keep is specified' {
             # Create some old backup folders
             $OldDate1 = (Get-Date).AddDays(-5).ToString('yyyy-MM-dd')
             $OldDate2 = (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
@@ -100,7 +100,7 @@ Describe 'DailyBackup Module' {
             New-Item -Path (Join-Path $script:BackupDir $OldDate2) -ItemType Directory -Force | Out-Null
 
             # Run backup with cleanup
-            New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -DailyBackupsToKeep 2
+            New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -Keep 2
 
             # Should only have 2 backup folders (today and one old)
             $BackupFolders = Get-ChildItem -Path $script:BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
@@ -111,11 +111,11 @@ Describe 'DailyBackup Module' {
 
 Describe 'Error Handling' {
     Context 'Invalid Parameters' {
-        It 'Should throw error for invalid DailyBackupsToKeep value' {
+        It 'Should throw error for invalid Keep value' {
             # The validation should catch this at parameter binding time
             try
             {
-                New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -DailyBackupsToKeep -1
+                New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -Keep -1
                 # If we get here, the test should fail
                 $false | Should Be $true
             }

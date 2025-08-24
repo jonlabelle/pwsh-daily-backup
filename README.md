@@ -31,7 +31,7 @@ Install-Module -Name DailyBackup -Scope CurrentUser
 New-DailyBackup -Path "C:\MyDocuments" -Destination "D:\Backups"
 
 # Multiple sources with cleanup (keep last 7 days)
-New-DailyBackup -Path @("C:\Documents", "C:\Pictures") -Destination "D:\Backups" -DailyBackupsToKeep 7
+New-DailyBackup -Path @("C:\Documents", "C:\Pictures") -Destination "D:\Backups" -Keep 7
 
 # Test run (see what would be backed up)
 New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -WhatIf -Verbose
@@ -63,7 +63,7 @@ SYNOPSIS
     Perform a daily backup with progress tracking and automatic cleanup.
 
 SYNTAX
-    New-DailyBackup [-Path] <String[]> [-Destination <String>] [-DailyBackupsToKeep <Int32>] [-WhatIf] [-Verbose]
+    New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-WhatIf] [-Verbose]
 ```
 
 ## Parameters
@@ -87,7 +87,7 @@ The root directory path where daily backups will be stored.
 - **Pipeline input:** No
 - **Wildcards:** No
 
-### -DailyBackupsToKeep &lt;Int32&gt;
+### -Keep &lt;Int32&gt;
 
 The number of daily backups to keep when purging old backups. Oldest backups are deleted first.
 
@@ -96,6 +96,7 @@ The number of daily backups to keep when purging old backups. Oldest backups are
 - **Default:** 0 (keep all backups)
 - **Range:** 0 to 2147483647
 - **Pipeline input:** No
+- **Aliases:** DailyBackupsToKeep
 
 ### Common Parameters
 
@@ -119,7 +120,7 @@ Creates a backup in `D:\Backups\2025-08-24` with ZIP files containing your docum
 New-DailyBackup `
     -Path @('C:\Users\Ron\Documents', 'C:\Users\Ron\Music') `
     -Destination 'C:\Users\Ron\iCloudDrive' `
-    -DailyBackupsToKeep 7 `
+    -Keep 7 `
     -Verbose
 ```
 
@@ -144,7 +145,7 @@ $BackupPaths = @(
 )
 
 try {
-    New-DailyBackup -Path $BackupPaths -Destination "D:\DailyBackups" -DailyBackupsToKeep 30 -Verbose
+    New-DailyBackup -Path $BackupPaths -Destination "D:\DailyBackups" -Keep 30 -Verbose
     Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
 }
 catch {
@@ -163,7 +164,7 @@ $HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
     $env:HOME
 }
 
-New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -DailyBackupsToKeep 14
+New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -Keep 14
 ```
 
 ## 🔧 Advanced Usage
@@ -190,7 +191,7 @@ Create a `DailyBackup.config.psd1` file to customize default behavior:
 
 ```powershell
 # Create scheduled task (Windows)
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -DailyBackupsToKeep 30`""
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30`""
 $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 ```

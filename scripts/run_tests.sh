@@ -34,7 +34,7 @@ run_test_command() {
     echo " Running integration test command"
     echo "----------------------------------"
     echo ""
-    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command 'Import-Module ./DailyBackup; New-DailyBackup -Path ".github" -Destination "tmp2/test" -DailyBackupsToKeep 2 -WhatIf -Verbose'
+    pwsh -NonInteractive -NoProfile -NoLogo -ExecutionPolicy ByPass -Command 'Import-Module ./DailyBackup; New-DailyBackup -Path ".github" -Destination "tmp2/test" -Keep 2 -WhatIf -Verbose'
     echo ""
     echo "Finished running test command."
     echo ""

@@ -204,7 +204,7 @@ try
         }
 
         # Run backup with cleanup
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -DailyBackupsToKeep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
 
         # Check results
         $remainingDirs = Get-ChildItem -Path $backupDir.FullName -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
@@ -212,7 +212,7 @@ try
     }
     else
     {
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -DailyBackupsToKeep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
         Write-Host '✓ Cleanup test completed (dry-run)' -ForegroundColor Green
     }
 }
@@ -233,8 +233,8 @@ try
     # Test with invalid parameter values
     try
     {
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -DailyBackupsToKeep -1 -WhatIf:$dryRun -ErrorAction Stop
-        Write-Host '✗ Should have failed with negative DailyBackupsToKeep' -ForegroundColor Red
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep -1 -WhatIf:$dryRun -ErrorAction Stop
+        Write-Host '✗ Should have failed with negative Keep value' -ForegroundColor Red
     }
     catch
     {
