@@ -69,7 +69,7 @@ try
 {
     Get-Module $ModuleName | Remove-Module -Verbose:$verboseEnabled -Force -ErrorAction SilentlyContinue
     Import-Module -Name $modulePath -Force -Verbose:$verboseEnabled
-    Write-Host '✓ Module imported successfully' -ForegroundColor Green
+    Write-Host '[OK] Module imported successfully' -ForegroundColor Green
 }
 catch
 {
@@ -85,11 +85,14 @@ try
         Remove-Item $testDataDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    if (-not $dryRun) {
+    if (-not $dryRun)
+    {
         $sourceDir = New-Item -Path (Join-Path $testDataDir 'SourceFiles') -ItemType Directory -Force
         $backupDir = New-Item -Path (Join-Path $testDataDir 'Backups') -ItemType Directory -Force
         $largeDirTest = New-Item -Path (Join-Path $testDataDir 'LargeTest') -ItemType Directory -Force
-    } else {
+    }
+    else
+    {
         # In WhatIf mode, create path objects manually since New-Item returns null
         New-Item -Path (Join-Path $testDataDir 'SourceFiles') -ItemType Directory -Force -WhatIf
         New-Item -Path (Join-Path $testDataDir 'Backups') -ItemType Directory -Force -WhatIf
@@ -101,7 +104,7 @@ try
         $largeDirTest = [PSCustomObject]@{ FullName = Join-Path $testDataDir 'LargeTest' }
     }
 
-    Write-Host '✓ Test directories created' -ForegroundColor Green
+    Write-Host '[OK] Test directories created' -ForegroundColor Green
 }
 catch
 {
@@ -112,7 +115,8 @@ catch
 # Create test files
 try
 {
-    if (-not $dryRun) {
+    if (-not $dryRun)
+    {
         # Basic test files
         @('test1.txt', 'test2.txt', 'important.log') | ForEach-Object {
             "Sample content for $_`nCreated at: $(Get-Date)" | Out-File -FilePath (Join-Path $sourceDir.FullName $_) -Encoding UTF8
@@ -124,17 +128,19 @@ try
 
         # Create files with special characters
         'Special content' | Out-File -FilePath (Join-Path $sourceDir.FullName 'file with spaces.txt') -Encoding UTF8
-    } else {
+    }
+    else
+    {
         # In WhatIf mode, just simulate file creation
         Write-Host "Would create test files in: $($sourceDir.FullName)" -ForegroundColor Gray
         @('test1.txt', 'test2.txt', 'important.log') | ForEach-Object {
             Write-Host "  - Would create: $_" -ForegroundColor Gray
         }
-        Write-Host "  - Would create: Subfolder/subfile.txt" -ForegroundColor Gray
-        Write-Host "  - Would create: file with spaces.txt" -ForegroundColor Gray
+        Write-Host '  - Would create: Subfolder/subfile.txt' -ForegroundColor Gray
+        Write-Host '  - Would create: file with spaces.txt' -ForegroundColor Gray
     }
 
-    Write-Host '✓ Test files created' -ForegroundColor Green
+    Write-Host '[OK] Test files created' -ForegroundColor Green
 }
 catch
 {
@@ -156,7 +162,7 @@ try
         if (Test-Path $backupPath)
         {
             $zipFiles = Get-ChildItem -Path $backupPath -Filter '*.zip'
-            Write-Host "✓ Backup created successfully ($($zipFiles.Count) zip file(s))" -ForegroundColor Green
+            Write-Host "[OK] Backup created successfully ($($zipFiles.Count) zip file(s))" -ForegroundColor Green
         }
         else
         {
@@ -166,7 +172,7 @@ try
 }
 catch
 {
-    Write-Host "✗ Test 1 failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Test 1 failed: $_" -ForegroundColor Red
 }
 
 # Test 2: Multiple source paths
@@ -177,11 +183,11 @@ try
     $path2 = Join-Path $sourceDir.FullName 'Subfolder'
 
     New-DailyBackup -Path @($path1, $path2) -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
-    Write-Host '✓ Multiple paths processed successfully' -ForegroundColor Green
+    Write-Host '[OK] Multiple paths processed successfully' -ForegroundColor Green
 }
 catch
 {
-    Write-Host "✗ Test 2 failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Test 2 failed: $_" -ForegroundColor Red
 }
 
 # Test 3: Cleanup functionality
@@ -208,17 +214,17 @@ try
 
         # Check results
         $remainingDirs = Get-ChildItem -Path $backupDir.FullName -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
-        Write-Host "✓ Cleanup test completed. Remaining backup directories: $($remainingDirs.Count)" -ForegroundColor Green
+        Write-Host "[OK] Cleanup test completed. Remaining backup directories: $($remainingDirs.Count)" -ForegroundColor Green
     }
     else
     {
         New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
-        Write-Host '✓ Cleanup test completed (dry-run)' -ForegroundColor Green
+        Write-Host '[OK] Cleanup test completed (dry-run)' -ForegroundColor Green
     }
 }
 catch
 {
-    Write-Host "✗ Test 3 failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Test 3 failed: $_" -ForegroundColor Red
 }
 
 # Test 4: Error handling
@@ -228,22 +234,22 @@ try
     # Test with non-existent source path
     $nonExistentPath = Join-Path $testDataDir 'NonExistent'
     New-DailyBackup -Path $nonExistentPath -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled -WarningAction SilentlyContinue
-    Write-Host '✓ Non-existent path handled gracefully' -ForegroundColor Green
+    Write-Host '[OK] Non-existent path handled gracefully' -ForegroundColor Green
 
     # Test with invalid parameter values
     try
     {
         New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep -1 -WhatIf:$dryRun -ErrorAction Stop
-        Write-Host '✗ Should have failed with negative Keep value' -ForegroundColor Red
+        Write-Host '[FAIL] Should have failed with negative Keep value' -ForegroundColor Red
     }
     catch
     {
-        Write-Host '✓ Invalid parameter validation working' -ForegroundColor Green
+        Write-Host '[OK] Invalid parameter validation working' -ForegroundColor Green
     }
 }
 catch
 {
-    Write-Host "✗ Test 4 failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Test 4 failed: $_" -ForegroundColor Red
 }
 
 # Test 5: Performance test (optional)
@@ -252,14 +258,17 @@ if ($RunPerformanceTests)
     Write-Host "`n--- Test 5: Performance Test ---" -ForegroundColor Yellow
     try
     {
-        if (-not $dryRun) {
+        if (-not $dryRun)
+        {
             # Create many files for performance testing
             Write-Host 'Creating test files for performance testing...' -ForegroundColor Gray
             for ($i = 1; $i -le 100; $i++)
             {
                 "Performance test file $i content $(Get-Random)" | Out-File -FilePath (Join-Path $largeDirTest.FullName "perf_$i.txt") -Encoding UTF8
             }
-        } else {
+        }
+        else
+        {
             Write-Host 'Would create 100 test files for performance testing...' -ForegroundColor Gray
         }
 
@@ -267,11 +276,11 @@ if ($RunPerformanceTests)
         New-DailyBackup -Path $largeDirTest.FullName -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
         $stopwatch.Stop()
 
-        Write-Host "✓ Performance test completed in $($stopwatch.ElapsedMilliseconds)ms" -ForegroundColor Green
+        Write-Host "[OK] Performance test completed in $($stopwatch.ElapsedMilliseconds)ms" -ForegroundColor Green
     }
     catch
     {
-        Write-Host "✗ Performance test failed: $_" -ForegroundColor Red
+        Write-Host "[FAIL] Performance test failed: $_" -ForegroundColor Red
     }
 }
 
@@ -284,7 +293,7 @@ try
     try
     {
         New-DailyBackup -Path '.\test\stubs\files-to-backup' -Destination (Join-Path $testDataDir 'RelativeTest') -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction SilentlyContinue
-        Write-Host '✓ Relative path handling working' -ForegroundColor Green
+        Write-Host '[OK] Relative path handling working' -ForegroundColor Green
     }
     finally
     {
@@ -293,7 +302,7 @@ try
 }
 catch
 {
-    Write-Host "✗ Test 6 failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Test 6 failed: $_" -ForegroundColor Red
 }
 
 # Summary
@@ -306,7 +315,7 @@ if (-not $dryRun -and $CleanupAfterTests)
     try
     {
         Remove-Item $testDataDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host '✓ Test data cleaned up' -ForegroundColor Green
+        Write-Host '[OK] Test data cleaned up' -ForegroundColor Green
     }
     catch
     {

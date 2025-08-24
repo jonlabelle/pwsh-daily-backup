@@ -197,6 +197,10 @@ jobs:
       - name: Run integration tests (Windows PowerShell)
         shell: powershell
         run: |
+          # Set console encoding to handle any potential encoding issues
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+
           Write-Host "Running integration tests on Windows PowerShell Desktop..." -ForegroundColor Green
           ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
           Write-Host "Integration tests completed successfully" -ForegroundColor Green
@@ -204,6 +208,10 @@ jobs:
       - name: Run original integration tests (Windows PowerShell)
         shell: powershell
         run: |
+          # Set console encoding to handle any potential encoding issues
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+
           Write-Host "Running original integration tests for compatibility on Windows PowerShell Desktop..." -ForegroundColor Green
           ./test/Tests.ps1 -Verbose
           Write-Host "Original integration tests completed" -ForegroundColor Green
