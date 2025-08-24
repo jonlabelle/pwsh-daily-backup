@@ -120,8 +120,96 @@ jobs:
           ./test/Tests.ps1 -Verbose
           Write-Host "Original integration tests completed" -ForegroundColor Green
 
+  build-windows-powershell:
+    name: Build on Windows PowerShell Desktop
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@main
+
+      - name: Install required PowerShell modules (Windows PowerShell)
+        shell: powershell
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -ErrorAction Stop
+
+          # Uninstall any existing Pester versions first
+          Get-Module Pester -ListAvailable | Uninstall-Module -Force -ErrorAction SilentlyContinue
+
+          # Install Pester v4 specifically for compatibility
+          Install-Module Pester -RequiredVersion 4.10.1 -Force -SkipPublisherCheck -ErrorAction Stop
+
+          # Verify installed versions
+          Write-Host "Installed module versions:" -ForegroundColor Green
+          Get-Module PSScriptAnalyzer -ListAvailable | Select-Object Name, Version
+          Get-Module Pester -ListAvailable | Select-Object Name, Version
+
+      - name: Run PSScriptAnalyzer (Windows PowerShell)
+        shell: powershell
+        run: |
+          Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerSettings.psd1 -Path . -Recurse -OutVariable issues
+          $errors = $issues.Where({$_.Severity -eq 'Error'})
+          $warnings = $issues.Where({$_.Severity -eq 'Warning'})
+          if ($errors) {
+              Write-Error "There were $($errors.Count) errors and $($warnings.Count) warnings total." -ErrorAction Stop
+          }
+          else {
+              Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
+          }
+
+      - name: Run Pester unit tests (Windows PowerShell)
+        shell: powershell
+        run: |
+          Write-Host "Running Pester unit tests on Windows PowerShell Desktop..." -ForegroundColor Green
+
+          # Import Pester v4 explicitly
+          Import-Module Pester -RequiredVersion 4.10.1 -Force
+          Write-Host "Using Pester version: $((Get-Module Pester).Version)" -ForegroundColor Yellow
+          Write-Host "PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Yellow
+
+          # Ensure we're in the right directory
+          Write-Host "Current directory: $PWD" -ForegroundColor Yellow
+          Write-Host "Module files present:" -ForegroundColor Yellow
+          Get-ChildItem -Name "DailyBackup.*"
+
+          # Test module import manually first
+          Write-Host "Testing module import..." -ForegroundColor Yellow
+          try {
+            Import-Module ./DailyBackup.psd1 -Force -ErrorAction Stop
+            Write-Host "Module imported successfully" -ForegroundColor Green
+            Get-Module DailyBackup | Format-List Name, Version, ExportedCommands
+          }
+          catch {
+            Write-Error "Failed to import module: $_"
+            throw
+          }
+
+          # Run tests with verbose output to diagnose issues
+          Write-Host "Running Pester tests..." -ForegroundColor Yellow
+          $TestResults = Invoke-Pester ./test/DailyBackup.Tests.ps1 -PassThru
+          Write-Host "Unit tests completed: $($TestResults.PassedCount) passed, $($TestResults.FailedCount) failed" -ForegroundColor Green
+
+          if ($TestResults.FailedCount -gt 0) {
+              Write-Error "Unit tests failed: $($TestResults.FailedCount) failed, $($TestResults.PassedCount) passed" -ErrorAction Stop
+          }
+
+      - name: Run integration tests (Windows PowerShell)
+        shell: powershell
+        run: |
+          Write-Host "Running integration tests on Windows PowerShell Desktop..." -ForegroundColor Green
+          ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
+          Write-Host "Integration tests completed successfully" -ForegroundColor Green
+
+      - name: Run original integration tests (Windows PowerShell)
+        shell: powershell
+        run: |
+          Write-Host "Running original integration tests for compatibility on Windows PowerShell Desktop..." -ForegroundColor Green
+          ./test/Tests.ps1 -Verbose
+          Write-Host "Original integration tests completed" -ForegroundColor Green
+
   publish:
-    needs: build
+    needs: [build, build-windows-powershell]
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
