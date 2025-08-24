@@ -8,7 +8,7 @@
 
 > Professional PowerShell module for creating automated, organized daily backups with comprehensive testing and enterprise-grade reliability.
 
-## ✨ Features
+## Features
 
 - **📅 Date-organized backups** - Automatically creates folders with YYYY-MM-DD format
 - **📁 Multiple source support** - Backup multiple files and directories in a single operation
@@ -42,12 +42,12 @@ New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -WhatIf -Verbose
 Update-Module -Name DailyBackup
 ```
 
-## 📖 Documentation
+## Documentation
 
 ### Complete Reference
 
-- **[Full Documentation](docs/HELP.md)** - Comprehensive user guide with examples and troubleshooting
-- **[Development Guide](docs/DEVELOPMENT.md)** - Testing, contributing, and development setup
+- **[Full Documentation](docs/help.md)** - Comprehensive user guide with examples and troubleshooting
+- **[Development Guide](docs/development.md)** - Testing, contributing, and development setup
 - **[Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
 - **[Configuration Guide](DailyBackup.config.psd1)** - Advanced configuration options
 - **[Changelog](CHANGELOG.md)** - Version history and improvements
@@ -102,7 +102,7 @@ Supports all PowerShell common parameters: `-WhatIf`, `-Verbose`, `-ErrorAction`
 
 [Learn more about CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216)
 
-## 💡 Examples
+## Examples
 
 ### Example 1: Basic Daily Backup
 
@@ -194,6 +194,6 @@ $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 ```
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE.txt).
