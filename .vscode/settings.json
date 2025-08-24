@@ -21,6 +21,8 @@
     "powershell.codeFormatting.useConstantStrings": true,
 
     "cSpell.words": [
-        "pwsh"
+        "notmatch",
+        "pwsh",
+        "USERPROFILE"
     ]
 }
