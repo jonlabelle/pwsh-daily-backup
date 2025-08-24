@@ -34,7 +34,7 @@ function GenerateBackupPath
         Generates a backup file name.
 
     .DESCRIPTION
-        Generates a backup file name by replacing directory seperator
+        Generates a backup file name by replacing directory separator
         characters and spaces with underscores.
 
     .PARAMETER Path
@@ -63,7 +63,7 @@ function GenerateBackupPath
     # Removes the drive part (e.g. 'C:')
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
 
-    # replace directory seperators with underscores
+    # replace directory separators with underscores
     $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
 
     $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
@@ -100,13 +100,10 @@ function CompressBackup
     .PARAMETER DestinationPath
         The destination path of the compressed file.
 
-    .PARAMETER DryRun
-        Whether or not to perform the Compress-Archive operation.
-        Internally sets the value of the -WhatIf parameter when running the Compress-Archive cmdlet.
-
     .PARAMETER VerboseEnabled
         Whether or not invoke commands with the -Verbose parameter.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param
     (
         [Parameter(Mandatory = $true)]
@@ -118,22 +115,19 @@ function CompressBackup
         [string] $DestinationPath,
 
         [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
-
-        [Parameter(Mandatory = $false)]
         [bool] $VerboseEnabled = $false
     )
 
     $backupPath = GenerateBackupPath -Path $Path -DestinationPath $DestinationPath
 
-    if ($DryRun)
+    if ($PSCmdlet.ShouldProcess("$backupPath.zip", 'Compress-Archive'))
     {
-        Write-Verbose ('New-DailyBackup:CompressBackup> Dry-run only, backup ''{0}'' will not be created' -f "$backupPath.zip")
+        Write-Verbose ('New-DailyBackup:CompressBackup> Compressing backup ''{0}''' -f "$backupPath.zip")
+        Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Continue
     }
     else
     {
-        Write-Verbose ('New-DailyBackup:CompressBackup> Compressing backup ''{0}''' -f "$backupPath.zip")
-        Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$DryRun -Verbose:$VerboseEnabled -ErrorAction Continue
+        Write-Verbose ('New-DailyBackup:CompressBackup> Dry-run only, backup ''{0}'' will not be created' -f "$backupPath.zip")
     }
 }
 
@@ -308,13 +302,10 @@ function RemoveDailyBackup
     .PARAMETER BackupsToKeep
         The minimum number of backups to keep before deleting.
 
-    .PARAMETER DryRun
-        Whether or not to perform the actual delete operation.
-        Internally sets the value of the -WhatIf parameter when running the Remove-Item cmdlet.
-
     .PARAMETER VerboseEnabled
         Whether or not invoke commands with the -Verbose parameter.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param
     (
         [Parameter(Mandatory = $true)]
@@ -324,9 +315,6 @@ function RemoveDailyBackup
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [int] $BackupsToKeep,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $DryRun = $false,
 
         [Parameter(Mandatory = $false)]
         [bool] $VerboseEnabled = $false
@@ -352,11 +340,10 @@ function RemoveDailyBackup
         for ($i = 0; $i -lt ($sortedBackupPaths.Count - $BackupsToKeep); $i++)
         {
             $backupPath = $sortedBackupPaths[$i]
-            Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Removing old backup directory: {0}' -f $backupPath) -Verbose:$VerboseEnabled
-            RemoveItemAlternative -LiteralPath $backupPath -Verbose:$VerboseEnabled
-
-            if (-not $DryRun)
+            if ($PSCmdlet.ShouldProcess($backupPath, 'Remove backup directory'))
             {
+                Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Removing old backup directory: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+                RemoveItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled
                 Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Successfully removed: {0}' -f $backupPath) -Verbose:$VerboseEnabled
             }
         }
@@ -453,11 +440,9 @@ function New-DailyBackup
             Write-Verbose 'New-DailyBackup:Begin> Verbose mode is enabled' -Verbose:$verboseEnabled
         }
 
-        $dryRun = $true
         if ($PSCmdlet.ShouldProcess('New-DailyBackup', 'Begin'))
         {
             Write-Verbose 'New-DailyBackup:Begin> Dry-run is not enabled' -Verbose:$verboseEnabled
-            $dryRun = $false
         }
         else
         {
@@ -471,11 +456,11 @@ function New-DailyBackup
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
             Write-Verbose ('New-DailyBackup:Begin> Removing existing backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
-            RemoveItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$dryRun -Verbose:$verboseEnabled
+            RemoveItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
         }
 
         Write-Verbose ('New-DailyBackup:Begin> Creating backup destination directory: {0}' -f $datedDestinationDir) -Verbose:$verboseEnabled
-        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
+        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
     }
     process
     {
@@ -507,7 +492,7 @@ function New-DailyBackup
                     foreach ($globItem in $resolvedPath)
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing glob item: {0}' -f $globItem) -Verbose:$verboseEnabled
-                        CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                        CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
                     }
                 }
                 else
@@ -519,7 +504,7 @@ function New-DailyBackup
                     else
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing single item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
-                        CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                        CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
                     }
                 }
             }
@@ -537,7 +522,7 @@ function New-DailyBackup
 
         if ($DailyBackupsToKeep -gt 0)
         {
-            RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -DryRun $dryRun -VerboseEnabled $verboseEnabled
+            RemoveDailyBackup -Path $Destination -BackupsToKeep $DailyBackupsToKeep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
         }
 
         Write-Verbose 'New-DailyBackup:End> Finished' -Verbose:$verboseEnabled
