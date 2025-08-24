@@ -1,4 +1,4 @@
-name: ci/cd
+name: ci
 
 on:
   push:
@@ -207,46 +207,3 @@ jobs:
           Write-Host "Running original integration tests for compatibility on Windows PowerShell Desktop..." -ForegroundColor Green
           ./test/Tests.ps1 -Verbose
           Write-Host "Original integration tests completed" -ForegroundColor Green
-
-  publish:
-    needs: [build, build-windows-powershell]
-    if: ${{ github.event_name != 'pull_request' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@main
-
-      - name: Validate module manifest
-        shell: pwsh
-        run: |
-          Write-Host "Validating module manifest..." -ForegroundColor Green
-          $manifest = Test-ModuleManifest -Path './DailyBackup.psd1'
-          Write-Host "Module manifest is valid. Version: $($manifest.Version)" -ForegroundColor Green
-
-      - name: Publish to PSGallery
-        shell: pwsh
-        run: |
-          Write-Host "Preparing module for publication..." -ForegroundColor Green
-
-          # Create the proper module directory structure
-          $distPath = './dist'
-          $modulePath = Join-Path $distPath 'DailyBackup'
-          New-Item -Path $modulePath -ItemType Directory -Force
-
-          # Copy core module files to the module subfolder
-          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination $modulePath
-
-          # Copy additional documentation if it exists
-          if (Test-Path 'CHANGELOG.md') { Copy-Item 'CHANGELOG.md' -Destination $modulePath }
-          if (Test-Path 'DailyBackup.config.psd1') { Copy-Item 'DailyBackup.config.psd1' -Destination $modulePath }
-
-          # Verify module structure
-          Write-Host "Module structure:" -ForegroundColor Gray
-          Get-ChildItem -Path $modulePath -Recurse | Format-Table Name, Length
-
-          # Test the module manifest before publishing
-          $manifest = Test-ModuleManifest -Path (Join-Path $modulePath 'DailyBackup.psd1')
-          Write-Host "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -ForegroundColor Green
-
-          Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Green
-          Publish-Module -Path $modulePath -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose

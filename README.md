@@ -1,12 +1,13 @@
 # PowerShell Daily Backup
 
-[![ci/cd](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
+[![ci](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml)
+[![release](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/release.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/release.yml)
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/DailyBackup)](https://www.powershellgallery.com/packages/DailyBackup)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci.yml)
 [![PowerShell](https://img.shields.io/badge/powershell-5.1%2B-blue)](https://docs.microsoft.com/en-us/powershell/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
-> Professional PowerShell module for creating automated, organized daily backups with comprehensive testing and enterprise-grade reliability.
+> A PowerShell module for creating automated daily backups.
 
 ## Features
 

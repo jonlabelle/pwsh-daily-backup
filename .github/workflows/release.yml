@@ -1,0 +1,96 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g., 1.3.1)"
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            Write-Error "Version must be in format x.y.z (e.g., 1.3.1)" -ErrorAction Stop
+          }
+          Write-Host "Version format is valid: $version" -ForegroundColor Green
+
+      - name: Update module version
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          $manifestPath = './DailyBackup.psd1'
+
+          Write-Host "Updating module version to $version..." -ForegroundColor Green
+
+          # Read the manifest content
+          $content = Get-Content -Path $manifestPath -Raw
+
+          # Update the ModuleVersion line
+          $content = $content -replace "ModuleVersion = '[^']*'", "ModuleVersion = '$version'"
+
+          # Write back to file
+          Set-Content -Path $manifestPath -Value $content -NoNewline
+
+          # Verify the change
+          $manifest = Test-ModuleManifest -Path $manifestPath
+          Write-Host "Updated module version to: $($manifest.Version)" -ForegroundColor Green
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add DailyBackup.psd1
+          git commit -m "Update module version to ${{ github.event.inputs.version }}"
+          git push
+
+      - name: Create Git tag
+        run: |
+          git tag -f "v${{ github.event.inputs.version }}"
+          git push -f origin "v${{ github.event.inputs.version }}"
+
+      - name: Validate module manifest
+        shell: pwsh
+        run: |
+          Write-Host "Validating module manifest..." -ForegroundColor Green
+          $manifest = Test-ModuleManifest -Path './DailyBackup.psd1'
+          Write-Host "Module manifest is valid. Version: $($manifest.Version)" -ForegroundColor Green
+
+      - name: Publish to PSGallery
+        shell: pwsh
+        run: |
+          Write-Host "Preparing module for publication..." -ForegroundColor Green
+
+          # Create the proper module directory structure
+          $distPath = './dist'
+          $modulePath = Join-Path $distPath 'DailyBackup'
+          New-Item -Path $modulePath -ItemType Directory -Force
+
+          # Copy core module files to the module subfolder
+          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination $modulePath
+
+          # Copy additional documentation if it exists
+          if (Test-Path 'CHANGELOG.md') { Copy-Item 'CHANGELOG.md' -Destination $modulePath }
+          if (Test-Path 'DailyBackup.config.psd1') { Copy-Item 'DailyBackup.config.psd1' -Destination $modulePath }
+
+          # Verify module structure
+          Write-Host "Module structure:" -ForegroundColor Gray
+          Get-ChildItem -Path $modulePath -Recurse | Format-Table Name, Length
+
+          # Test the module manifest before publishing
+          $manifest = Test-ModuleManifest -Path (Join-Path $modulePath 'DailyBackup.psd1')
+          Write-Host "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -ForegroundColor Green
+
+          Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Green
+          Publish-Module -Path $modulePath -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose
