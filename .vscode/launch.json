@@ -6,7 +6,55 @@
 
     "configurations": [
         {
-            "name": "PowerShell: Run tests",
+            "name": "PowerShell: Run Pester unit tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "Invoke-Pester",
+            // prettier-ignore
+            "args": [
+                "./test/DailyBackup.Tests.ps1",
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell: Run integration tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./test/IntegrationTests.ps1",
+            // prettier-ignore
+            "args": [
+                "-Verbose",
+                "-CleanupAfterTests:$true"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell: Run integration tests (dry-run)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./test/IntegrationTests.ps1",
+            // prettier-ignore
+            "args": [
+                "-WhatIf",
+                "-Verbose",
+                "-CleanupAfterTests:$false"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell: Run all tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/.vscode/run-all-tests.ps1",
+            // prettier-ignore
+            "args": [
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell: Run original tests",
             "type": "PowerShell",
             "request": "launch",
             "script": "./test/Tests.ps1",
@@ -15,7 +63,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run tests (dry-run)",
+            "name": "PowerShell: Run original tests (dry-run)",
             "type": "PowerShell",
             "request": "launch",
             "script": "./test/Tests.ps1",

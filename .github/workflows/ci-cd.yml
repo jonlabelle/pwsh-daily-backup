@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '.github/**'
-      - '.vscode/**'
-      - 'README.md'
-      - 'scripts/**'
-      - 'test/**'
+      - ".github/**"
+      - ".vscode/**"
+      - "README.md"
+      - "scripts/**"
+      - "docs/**"
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -26,11 +26,22 @@ jobs:
       - name: Checkout Git repository
         uses: actions/checkout@main
 
-      - name: Install PSScriptAnalyzer module
+      - name: Install required PowerShell modules
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -ErrorAction Stop
+
+          # Uninstall any existing Pester versions first
+          Get-Module Pester -ListAvailable | Uninstall-Module -Force -ErrorAction SilentlyContinue
+
+          # Install Pester v4 specifically for compatibility
+          Install-Module Pester -RequiredVersion 4.10.1 -Force -SkipPublisherCheck -ErrorAction Stop
+
+          # Verify installed versions
+          Write-Host "Installed module versions:" -ForegroundColor Green
+          Get-Module PSScriptAnalyzer -ListAvailable | Select-Object Name, Version
+          Get-Module Pester -ListAvailable | Select-Object Name, Version
 
       - name: Run PSScriptAnalyzer
         shell: pwsh
@@ -45,9 +56,69 @@ jobs:
               Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
           }
 
-      - name: Running integration tests
+      - name: Run Pester unit tests
         shell: pwsh
-        run: ./test/Tests.ps1 -Verbose
+        run: |
+          Write-Host "Running Pester unit tests..." -ForegroundColor Green
+
+          # Import Pester v4 explicitly
+          Import-Module Pester -RequiredVersion 4.10.1 -Force
+          Write-Host "Using Pester version: $((Get-Module Pester).Version)" -ForegroundColor Yellow
+
+          # Ensure we're in the right directory
+          Write-Host "Current directory: $PWD" -ForegroundColor Yellow
+          Write-Host "Module files present:" -ForegroundColor Yellow
+          Get-ChildItem -Name "DailyBackup.*"
+
+          # Test module import manually first
+          Write-Host "Testing module import..." -ForegroundColor Yellow
+          try {
+            Import-Module ./DailyBackup.psd1 -Force -ErrorAction Stop
+            Write-Host "Module imported successfully" -ForegroundColor Green
+            Get-Module DailyBackup | Format-List Name, Version, ExportedCommands
+          }
+          catch {
+            Write-Error "Failed to import module: $_"
+            throw
+          }
+
+          # Run tests with verbose output to diagnose issues
+          Write-Host "Running Pester tests..." -ForegroundColor Yellow
+          $TestResults = Invoke-Pester ./test/DailyBackup.Tests.ps1 -PassThru
+          Write-Host "Unit tests completed: $($TestResults.PassedCount) passed, $($TestResults.FailedCount) failed" -ForegroundColor Green
+
+          # Create test summary for GitHub
+          if ($env:GITHUB_STEP_SUMMARY) {
+            "## Unit Test Results" >> $env:GITHUB_STEP_SUMMARY
+            "- ✅ Passed: $($TestResults.PassedCount)" >> $env:GITHUB_STEP_SUMMARY
+            "- ❌ Failed: $($TestResults.FailedCount)" >> $env:GITHUB_STEP_SUMMARY
+            "- ⏱️ Duration: $($TestResults.Time)" >> $env:GITHUB_STEP_SUMMARY
+
+            if ($TestResults.FailedCount -gt 0) {
+              "## Failed Tests" >> $env:GITHUB_STEP_SUMMARY
+              foreach ($test in $TestResults.TestResult | Where-Object {$_.Result -eq 'Failed'}) {
+                "- ❌ $($test.Name): $($test.FailureMessage)" >> $env:GITHUB_STEP_SUMMARY
+              }
+            }
+          }
+
+          if ($TestResults.FailedCount -gt 0) {
+              Write-Error "Unit tests failed: $($TestResults.FailedCount) failed, $($TestResults.PassedCount) passed" -ErrorAction Stop
+          }
+
+      - name: Run integration tests
+        shell: pwsh
+        run: |
+          Write-Host "Running integration tests..." -ForegroundColor Green
+          ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
+          Write-Host "Integration tests completed successfully" -ForegroundColor Green
+
+      - name: Run original integration tests (compatibility)
+        shell: pwsh
+        run: |
+          Write-Host "Running original integration tests for compatibility..." -ForegroundColor Green
+          ./test/Tests.ps1 -Verbose
+          Write-Host "Original integration tests completed" -ForegroundColor Green
 
   publish:
     needs: build
@@ -57,9 +128,37 @@ jobs:
       - name: Checkout Git repository
         uses: actions/checkout@main
 
+      - name: Validate module manifest
+        shell: pwsh
+        run: |
+          Write-Host "Validating module manifest..." -ForegroundColor Green
+          $manifest = Test-ModuleManifest -Path './DailyBackup.psd1'
+          Write-Host "Module manifest is valid. Version: $($manifest.Version)" -ForegroundColor Green
+
       - name: Publish to PSGallery
         shell: pwsh
         run: |
-          New-Item -Path $pwd -Name 'dist' -ItemType Directory -Force
-          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination 'dist'
-          Publish-Module -Name (Join-Path -Path $pwd -ChildPath 'dist' -AdditionalChildPath 'DailyBackup.psd1') -NuGetApiKey ${{ secrets.NUGET_API_KEY }}
+          Write-Host "Preparing module for publication..." -ForegroundColor Green
+
+          # Create the proper module directory structure
+          $distPath = './dist'
+          $modulePath = Join-Path $distPath 'DailyBackup'
+          New-Item -Path $modulePath -ItemType Directory -Force
+
+          # Copy core module files to the module subfolder
+          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination $modulePath
+
+          # Copy additional documentation if it exists
+          if (Test-Path 'CHANGELOG.md') { Copy-Item 'CHANGELOG.md' -Destination $modulePath }
+          if (Test-Path 'DailyBackup.config.psd1') { Copy-Item 'DailyBackup.config.psd1' -Destination $modulePath }
+
+          # Verify module structure
+          Write-Host "Module structure:" -ForegroundColor Gray
+          Get-ChildItem -Path $modulePath -Recurse | Format-Table Name, Length
+
+          # Test the module manifest before publishing
+          $manifest = Test-ModuleManifest -Path (Join-Path $modulePath 'DailyBackup.psd1')
+          Write-Host "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -ForegroundColor Green
+
+          Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Green
+          Publish-Module -Path $modulePath -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose

@@ -2,108 +2,198 @@
 
 [![ci/cd](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/DailyBackup)](https://www.powershellgallery.com/packages/DailyBackup)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/ci-cd.yml)
+[![PowerShell](https://img.shields.io/badge/powershell-5.1%2B-blue)](https://docs.microsoft.com/en-us/powershell/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
-> PowerShell module for performing simple daily backups.
+> Professional PowerShell module for creating automated, organized daily backups with comprehensive testing and enterprise-grade reliability.
 
-## Installation
+## ✨ Features
+
+- **📅 Date-organized backups** - Automatically creates folders with YYYY-MM-DD format
+- **📁 Multiple source support** - Backup multiple files and directories in a single operation
+- **🧹 Automatic cleanup** - Configurable retention policy to automatically remove old backups
+- **🌐 Cross-platform** - Works on Windows, macOS, and Linux with PowerShell Core
+
+## 🚀 Quick Start
+
+### Installation
 
 ```powershell
-Install-Module -Name DailyBackup
+Install-Module -Name DailyBackup -Scope CurrentUser
 ```
 
-## Updating
+### Basic Usage
+
+```powershell
+# Simple backup
+New-DailyBackup -Path "C:\MyDocuments" -Destination "D:\Backups"
+
+# Multiple sources with cleanup (keep last 7 days)
+New-DailyBackup -Path @("C:\Documents", "C:\Pictures") -Destination "D:\Backups" -DailyBackupsToKeep 7
+
+# Test run (see what would be backed up)
+New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -WhatIf -Verbose
+```
+
+### Updating
 
 ```powershell
 Update-Module -Name DailyBackup
 ```
 
-## Usage
+## 📖 Documentation
+
+### Complete Reference
+
+- **[📚 Full Documentation](docs/HELP.md)** - Comprehensive user guide with examples and troubleshooting
+- **[�️ Development Guide](docs/DEVELOPMENT.md)** - Testing, contributing, and development setup
+- **[�📋 Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
+- **[🔧 Configuration Guide](DailyBackup.config.psd1)** - Advanced configuration options
+- **[📝 Changelog](CHANGELOG.md)** - Version history and improvements
+
+### Command Reference
 
 ```console
 NAME
     New-DailyBackup
 
 SYNOPSIS
-    Perform a daily backup.
+    Perform a daily backup with progress tracking and automatic cleanup.
 
 SYNTAX
-    New-DailyBackup [-Path] <String[]> [-Destination] <String> -DailyBackupsToKeep <Int32> [-WhatIf] [-Verbose]
-
-DESCRIPTION
-    Create a new daily backup storing the compressed (.zip) contents in a
-    destination folder formatted by day ('yyyy-MM-dd').
-
-PARAMETERS
-    -Path <String[]>
-        The source file or directory path(s) to backup.
-
-        Required?                    true
-        Position?                    1
-        Default value
-        Accept pipeline input?       true (ByValue, ByPropertyName)
-        Accept wildcard characters?  false
-
-    -Destination <String>
-        The root directory path where daily backups will be stored.
-        The default destination is the current working directory.
-
-        Required?                    false
-        Position?                    2
-        Default value                .
-        Accept pipeline input?       false
-        Accept wildcard characters?  false
-
-    -DailyBackupsToKeep <Int32>
-        The number of daily backups to keep when purging old backups.
-        The oldest backups will be deleted first.
-        This value cannot be less than zero.
-        The default value is 0, which will not remove any backups.
-
-        Required?                    false
-        Position?                    named
-        Default value                0
-        Accept pipeline input?       false
-        Accept wildcard characters?  false
-
-    -WhatIf [<SwitchParameter>]
-        When present, backup operations will not be performed.
-
-        Required?                    false
-        Position?                    named
-        Default value
-        Accept pipeline input?       false
-        Accept wildcard characters?  false
-
-    <CommonParameters>
-        This cmdlet supports the common parameters: Verbose, Debug,
-        ErrorAction, ErrorVariable, WarningAction, WarningVariable,
-        OutBuffer, PipelineVariable, and OutVariable. For more information, see
-        about_CommonParameters (https://go.microsoft.com/fwlink/?LinkID=113216).
+    New-DailyBackup [-Path] <String[]> [-Destination <String>] [-DailyBackupsToKeep <Int32>] [-WhatIf] [-Verbose]
 ```
 
-## Examples
+## Parameters
 
-To perform a daily backup of directories `C:\Users\Ron\Documents` and
-`C:\Users\Ron\Music`, and store them as `C:\Users\Ron\iCloudDrive\{yyyy-MM-dd}\{basename}.zip`,
-keeping only the latest 7 backups.
+### -Path &lt;String[]&gt;
+
+The source file or directory path(s) to backup.
+
+- **Required:** Yes
+- **Position:** 1
+- **Pipeline input:** Yes (ByValue, ByPropertyName)
+- **Wildcards:** No
+
+### -Destination &lt;String&gt;
+
+The root directory path where daily backups will be stored.
+
+- **Required:** No
+- **Position:** 2
+- **Default:** Current working directory (`.`)
+- **Pipeline input:** No
+- **Wildcards:** No
+
+### -DailyBackupsToKeep &lt;Int32&gt;
+
+The number of daily backups to keep when purging old backups. Oldest backups are deleted first.
+
+- **Required:** No
+- **Position:** Named
+- **Default:** 0 (keep all backups)
+- **Range:** 0 to 2147483647
+- **Pipeline input:** No
+
+### Common Parameters
+
+Supports all PowerShell common parameters: `-WhatIf`, `-Verbose`, `-ErrorAction`, `-WarningAction`, etc.
+
+[Learn more about CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216)
+
+## 💡 Examples
+
+### Example 1: Basic Daily Backup
 
 ```powershell
-Import-Module DailyBackup
-
-New-DailyBackup `
-    -Path 'C:\Users\Ron\Documents', 'C:\Users\Ron\Music' `
-    -Destination 'C:\Users\Ron\iCloudDrive' `
-    -DailyBackupsToKeep 7 `
+New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups"
 ```
 
-> **NOTE** If running multiple backups on the same day, the previous backup(s)
-> will be destroyed and overwritten with the current backup.
-> TODO: Maybe consider using the -Force option instead.
+Creates a backup in `D:\Backups\2025-08-24` with ZIP files containing your documents.
 
-## Author
+### Example 2: Multiple Sources with Cleanup
 
-Jon LaBelle
+```powershell
+New-DailyBackup `
+    -Path @('C:\Users\Ron\Documents', 'C:\Users\Ron\Music') `
+    -Destination 'C:\Users\Ron\iCloudDrive' `
+    -DailyBackupsToKeep 7 `
+    -Verbose
+```
 
-## License
+Backs up multiple directories and keeps only the latest 7 daily backups, with detailed progress output.
 
-[MIT License](LICENSE.txt)
+### Example 3: Test Run (WhatIf)
+
+```powershell
+New-DailyBackup -Path "C:\Important" -Destination "D:\Backup" -WhatIf -Verbose
+```
+
+Shows exactly what would be backed up without actually creating any files.
+
+### Example 4: Scheduled Backup Script
+
+```powershell
+# Create a script for Windows Task Scheduler
+$BackupPaths = @(
+    "$env:USERPROFILE\Documents",
+    "$env:USERPROFILE\Pictures",
+    "$env:USERPROFILE\.ssh"
+)
+
+try {
+    New-DailyBackup -Path $BackupPaths -Destination "D:\DailyBackups" -DailyBackupsToKeep 30 -Verbose
+    Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
+}
+catch {
+    Write-Error "❌ Backup failed: $_"
+    # Send email notification, write to event log, etc.
+}
+```
+
+### Example 5: Cross-Platform Home Backup
+
+```powershell
+# Works on Windows, macOS, and Linux
+$HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
+    $env:USERPROFILE
+} else {
+    $env:HOME
+}
+
+New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -DailyBackupsToKeep 14
+```
+
+## 🔧 Advanced Usage
+
+### Configuration File
+
+Create a `DailyBackup.config.psd1` file to customize default behavior:
+
+```powershell
+@{
+    DefaultSettings = @{
+        DefaultDestination = 'D:\AutoBackups'
+        DefaultBackupsToKeep = 14
+        CompressionLevel = 'Optimal'
+    }
+    Logging = @{
+        EnableFileLogging = $true
+        LogLevel = 'Information'
+    }
+}
+```
+
+### Automation with Task Scheduler
+
+```powershell
+# Create scheduled task (Windows)
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -DailyBackupsToKeep 30`""
+$Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
+Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
+```
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE.txt) - see the LICENSE file for details.

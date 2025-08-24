@@ -288,7 +288,7 @@ function RemoveItemAlternative
     }
     else
     {
-        Write-Warning "New-DailyBackup:RemoveItemAlternative> Path '$Path' doesn't exist. Skipping."
+        Write-Warning "New-DailyBackup:RemoveItemAlternative> Path '$LiteralPath' doesn't exist. Skipping."
     }
 }
 
@@ -352,7 +352,13 @@ function RemoveDailyBackup
         for ($i = 0; $i -lt ($sortedBackupPaths.Count - $BackupsToKeep); $i++)
         {
             $backupPath = $sortedBackupPaths[$i]
-            RemoveItemAlternative -LiteralPath $backupPath -WhatIf:$dryRun -Verbose:$verboseEnabled
+            Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Removing old backup directory: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+            RemoveItemAlternative -LiteralPath $backupPath -Verbose:$VerboseEnabled
+
+            if (-not $DryRun)
+            {
+                Write-Verbose ('New-DailyBackup:RemoveDailyBackup> Successfully removed: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+            }
         }
     }
     else
@@ -434,7 +440,7 @@ function New-DailyBackup
         [Parameter(
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
         )]
-        [ValidateNotNullOrEmpty()]
+        [ValidateRange(0, [int]::MaxValue)]
         [Alias('Keep')]
         [int] $DailyBackupsToKeep = 0
     )
@@ -473,40 +479,57 @@ function New-DailyBackup
     }
     process
     {
+        $totalPaths = $Path.Count
+        $currentPath = 0
+
         foreach ($item in $Path)
         {
+            $currentPath++
+            Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $totalPaths" -PercentComplete (($currentPath / $totalPaths) * 100)
+
             if (-not [System.IO.Path]::IsPathRooted($item))
             {
                 Write-Verbose ('New-DailyBackup:Process> {0} is not a full path, prepending current directory: {1}' -f $item, $pwd) -Verbose:$verboseEnabled
                 $item = (Join-Path -Path $pwd -ChildPath $item)
             }
 
-            $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
-            if ($null -eq $resolvedPath)
+            try
             {
-                Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
-                continue
-            }
-
-            if ($resolvedPath.Count -gt 1)
-            {
-                foreach ($globItem in $resolvedPath)
+                $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
+                if ($null -eq $resolvedPath)
                 {
-                    CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
+                    continue
                 }
-            }
-            else
-            {
-                if (!(Test-Path -Path $resolvedPath -IsValid))
+
+                if ($resolvedPath.Count -gt 1)
                 {
-                    Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
+                    foreach ($globItem in $resolvedPath)
+                    {
+                        Write-Verbose ('New-DailyBackup:Process> Processing glob item: {0}' -f $globItem) -Verbose:$verboseEnabled
+                        CompressBackup -Path $globItem -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    }
                 }
                 else
                 {
-                    CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    if (!(Test-Path -Path $resolvedPath -IsValid))
+                    {
+                        Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
+                    }
+                    else
+                    {
+                        Write-Verbose ('New-DailyBackup:Process> Processing single item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
+                        CompressBackup -Path $resolvedPath -DestinationPath $datedDestinationDir -DryRun $dryRun -VerboseEnabled $verboseEnabled
+                    }
                 }
             }
+            catch
+            {
+                Write-Error ('New-DailyBackup:Process> Error processing path {0}: {1}' -f $item, $_.Exception.Message) -ErrorAction Continue
+            }
         }
+
+        Write-Progress -Activity 'Creating Daily Backup' -Completed
     }
     end
     {
