@@ -47,6 +47,28 @@ Invoke-Pester ./test/DailyBackup.Tests.ps1 -Detailed
 ./test/IntegrationTests.ps1 -Verbose
 ```
 
+#### Run All Tests
+
+```powershell
+# Run comprehensive test suite
+./scripts/run-all-tests.ps1
+
+# Run with verbose output
+./scripts/run-all-tests.ps1 -Verbose
+```
+
+**VS Code Integration:**
+
+- Task: `Ctrl+Shift+P` → "Tasks: Run Task" → "Run all tests"
+- Debug: `F5` → "PowerShell: Run all tests"
+
+The comprehensive test runner executes:
+
+- Static analysis (PSScriptAnalyzer)
+- Unit tests (Pester)
+- Integration tests
+- Provides detailed reporting with pass/fail status
+
 #### Full Build Pipeline
 
 ```powershell

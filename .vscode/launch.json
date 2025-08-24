@@ -46,41 +46,12 @@
             "name": "PowerShell: Run all tests",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceFolder}/.vscode/run-all-tests.ps1",
+            "script": "${workspaceFolder}/scripts/run-all-tests.ps1",
             // prettier-ignore
             "args": [
                 "-Verbose"
             ],
             "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "PowerShell: Run original tests",
-            "type": "PowerShell",
-            "request": "launch",
-            "script": "./test/Tests.ps1",
-            // prettier-ignore
-            "args": ["-Verbose"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "PowerShell: Run original tests (dry-run)",
-            "type": "PowerShell",
-            "request": "launch",
-            "script": "./test/Tests.ps1",
-            // prettier-ignore
-            "args": [
-                "-WhatIf",
-                "-Verbose"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "Bash: Run tests",
-            "type": "node",
-            "request": "launch",
-            "skipFiles": ["<node_internals>/**"],
-            "preLaunchTask": "Bash tests",
-            "stopOnEntry": false
         },
         {
             "name": "PowerShell: Run PSScriptAnalyzer",

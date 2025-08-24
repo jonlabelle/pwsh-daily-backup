@@ -4,10 +4,18 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Bash tests",
+            "label": "Run all tests",
             "type": "shell",
-            "command": "bash",
-            "args": ["${workspaceFolder}/scripts/run_tests.sh"]
+            "command": "pwsh",
+            "args": ["-File", "${workspaceFolder}/scripts/run-all-tests.ps1", "-Verbose"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }

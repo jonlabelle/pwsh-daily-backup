@@ -50,7 +50,8 @@ $ModuleManifest = Join-Path $ProjectRoot "$ModuleName.psd1"
 $ModuleScript = Join-Path $ProjectRoot "$ModuleName.psm1"
 
 # Helper functions
-function Write-BuildMessage {
+function Write-BuildMessage
+{
     param(
         [string] $Message,
         [ValidateSet('Info', 'Success', 'Warning', 'Error')]
@@ -64,7 +65,8 @@ function Write-BuildMessage {
         'Error' = 'Red'
     }
 
-    $prefix = switch ($Type) {
+    $prefix = switch ($Type)
+    {
         'Info' { '[INFO]' }
         'Success' { '[SUCCESS]' }
         'Warning' { '[WARNING]' }
@@ -74,64 +76,75 @@ function Write-BuildMessage {
     Write-Host "$prefix $Message" -ForegroundColor $colors[$Type]
 }
 
-function Test-Prerequisites {
-    Write-BuildMessage "Checking prerequisites..."
+function Test-Prerequisites
+{
+    Write-BuildMessage 'Checking prerequisites...'
 
     # Check PowerShell version
-    if ($PSVersionTable.PSVersion.Major -lt 5) {
-        throw "PowerShell 5.1 or higher is required"
+    if ($PSVersionTable.PSVersion.Major -lt 5)
+    {
+        throw 'PowerShell 5.1 or higher is required'
     }
 
     # Check for required modules
     $requiredModules = @('PSScriptAnalyzer', 'Pester')
-    foreach ($module in $requiredModules) {
-        if (!(Get-Module -ListAvailable -Name $module)) {
+    foreach ($module in $requiredModules)
+    {
+        if (!(Get-Module -ListAvailable -Name $module))
+        {
             Write-BuildMessage "Installing missing module: $module" -Type Warning
             Install-Module -Name $module -Scope CurrentUser -Force
         }
     }
 
-    Write-BuildMessage "Prerequisites check completed" -Type Success
+    Write-BuildMessage 'Prerequisites check completed' -Type Success
 }
 
-function Invoke-StaticAnalysis {
-    Write-BuildMessage "Running static analysis..."
+function Invoke-StaticAnalysis
+{
+    Write-BuildMessage 'Running static analysis...'
 
     $settingsPath = Join-Path $ProjectRoot 'PSScriptAnalyzerSettings.psd1'
     $results = Invoke-ScriptAnalyzer -Path $ProjectRoot -Settings $settingsPath -Recurse
 
-    if ($results) {
-        $errors = $results | Where-Object Severity -eq 'Error'
-        $warnings = $results | Where-Object Severity -eq 'Warning'
+    if ($results)
+    {
+        $errors = $results | Where-Object Severity -EQ 'Error'
+        $warnings = $results | Where-Object Severity -EQ 'Warning'
 
         Write-BuildMessage "Found $($errors.Count) errors and $($warnings.Count) warnings" -Type Warning
 
-        if ($errors.Count -gt 0) {
-            $results | Where-Object Severity -eq 'Error' | Format-Table -AutoSize
-            throw "Static analysis found errors that must be fixed"
+        if ($errors.Count -gt 0)
+        {
+            $results | Where-Object Severity -EQ 'Error' | Format-Table -AutoSize
+            throw 'Static analysis found errors that must be fixed'
         }
 
-        if ($warnings.Count -gt 0) {
-            Write-BuildMessage "Static analysis warnings:" -Type Warning
-            $results | Where-Object Severity -eq 'Warning' | Format-Table -AutoSize
+        if ($warnings.Count -gt 0)
+        {
+            Write-BuildMessage 'Static analysis warnings:' -Type Warning
+            $results | Where-Object Severity -EQ 'Warning' | Format-Table -AutoSize
         }
     }
 
-    Write-BuildMessage "Static analysis completed" -Type Success
+    Write-BuildMessage 'Static analysis completed' -Type Success
 }
 
-function Invoke-UnitTests {
-    Write-BuildMessage "Running unit tests..."
+function Invoke-UnitTests
+{
+    Write-BuildMessage 'Running unit tests...'
 
     $testPath = Join-Path $ProjectRoot 'test'
-    if (!(Test-Path $testPath)) {
-        Write-BuildMessage "No test directory found, skipping unit tests" -Type Warning
+    if (!(Test-Path $testPath))
+    {
+        Write-BuildMessage 'No test directory found, skipping unit tests' -Type Warning
         return
     }
 
     # Run Pester tests if available
     $pesterTest = Join-Path $testPath "$ModuleName.Tests.ps1"
-    if (Test-Path $pesterTest) {
+    if (Test-Path $pesterTest)
+    {
         $pesterConfig = New-PesterConfiguration
         $pesterConfig.Run.Path = $pesterTest
         $pesterConfig.Output.Verbosity = 'Detailed'
@@ -140,40 +153,41 @@ function Invoke-UnitTests {
 
         $results = Invoke-Pester -Configuration $pesterConfig
 
-        if ($results.Result -eq 'Failed') {
-            throw "Unit tests failed"
+        if ($results.Result -eq 'Failed')
+        {
+            throw 'Unit tests failed'
         }
 
         Write-BuildMessage "Unit tests passed: $($results.PassedCount)/$($results.TotalCount)" -Type Success
     }
 
-    Write-BuildMessage "Unit tests completed" -Type Success
+    Write-BuildMessage 'Unit tests completed' -Type Success
 }
 
-function Invoke-IntegrationTests {
-    Write-BuildMessage "Running integration tests..."
+function Invoke-IntegrationTests
+{
+    Write-BuildMessage 'Running integration tests...'
 
     $integrationTest = Join-Path $ProjectRoot 'test\IntegrationTests.ps1'
-    if (Test-Path $integrationTest) {
+    if (Test-Path $integrationTest)
+    {
         & $integrationTest -CleanupAfterTests:$true
-    } else {
-        # Fall back to original test
-        $originalTest = Join-Path $ProjectRoot 'test\Tests.ps1'
-        if (Test-Path $originalTest) {
-            & $originalTest
-        } else {
-            Write-BuildMessage "No integration tests found" -Type Warning
-        }
+    }
+    else
+    {
+        Write-BuildMessage 'No integration tests found' -Type Warning
     }
 
-    Write-BuildMessage "Integration tests completed" -Type Success
+    Write-BuildMessage 'Integration tests completed' -Type Success
 }
 
-function New-ModulePackage {
-    Write-BuildMessage "Creating module package..."
+function New-ModulePackage
+{
+    Write-BuildMessage 'Creating module package...'
 
     # Create output directory
-    if (Test-Path $OutputPath) {
+    if (Test-Path $OutputPath)
+    {
         Remove-Item $OutputPath -Recurse -Force
     }
     New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
@@ -187,17 +201,22 @@ function New-ModulePackage {
         (Join-Path $ProjectRoot 'CHANGELOG.md')
     )
 
-    foreach ($file in $filesToCopy) {
-        if (Test-Path $file) {
+    foreach ($file in $filesToCopy)
+    {
+        if (Test-Path $file)
+        {
             Copy-Item -Path $file -Destination $OutputPath -Force
             Write-BuildMessage "Copied: $(Split-Path $file -Leaf)"
-        } else {
+        }
+        else
+        {
             Write-BuildMessage "File not found: $file" -Type Warning
         }
     }
 
     # Update version for release builds
-    if ($Configuration -eq 'Release') {
+    if ($Configuration -eq 'Release')
+    {
         $manifest = Join-Path $OutputPath "$ModuleName.psd1"
         $content = Get-Content $manifest -Raw
 
@@ -209,33 +228,43 @@ function New-ModulePackage {
     Write-BuildMessage "Module package created at: $OutputPath" -Type Success
 }
 
-function Invoke-Build {
+function Invoke-Build
+{
     Write-BuildMessage "Starting build process for $ModuleName..."
 
     Test-Prerequisites
 
-    switch ($Task) {
-        'Analyze' {
+    switch ($Task)
+    {
+        'Analyze'
+        {
             Invoke-StaticAnalysis
         }
-        'Test' {
-            if (-not $SkipTests) {
+        'Test'
+        {
+            if (-not $SkipTests)
+            {
                 Invoke-UnitTests
                 Invoke-IntegrationTests
             }
         }
-        'Build' {
+        'Build'
+        {
             Invoke-StaticAnalysis
-            if (-not $SkipTests) {
+            if (-not $SkipTests)
+            {
                 Invoke-UnitTests
             }
         }
-        'Package' {
+        'Package'
+        {
             New-ModulePackage
         }
-        'All' {
+        'All'
+        {
             Invoke-StaticAnalysis
-            if (-not $SkipTests) {
+            if (-not $SkipTests)
+            {
                 Invoke-UnitTests
                 Invoke-IntegrationTests
             }
@@ -243,14 +272,16 @@ function Invoke-Build {
         }
     }
 
-    Write-BuildMessage "Build completed successfully!" -Type Success
+    Write-BuildMessage 'Build completed successfully!' -Type Success
 }
 
 # Main execution
-try {
+try
+{
     Invoke-Build
 }
-catch {
+catch
+{
     Write-BuildMessage "Build failed: $_" -Type Error
     exit 1
 }
