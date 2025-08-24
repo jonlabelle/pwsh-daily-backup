@@ -10,6 +10,7 @@ on:
 
 jobs:
   release:
+    name: Release v${{ github.event.inputs.version }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Git repository
