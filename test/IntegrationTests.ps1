@@ -239,8 +239,8 @@ try
     # Test with invalid parameter values
     try
     {
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep -1 -WhatIf:$dryRun -ErrorAction Stop
-        Write-Host '[FAIL] Should have failed with negative Keep value' -ForegroundColor Red
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep -2 -WhatIf:$dryRun -ErrorAction Stop
+        Write-Host '[FAIL] Should have failed with invalid Keep value (-2)' -ForegroundColor Red
     }
     catch
     {

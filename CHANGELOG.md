@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-08-24
+
+### Added
+
+- New test cases for improved Keep parameter behavior
+- Enhanced parameter validation tests
+
+### Changed
+
+- **BREAKING**: Changed default Keep parameter value from `0` to `-1` for better semantics
+- **BREAKING**: Keep parameter now uses `-1` to mean "keep all backups" instead of `0`
+- **BREAKING**: Keep parameter now uses `0` to mean "delete all backups" (more intuitive)
+- Improved parameter validation range to accept `-1` as minimum value
+- Updated all documentation to reflect new Keep parameter behavior
+
+### Fixed
+
+- Integration tests updated to validate new Keep parameter behavior
+- Unit tests updated for new parameter validation ranges
+
 ## [1.3.0] - 2025-08-24
 
 ### Added

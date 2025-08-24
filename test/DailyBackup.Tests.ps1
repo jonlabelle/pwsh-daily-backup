@@ -106,6 +106,38 @@ Describe 'DailyBackup Module' {
             $BackupFolders = Get-ChildItem -Path $script:BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
             $BackupFolders.Count -le 2 | Should Be $true
         }
+
+        It 'Should keep all backups when Keep is -1 (default)' {
+            # Create some old backup folders
+            $OldDate1 = (Get-Date).AddDays(-5).ToString('yyyy-MM-dd')
+            $OldDate2 = (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
+
+            New-Item -Path (Join-Path $script:BackupDir $OldDate1) -ItemType Directory -Force | Out-Null
+            New-Item -Path (Join-Path $script:BackupDir $OldDate2) -ItemType Directory -Force | Out-Null
+
+            # Run backup with default Keep value (-1)
+            New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir
+
+            # Should have all backup folders (today plus 2 old ones = 3)
+            $BackupFolders = Get-ChildItem -Path $script:BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
+            $BackupFolders.Count | Should Be 3
+        }
+
+        It 'Should delete all backups when Keep is 0' {
+            # Create some old backup folders
+            $OldDate1 = (Get-Date).AddDays(-5).ToString('yyyy-MM-dd')
+            $OldDate2 = (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
+
+            New-Item -Path (Join-Path $script:BackupDir $OldDate1) -ItemType Directory -Force | Out-Null
+            New-Item -Path (Join-Path $script:BackupDir $OldDate2) -ItemType Directory -Force | Out-Null
+
+            # Run backup with Keep 0 (delete all old backups, keep only today's)
+            New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -Keep 0
+
+            # Should have no backup folders (all deleted, today's created then deleted)
+            $BackupFolders = Get-ChildItem -Path $script:BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
+            $BackupFolders.Count | Should Be 0
+        }
     }
 }
 
@@ -115,7 +147,7 @@ Describe 'Error Handling' {
             # The validation should catch this at parameter binding time
             try
             {
-                New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -Keep -1
+                New-DailyBackup -Path $script:SourceDir -Destination $script:BackupDir -Keep -2
                 # If we get here, the test should fail
                 $false | Should Be $true
             }

@@ -93,8 +93,8 @@ The number of daily backups to keep when purging old backups. Oldest backups are
 
 - **Required:** No
 - **Position:** Named
-- **Default:** 0 (keep all backups)
-- **Range:** 0 to 2147483647
+- **Default:** -1 (keep all backups)
+- **Range:** -1 to 2147483647
 - **Pipeline input:** No
 - **Aliases:** DailyBackupsToKeep
 

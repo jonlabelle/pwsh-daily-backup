@@ -15,7 +15,7 @@
     # Use '.' for current directory, or specify a full path
     DefaultDestination = '.'
 
-    # Default number of daily backups to keep (0 = keep all)
+    # Default number of daily backups to keep (-1 = keep all)
     DefaultBackupsToKeep = 7
 
     # Default compression level for ZIP archives

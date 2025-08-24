@@ -544,7 +544,8 @@ function New-DailyBackup
     .PARAMETER Keep
         The number of daily backup folders to retain when cleaning up old backups.
         Older backup folders beyond this number will be automatically deleted.
-        Set to 0 (default) to disable automatic cleanup. Must be 0 or greater.
+        Set to -1 (default) to disable automatic cleanup and keep all backups.
+        Set to 0 to delete all existing backups. Must be -1 or greater.
 
         Note: DailyBackupsToKeep is an alias for this parameter.
 
@@ -621,9 +622,9 @@ function New-DailyBackup
         [Parameter(
             HelpMessage = 'The number of daily backups to keep when purging old backups.'
         )]
-        [ValidateRange(0, [int]::MaxValue)]
+        [ValidateRange(-1, [int]::MaxValue)]
         [Alias('DailyBackupsToKeep')]
-        [int] $Keep = 0
+        [int] $Keep = -1
     )
     begin
     {
@@ -714,7 +715,7 @@ function New-DailyBackup
     {
         Write-Verbose 'New-DailyBackup:End> Running post backup operations' -Verbose:$verboseEnabled
 
-        if ($Keep -gt 0)
+        if ($Keep -ge 0)
         {
             RemoveDailyBackup -Path $Destination -BackupsToKeep $Keep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
         }

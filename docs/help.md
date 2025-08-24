@@ -139,13 +139,15 @@ The root directory where daily backup folders will be created. Each backup sessi
 ### -Keep
 
 **Type**: `Int32`
-**Default**: `0` (keep all backups)
+**Default**: `-1` (keep all backups)
 **Alias**: `DailyBackupsToKeep`
 
-Number of daily backup folders to retain. When exceeded, the oldest backups are deleted first. Set to 0 to keep all backups indefinitely.
+Number of daily backup folders to retain. When exceeded, the oldest backups are deleted first. Set to -1 to keep all backups indefinitely.
 
 **Examples:**
 
+- `-1`: Keep all backups (no cleanup)
+- `0`: Delete all existing backups
 - `1`: Keep only today's backup
 - `7`: Keep the last week of backups
 - `30`: Keep the last month of backups
