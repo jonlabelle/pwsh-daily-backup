@@ -25,7 +25,7 @@
             // prettier-ignore
             "args": [
                 "-Verbose",
-                "-CleanupAfterTests:$true"
+                "-CleanupAfterTests"
             ],
             "cwd": "${workspaceFolder}"
         },
@@ -37,8 +37,7 @@
             // prettier-ignore
             "args": [
                 "-WhatIf",
-                "-Verbose",
-                "-CleanupAfterTests:$false"
+                "-Verbose"
             ],
             "cwd": "${workspaceFolder}"
         },

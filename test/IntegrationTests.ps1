@@ -29,10 +29,10 @@ param(
     [string] $ModuleName = 'DailyBackup',
 
     [Parameter()]
-    [bool] $CleanupAfterTests = $true,
+    [switch] $CleanupAfterTests = $true,
 
     [Parameter()]
-    [bool] $RunPerformanceTests = $false
+    [switch] $RunPerformanceTests
 )
 
 # Set up error handling
