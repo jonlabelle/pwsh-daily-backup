@@ -61,8 +61,9 @@ function GetRandomFileName
         backup filenames when duplicates are detected.
 
     .EXAMPLE
-        $randomName = GetRandomFileName
-        # Returns something like "kdjf3k2j"
+        PS > $randomName = GetRandomFileName
+
+        Returns something like "kdjf3k2j"
     #>
     $randomFileName = [System.IO.Path]::GetRandomFileName()
     return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
@@ -100,12 +101,14 @@ function GenerateBackupPath
         - Duplicate filenames are handled by appending a random suffix
 
     .EXAMPLE
-        GenerateBackupPath -Path 'C:\Users\John\Documents' -DestinationPath 'C:\Backups\2025-08-24'
-        # Returns: C:\Backups\2025-08-24\Users__John__Documents
+        PS > GenerateBackupPath -Path 'C:\Users\John\Documents' -DestinationPath 'C:\Backups\2025-08-24'
+
+        Returns: C:\Backups\2025-08-24\Users__John__Documents
 
     .EXAMPLE
-        GenerateBackupPath -Path '/home/user/photos' -DestinationPath '/backups/daily'
-        # Returns: /backups/daily/home__user__photos
+        PS > GenerateBackupPath -Path '/home/user/photos' -DestinationPath '/backups/daily'
+
+        Returns: /backups/daily/home__user__photos
     #>
     param
     (
@@ -176,12 +179,14 @@ function CompressBackup
         - Continues on individual file errors rather than stopping completely
 
     .EXAMPLE
-        CompressBackup -Path 'C:\Documents' -DestinationPath 'C:\Backups\2025-08-24' -VerboseEnabled $true
-        # Creates a backup archive of the Documents folder with verbose output
+        PS > CompressBackup -Path 'C:\Documents' -DestinationPath 'C:\Backups\2025-08-24' -VerboseEnabled $true
+
+        Creates a backup archive of the Documents folder with verbose output
 
     .EXAMPLE
-        CompressBackup -Path 'C:\MyFile.txt' -DestinationPath 'C:\Backups\2025-08-24' -WhatIf
-        # Shows what would be compressed without actually creating the archive
+        PS > CompressBackup -Path 'C:\MyFile.txt' -DestinationPath 'C:\Backups\2025-08-24' -WhatIf
+
+        Shows what would be compressed without actually creating the archive
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param
@@ -242,20 +247,24 @@ function ResolveUnverifiedPath
         may not exist yet but need to be resolved for path construction.
 
     .EXAMPLE
-        ResolveUnverifiedPath -Path 'c:\windows\notepad.exe'
-        # Returns: C:\Windows\notepad.exe (if it exists)
+        PS > ResolveUnverifiedPath -Path 'c:\windows\notepad.exe'
+
+        Returns: C:\Windows\notepad.exe (if it exists)
 
     .EXAMPLE
-        ResolveUnverifiedPath -Path '..\notepad.exe'
-        # Returns: C:\Windows\notepad.exe (resolved relative to current directory)
+        PS > ResolveUnverifiedPath -Path '..\notepad.exe'
+
+        Returns: C:\Windows\notepad.exe (resolved relative to current directory)
 
     .EXAMPLE
-        ResolveUnverifiedPath -Path '..\nonexistent.txt'
-        # Returns: C:\Windows\nonexistent.txt (resolved even though file doesn't exist)
+        PS > ResolveUnverifiedPath -Path '..\nonexistent.txt'
+
+        Returns: C:\Windows\nonexistent.txt (resolved even though file doesn't exist)
 
     .EXAMPLE
-        'file1.txt', 'file2.txt' | ResolveUnverifiedPath
-        # Resolves multiple paths from pipeline input
+        PS > 'file1.txt', 'file2.txt' | ResolveUnverifiedPath
+
+        Resolves multiple paths from pipeline input
 
     .LINK
         https://aka.ms/PowerShellForGitHub
@@ -317,16 +326,19 @@ function RemoveItemAlternative
         - Continues processing even if individual items fail to delete
 
     .EXAMPLE
-        RemoveItemAlternative -LiteralPath "C:\Users\John\OneDrive\OldBackups"
-        # Removes the entire OldBackups folder and all its contents
+        PS > RemoveItemAlternative -LiteralPath "C:\Users\John\OneDrive\OldBackups"
+
+        Removes the entire OldBackups folder and all its contents
 
     .EXAMPLE
-        RemoveItemAlternative -LiteralPath "C:\Users\John\iCloud\TempFiles" -SkipTopLevelFolder
-        # Clears the TempFiles folder contents but keeps the folder itself
+        PS > RemoveItemAlternative -LiteralPath "C:\Users\John\iCloud\TempFiles" -SkipTopLevelFolder
+
+        Clears the TempFiles folder contents but keeps the folder itself
 
     .EXAMPLE
-        RemoveItemAlternative -LiteralPath "C:\CloudFolder\Data" -WhatIf
-        # Shows what would be deleted without actually removing anything
+        PS > RemoveItemAlternative -LiteralPath "C:\CloudFolder\Data" -WhatIf
+
+        Shows what would be deleted without actually removing anything
 
     .LINK
         https://evotec.xyz/remove-item-access-to-the-cloud-file-is-denied-while-deleting-files-from-onedrive/
@@ -443,16 +455,19 @@ function RemoveDailyBackup
         - Skips cleanup if total backups don't exceed the retention limit
 
     .EXAMPLE
-        RemoveDailyBackup -Path 'C:\Backups' -BackupsToKeep 7 -VerboseEnabled $true
-        # Keeps the 7 most recent daily backup folders, removes older ones
+        PS > RemoveDailyBackup -Path 'C:\Backups' -BackupsToKeep 7 -VerboseEnabled $true
+
+        Keeps the 7 most recent daily backup folders, removes older ones
 
     .EXAMPLE
-        RemoveDailyBackup -Path '/home/user/backups' -BackupsToKeep 3 -WhatIf
-        # Shows which backup directories would be deleted without actually removing them
+        PS > RemoveDailyBackup -Path '/home/user/backups' -BackupsToKeep 3 -WhatIf
+
+        Shows which backup directories would be deleted without actually removing them
 
     .EXAMPLE
-        RemoveDailyBackup -Path 'C:\DailyBackups' -BackupsToKeep 14
-        # Maintains a 2-week retention policy (14 days) for backup directories
+        PS > RemoveDailyBackup -Path 'C:\DailyBackups' -BackupsToKeep 14
+
+        Maintains a 2-week retention policy (14 days) for backup directories
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param
@@ -550,28 +565,34 @@ function New-DailyBackup
         - Displays progress bar for multiple source paths
 
     .EXAMPLE
-        New-DailyBackup -Path 'C:\Documents' -Destination 'D:\Backups'
-        # Creates a backup of Documents folder in D:\Backups\2025-08-24\
+        PS > New-DailyBackup -Path 'C:\Documents' -Destination 'D:\Backups'
+
+        Creates a backup of Documents folder in D:\Backups\2025-08-24\
 
     .EXAMPLE
-        New-DailyBackup -Path 'file1.txt', 'C:\Photos', 'D:\Projects' -Destination 'E:\DailyBackups' -Verbose
-        # Backs up multiple paths with detailed output
+        PS > New-DailyBackup -Path 'file1.txt', 'C:\Photos', 'D:\Projects' -Destination 'E:\DailyBackups' -Verbose
+
+        Backs up multiple paths with detailed output
 
     .EXAMPLE
-        New-DailyBackup -Path 'C:\Data' -Destination 'D:\Backups' -DailyBackupsToKeep 7
-        # Creates backup and keeps only the last 7 days of backups
+        PS > New-DailyBackup -Path 'C:\Data' -Destination 'D:\Backups' -DailyBackupsToKeep 7
+
+        Creates backup and keeps only the last 7 days of backups
 
     .EXAMPLE
-        New-DailyBackup -Path 'C:\ImportantFiles' -WhatIf
-        # Shows what would be backed up without actually creating archives
+        PS > New-DailyBackup -Path 'C:\ImportantFiles' -WhatIf
+
+        Shows what would be backed up without actually creating archives
 
     .EXAMPLE
-        Get-ChildItem 'C:\Projects' -Directory | New-DailyBackup -Destination 'D:\ProjectBackups'
-        # Backs up all subdirectories from C:\Projects using pipeline input
+        PS > Get-ChildItem 'C:\Projects' -Directory | New-DailyBackup -Destination 'D:\ProjectBackups'
+
+        Backs up all subdirectories from C:\Projects using pipeline input
 
     .EXAMPLE
-        New-DailyBackup -Path '.\src', '.\docs' -Destination '\\server\backups' -Keep 14
-        # Backs up relative paths to network location with 2-week retention
+        PS > New-DailyBackup -Path '.\src', '.\docs' -Destination '\\server\backups' -Keep 14
+
+        Backs up relative paths to network location with 2-week retention
 
     .LINK
         https://github.com/jonlabelle/pwsh-daily-backup
