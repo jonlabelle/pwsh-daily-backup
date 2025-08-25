@@ -166,7 +166,7 @@ $HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
 New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -Keep 14
 ```
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Automation with Task Scheduler
 
