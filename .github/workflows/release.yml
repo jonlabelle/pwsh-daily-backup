@@ -83,7 +83,6 @@ jobs:
 
           # Copy additional documentation if it exists
           if (Test-Path 'CHANGELOG.md') { Copy-Item 'CHANGELOG.md' -Destination $modulePath }
-          if (Test-Path 'DailyBackup.config.psd1') { Copy-Item 'DailyBackup.config.psd1' -Destination $modulePath }
 
           # Verify module structure
           Write-Host "Module structure:" -ForegroundColor Gray

@@ -50,7 +50,6 @@ Update-Module -Name DailyBackup
 - **[Full Documentation](docs/help.md)** - Comprehensive user guide with examples and troubleshooting
 - **[Development Guide](docs/development.md)** - Testing, contributing, and development setup
 - **[Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
-- **[Configuration Guide](DailyBackup.config.psd1)** - Advanced configuration options
 - **[Changelog](CHANGELOG.md)** - Version history and improvements
 
 ### Command Reference
@@ -168,24 +167,6 @@ New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -Keep
 ```
 
 ## 🔧 Advanced Usage
-
-### Configuration File
-
-Create a `DailyBackup.config.psd1` file to customize default behavior:
-
-```powershell
-@{
-    DefaultSettings = @{
-        DefaultDestination = 'D:\AutoBackups'
-        DefaultBackupsToKeep = 14
-        CompressionLevel = 'Optimal'
-    }
-    Logging = @{
-        EnableFileLogging = $true
-        LogLevel = 'Information'
-    }
-}
-```
 
 ### Automation with Task Scheduler
 

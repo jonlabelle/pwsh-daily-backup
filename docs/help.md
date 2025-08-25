@@ -245,18 +245,11 @@ catch {
 
 ### Customizing Behavior
 
-#### Environment Variables
+The module uses sensible defaults for all operations. You can customize behavior by:
 
-Set these environment variables to change default behavior:
-
-```powershell
-$env:DAILYBACKUP_DEFAULT_DESTINATION = "D:\MyBackups"
-$env:DAILYBACKUP_DEFAULT_RETENTION = "14"
-```
-
-#### Configuration File
-
-Create a `DailyBackup.config.psd1` file in the module directory or user profile to customize settings (see DailyBackup.config.psd1 for full options).
+- Using different parameter values for each backup operation
+- Creating wrapper scripts with your preferred settings
+- Setting up scheduled tasks with specific configurations
 
 ## Troubleshooting
 
