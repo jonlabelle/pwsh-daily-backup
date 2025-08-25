@@ -179,4 +179,4 @@ Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE.txt).
+[MIT](LICENSE.txt)
