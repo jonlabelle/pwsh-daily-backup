@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **CI/CD Pipeline**: Fixed Pester test compatibility issues causing CI failures
+- **Testing Framework**: Updated unit tests to use Pester v5 syntax and proper test isolation
+- **Build System**: Corrected Build.ps1 to use appropriate Pester configuration for CI environments
+
+### Changed
+
+- **Developer Experience**: Integrated `Build.ps1` throughout CI/CD and development workflows
+- **GitHub Actions**: Simplified CI/CD workflows to use unified build script instead of inline commands
+- **VS Code Integration**: Added comprehensive VS Code tasks for all build operations
+- **Build System**: Enhanced `Build.ps1` package task to create proper PowerShell Gallery directory structure
+- **Documentation**: Updated development guide with new VS Code tasks and build workflow
+
+### Added
+
+- VS Code tasks for `Build: All`, `Build: Test`, `Build: Analyze`, and `Build: Package`
+- Enhanced build script package validation for release builds
+- Comprehensive developer documentation for VS Code integration
+
 ## [1.4.0] - 2025-08-24
 
 ### Added

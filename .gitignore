@@ -32,6 +32,7 @@ pnpm-debug.log*
 tmp/
 *.code-workspace
 dist/
+coverage.xml
 
 # Ignore stub destination backup
 test/stubs/files-backed-up/

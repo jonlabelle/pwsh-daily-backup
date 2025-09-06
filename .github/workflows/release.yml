@@ -61,36 +61,12 @@ jobs:
           git tag -f "v${{ github.event.inputs.version }}"
           git push -f origin "v${{ github.event.inputs.version }}"
 
-      - name: Validate module manifest
+      - name: Build and validate module
         shell: pwsh
-        run: |
-          Write-Host "Validating module manifest..." -ForegroundColor Green
-          $manifest = Test-ModuleManifest -Path './DailyBackup.psd1'
-          Write-Host "Module manifest is valid. Version: $($manifest.Version)" -ForegroundColor Green
+        run: ./Build.ps1 -Task Build -Configuration Release
 
       - name: Publish to PSGallery
         shell: pwsh
         run: |
-          Write-Host "Preparing module for publication..." -ForegroundColor Green
-
-          # Create the proper module directory structure
-          $distPath = './dist'
-          $modulePath = Join-Path $distPath 'DailyBackup'
-          New-Item -Path $modulePath -ItemType Directory -Force
-
-          # Copy core module files to the module subfolder
-          Copy-Item -Path 'DailyBackup.psm1', 'DailyBackup.psd1', 'LICENSE.txt', 'README.md' -Destination $modulePath
-
-          # Copy additional documentation if it exists
-          if (Test-Path 'CHANGELOG.md') { Copy-Item 'CHANGELOG.md' -Destination $modulePath }
-
-          # Verify module structure
-          Write-Host "Module structure:" -ForegroundColor Gray
-          Get-ChildItem -Path $modulePath -Recurse | Format-Table Name, Length
-
-          # Test the module manifest before publishing
-          $manifest = Test-ModuleManifest -Path (Join-Path $modulePath 'DailyBackup.psd1')
-          Write-Host "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -ForegroundColor Green
-
           Write-Host "Publishing module to PowerShell Gallery..." -ForegroundColor Green
-          Publish-Module -Path $modulePath -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose
+          Publish-Module -Path ./dist/DailyBackup -NuGetApiKey ${{ secrets.NUGET_API_KEY }} -Verbose

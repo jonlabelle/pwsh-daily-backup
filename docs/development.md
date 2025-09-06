@@ -59,7 +59,12 @@ Invoke-Pester ./test/DailyBackup.Tests.ps1 -Detailed
 
 **VS Code Integration:**
 
-- Task: `Ctrl+Shift+P` → "Tasks: Run Task" → "Run all tests"
+- Task: `Ctrl+Shift+P` → "Tasks: Run Task" → Choose from available build tasks:
+  - **"Build: All"** - Complete build and test suite
+  - **"Build: Test"** - Run all tests only
+  - **"Build: Analyze"** - Static analysis only
+  - **"Build: Package"** - Create release package
+  - **"Run all tests"** - Legacy test runner (scripts/run-all-tests.ps1)
 - Debug: `F5` → "PowerShell: Run all tests"
 
 The comprehensive test runner executes:
@@ -76,10 +81,10 @@ The comprehensive test runner executes:
 ./Build.ps1 -Task All
 
 # Available tasks:
-./Build.ps1 -Task Clean      # Clean build artifacts
 ./Build.ps1 -Task Test       # Run all tests
 ./Build.ps1 -Task Analyze    # Run static analysis
-./Build.ps1 -Task Build      # Build module package
+./Build.ps1 -Task Package    # Create module package
+./Build.ps1 -Task Build      # Build and validate (alias for Package)
 ```
 
 ### Continuous Integration
@@ -107,6 +112,37 @@ Install-Module Pester, PSScriptAnalyzer -Scope CurrentUser
 # 3. Verify setup by running tests
 ./Build.ps1 -Task Test
 ```
+
+### VS Code Development
+
+This project includes VS Code configuration for an optimal development experience:
+
+#### Available Tasks
+
+Use `Ctrl+Shift+P` → "Tasks: Run Task" to access:
+
+| Task               | Description             | Command                       |
+| ------------------ | ----------------------- | ----------------------------- |
+| **Build: All**     | Complete build pipeline | `./Build.ps1 -Task All`       |
+| **Build: Test**    | Run all tests           | `./Build.ps1 -Task Test`      |
+| **Build: Analyze** | Static analysis only    | `./Build.ps1 -Task Analyze`   |
+| **Build: Package** | Create release package  | `./Build.ps1 -Task Package`   |
+| **Run all tests**  | Legacy test runner      | `./scripts/run-all-tests.ps1` |
+
+#### Launch Configurations
+
+Use `F5` or Debug panel to run:
+
+- **PowerShell: Run Pester unit tests** - Execute unit test suite
+- **PowerShell: Run integration tests** - Execute integration tests
+- **PowerShell: Run all tests** - Execute complete test suite
+- **PowerShell: Run PSScriptAnalyzer** - Static code analysis
+- **PowerShell: Interactive session** - Start debugging session
+
+#### Recommended Extensions
+
+- **PowerShell** - Official PowerShell extension
+- **PowerShell Pro Tools** - Advanced PowerShell development features
 
 ### Development Workflow
 

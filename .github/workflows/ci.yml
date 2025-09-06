@@ -32,86 +32,25 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -ErrorAction Stop
 
-          # Uninstall any existing Pester versions first
-          Get-Module Pester -ListAvailable | Uninstall-Module -Force -ErrorAction SilentlyContinue
-
-          # Install Pester v4 specifically for compatibility
-          Install-Module Pester -RequiredVersion 4.10.1 -Force -SkipPublisherCheck -ErrorAction Stop
+          # Install latest version of Pester
+          Install-Module Pester -Force -SkipPublisherCheck -ErrorAction Stop
 
           # Verify installed versions
           Write-Host "Installed module versions:" -ForegroundColor Green
           Get-Module PSScriptAnalyzer -ListAvailable | Select-Object Name, Version
           Get-Module Pester -ListAvailable | Select-Object Name, Version
 
-      - name: Run PSScriptAnalyzer
+      - name: Run static analysis
         shell: pwsh
-        run: |
-          Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerSettings.psd1 -Path . -Recurse -OutVariable issues
-          $errors = $issues.Where({$_.Severity -eq 'Error'})
-          $warnings = $issues.Where({$_.Severity -eq 'Warning'})
-          if ($errors) {
-              Write-Error "There were $($errors.Count) errors and $($warnings.Count) warnings total." -ErrorAction Stop
-          }
-          else {
-              Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
-          }
+        run: ./Build.ps1 -Task Analyze
 
-      - name: Run Pester unit tests
+      - name: Run unit tests
         shell: pwsh
-        run: |
-          Write-Host "Running Pester unit tests..." -ForegroundColor Green
-
-          # Import Pester v4 explicitly
-          Import-Module Pester -RequiredVersion 4.10.1 -Force
-          Write-Host "Using Pester version: $((Get-Module Pester).Version)" -ForegroundColor Yellow
-
-          # Ensure we're in the right directory
-          Write-Host "Current directory: $PWD" -ForegroundColor Yellow
-          Write-Host "Module files present:" -ForegroundColor Yellow
-          Get-ChildItem -Name "DailyBackup.*"
-
-          # Test module import manually first
-          Write-Host "Testing module import..." -ForegroundColor Yellow
-          try {
-            Import-Module ./DailyBackup.psd1 -Force -ErrorAction Stop
-            Write-Host "Module imported successfully" -ForegroundColor Green
-            Get-Module DailyBackup | Format-List Name, Version, ExportedCommands
-          }
-          catch {
-            Write-Error "Failed to import module: $_"
-            throw
-          }
-
-          # Run tests with verbose output to diagnose issues
-          Write-Host "Running Pester tests..." -ForegroundColor Yellow
-          $TestResults = Invoke-Pester ./test/DailyBackup.Tests.ps1 -PassThru
-          Write-Host "Unit tests completed: $($TestResults.PassedCount) passed, $($TestResults.FailedCount) failed" -ForegroundColor Green
-
-          # Create test summary for GitHub
-          if ($env:GITHUB_STEP_SUMMARY) {
-            "## Unit Test Results" >> $env:GITHUB_STEP_SUMMARY
-            "- ✅ Passed: $($TestResults.PassedCount)" >> $env:GITHUB_STEP_SUMMARY
-            "- ❌ Failed: $($TestResults.FailedCount)" >> $env:GITHUB_STEP_SUMMARY
-            "- ⏱️ Duration: $($TestResults.Time)" >> $env:GITHUB_STEP_SUMMARY
-
-            if ($TestResults.FailedCount -gt 0) {
-              "## Failed Tests" >> $env:GITHUB_STEP_SUMMARY
-              foreach ($test in $TestResults.TestResult | Where-Object {$_.Result -eq 'Failed'}) {
-                "- ❌ $($test.Name): $($test.FailureMessage)" >> $env:GITHUB_STEP_SUMMARY
-              }
-            }
-          }
-
-          if ($TestResults.FailedCount -gt 0) {
-              Write-Error "Unit tests failed: $($TestResults.FailedCount) failed, $($TestResults.PassedCount) passed" -ErrorAction Stop
-          }
+        run: ./Build.ps1 -Task Test
 
       - name: Run integration tests
         shell: pwsh
-        run: |
-          Write-Host "Running integration tests..." -ForegroundColor Green
-          ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
-          Write-Host "Integration tests completed successfully" -ForegroundColor Green
+        run: ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
 
   build-windows-powershell:
     name: Build on Windows PowerShell Desktop
@@ -127,73 +66,22 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -ErrorAction Stop
 
-          # Uninstall any existing Pester versions first
-          Get-Module Pester -ListAvailable | Uninstall-Module -Force -ErrorAction SilentlyContinue
-
-          # Install Pester v4 specifically for compatibility
-          Install-Module Pester -RequiredVersion 4.10.1 -Force -SkipPublisherCheck -ErrorAction Stop
+          # Install latest version of Pester
+          Install-Module Pester -Force -SkipPublisherCheck -ErrorAction Stop
 
           # Verify installed versions
           Write-Host "Installed module versions:" -ForegroundColor Green
           Get-Module PSScriptAnalyzer -ListAvailable | Select-Object Name, Version
           Get-Module Pester -ListAvailable | Select-Object Name, Version
 
-      - name: Run PSScriptAnalyzer (Windows PowerShell)
+      - name: Run static analysis (Windows PowerShell)
         shell: powershell
-        run: |
-          Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerSettings.psd1 -Path . -Recurse -OutVariable issues
-          $errors = $issues.Where({$_.Severity -eq 'Error'})
-          $warnings = $issues.Where({$_.Severity -eq 'Warning'})
-          if ($errors) {
-              Write-Error "There were $($errors.Count) errors and $($warnings.Count) warnings total." -ErrorAction Stop
-          }
-          else {
-              Write-Output "There were $($errors.Count) errors and $($warnings.Count) warnings total."
-          }
+        run: ./Build.ps1 -Task Analyze
 
-      - name: Run Pester unit tests (Windows PowerShell)
+      - name: Run unit tests (Windows PowerShell)
         shell: powershell
-        run: |
-          Write-Host "Running Pester unit tests on Windows PowerShell Desktop..." -ForegroundColor Green
-
-          # Import Pester v4 explicitly
-          Import-Module Pester -RequiredVersion 4.10.1 -Force
-          Write-Host "Using Pester version: $((Get-Module Pester).Version)" -ForegroundColor Yellow
-          Write-Host "PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Yellow
-
-          # Ensure we're in the right directory
-          Write-Host "Current directory: $PWD" -ForegroundColor Yellow
-          Write-Host "Module files present:" -ForegroundColor Yellow
-          Get-ChildItem -Name "DailyBackup.*"
-
-          # Test module import manually first
-          Write-Host "Testing module import..." -ForegroundColor Yellow
-          try {
-            Import-Module ./DailyBackup.psd1 -Force -ErrorAction Stop
-            Write-Host "Module imported successfully" -ForegroundColor Green
-            Get-Module DailyBackup | Format-List Name, Version, ExportedCommands
-          }
-          catch {
-            Write-Error "Failed to import module: $_"
-            throw
-          }
-
-          # Run tests with verbose output to diagnose issues
-          Write-Host "Running Pester tests..." -ForegroundColor Yellow
-          $TestResults = Invoke-Pester ./test/DailyBackup.Tests.ps1 -PassThru
-          Write-Host "Unit tests completed: $($TestResults.PassedCount) passed, $($TestResults.FailedCount) failed" -ForegroundColor Green
-
-          if ($TestResults.FailedCount -gt 0) {
-              Write-Error "Unit tests failed: $($TestResults.FailedCount) failed, $($TestResults.PassedCount) passed" -ErrorAction Stop
-          }
+        run: ./Build.ps1 -Task Test
 
       - name: Run integration tests (Windows PowerShell)
         shell: powershell
-        run: |
-          # Set console encoding to handle any potential encoding issues
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $OutputEncoding = [System.Text.Encoding]::UTF8
-
-          Write-Host "Running integration tests on Windows PowerShell Desktop..." -ForegroundColor Green
-          ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
-          Write-Host "Integration tests completed successfully" -ForegroundColor Green
+        run: ./test/IntegrationTests.ps1 -CleanupAfterTests:$true

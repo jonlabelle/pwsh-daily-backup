@@ -11,10 +11,10 @@
 
 ## Features
 
-- **📅 Date-organized backups** - Automatically creates folders with YYYY-MM-DD format
-- **📁 Multiple source support** - Backup multiple files and directories in a single operation
-- **🧹 Automatic cleanup** - Configurable retention policy to automatically remove old backups
-- **🌐 Cross-platform** - Works on Windows, macOS, and Linux with PowerShell Core
+- **Date-organized backups** - Automatically creates folders with YYYY-MM-DD format
+- **Multiple source support** - Backup multiple files and directories in a single operation
+- **Automatic cleanup** - Configurable retention policy to automatically remove old backups
+- **Cross-platform** - Works on Windows, macOS, and Linux with PowerShell Core
 
 ## 🚀 Quick Start
 

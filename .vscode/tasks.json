@@ -2,7 +2,64 @@
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
+
     "tasks": [
+        {
+            "label": "Build: All",
+            "type": "shell",
+            "command": "pwsh",
+            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "All", "-Verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Test",
+            "type": "shell",
+            "command": "pwsh",
+            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Test", "-Verbose"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Analyze",
+            "type": "shell",
+            "command": "pwsh",
+            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Analyze", "-Verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Package",
+            "type": "shell",
+            "command": "pwsh",
+            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Package", "-Verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
         {
             "label": "Run all tests",
             "type": "shell",

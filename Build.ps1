@@ -145,6 +145,7 @@ function Invoke-UnitTests
     $pesterTest = Join-Path $testPath "$ModuleName.Tests.ps1"
     if (Test-Path $pesterTest)
     {
+        # Use Pester v5 configuration
         $pesterConfig = New-PesterConfiguration
         $pesterConfig.Run.Path = $pesterTest
         $pesterConfig.Output.Verbosity = 'Detailed'
@@ -153,8 +154,9 @@ function Invoke-UnitTests
 
         $results = Invoke-Pester -Configuration $pesterConfig
 
-        if ($results.Result -eq 'Failed')
+        if ($results.FailedCount -gt 0)
         {
+            Write-BuildMessage "Unit tests failed: $($results.FailedCount) failed, $($results.PassedCount) passed" -Type Error
             throw 'Unit tests failed'
         }
 
@@ -192,7 +194,11 @@ function New-ModulePackage
     }
     New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
 
-    # Copy module files
+    # Create the proper module directory structure for PSGallery
+    $modulePackagePath = Join-Path $OutputPath $ModuleName
+    New-Item -Path $modulePackagePath -ItemType Directory -Force | Out-Null
+
+    # Copy module files to the module subfolder
     $filesToCopy = @(
         $ModuleManifest,
         $ModuleScript,
@@ -205,7 +211,7 @@ function New-ModulePackage
     {
         if (Test-Path $file)
         {
-            Copy-Item -Path $file -Destination $OutputPath -Force
+            Copy-Item -Path $file -Destination $modulePackagePath -Force
             Write-BuildMessage "Copied: $(Split-Path $file -Leaf)"
         }
         else
@@ -214,18 +220,18 @@ function New-ModulePackage
         }
     }
 
+    # Validate the module manifest
+    $packagedManifest = Join-Path $modulePackagePath "$ModuleName.psd1"
+    $manifest = Test-ModuleManifest $packagedManifest
+    Write-BuildMessage "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -Type Success
+
     # Update version for release builds
     if ($Configuration -eq 'Release')
     {
-        $manifest = Join-Path $OutputPath "$ModuleName.psd1"
-        $content = Get-Content $manifest -Raw
-
-        # You could implement version bumping logic here
-        # For now, just ensure the manifest is valid
-        Test-ModuleManifest $manifest | Out-Null
+        Write-BuildMessage "Release build - manifest version: $($manifest.Version)" -Type Success
     }
 
-    Write-BuildMessage "Module package created at: $OutputPath" -Type Success
+    Write-BuildMessage "Module package created at: $modulePackagePath" -Type Success
 }
 
 function Invoke-Build
