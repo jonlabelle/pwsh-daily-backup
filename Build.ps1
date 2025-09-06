@@ -76,7 +76,7 @@ function Write-BuildMessage
     Write-Host "$prefix $Message" -ForegroundColor $colors[$Type]
 }
 
-function Test-Prerequisites
+function Test-Prerequisite
 {
     Write-BuildMessage 'Checking prerequisites...'
 
@@ -130,7 +130,7 @@ function Invoke-StaticAnalysis
     Write-BuildMessage 'Static analysis completed' -Type Success
 }
 
-function Invoke-UnitTests
+function Invoke-UnitTest
 {
     Write-BuildMessage 'Running unit tests...'
 
@@ -166,7 +166,7 @@ function Invoke-UnitTests
     Write-BuildMessage 'Unit tests completed' -Type Success
 }
 
-function Invoke-IntegrationTests
+function Invoke-IntegrationTest
 {
     Write-BuildMessage 'Running integration tests...'
 
@@ -238,7 +238,7 @@ function Invoke-Build
 {
     Write-BuildMessage "Starting build process for $ModuleName..."
 
-    Test-Prerequisites
+    Test-Prerequisite
 
     switch ($Task)
     {
@@ -250,8 +250,8 @@ function Invoke-Build
         {
             if (-not $SkipTests)
             {
-                Invoke-UnitTests
-                Invoke-IntegrationTests
+                Invoke-UnitTest
+                Invoke-IntegrationTest
             }
         }
         'Build'
@@ -259,7 +259,7 @@ function Invoke-Build
             Invoke-StaticAnalysis
             if (-not $SkipTests)
             {
-                Invoke-UnitTests
+                Invoke-UnitTest
             }
         }
         'Package'
@@ -271,8 +271,8 @@ function Invoke-Build
             Invoke-StaticAnalysis
             if (-not $SkipTests)
             {
-                Invoke-UnitTests
-                Invoke-IntegrationTests
+                Invoke-UnitTest
+                Invoke-IntegrationTest
             }
             New-ModulePackage
         }
