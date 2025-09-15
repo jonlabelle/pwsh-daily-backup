@@ -34,11 +34,10 @@ $script:ProgressPreference = 'SilentlyContinue'
 # -----------------------------------------------
 # - Date format: yyyy-mm-dd
 # - Date range: 1900-01-01 through 2099-12-31
-# - Matches invalid dates such as February 31st
-# - Accepts dashes, forward slashes and dots as date separators.
+# - Simple pattern for PowerShell 5.1 compatibility
 # -----------------------------------------------
 $script:DefaultFolderDateFormat = 'yyyy-MM-dd'
-$script:DefaultFolderDateRegex = '\b(19|20)[0-9]{2}[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])\b'
+$script:DefaultFolderDateRegex = '^\d{4}-\d{2}-\d{2}$'
 # -----------------------------------------------
 
 function GetRandomFileName
@@ -649,7 +648,7 @@ function RemoveDailyBackup
         [bool] $VerboseEnabled = $false
     )
 
-    $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -cmatch $script:DefaultFolderDateRegex })
+    $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
     if ($qualifiedBackupDirs.Length -eq 0)
     {
         Write-Verbose ('New-DailyBackup:RemoveDailyBackup> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
@@ -979,11 +978,13 @@ function Get-BackupInfo
 
     $backupDates = if ($Date)
     {
-        @(Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -eq $Date })
+        $matchedDirs = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -eq $Date }
+        if ($matchedDirs) { @($matchedDirs) } else { @() }
     }
     else
     {
-        @(Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -match $script:DefaultFolderDateRegex } | Sort-Object -Descending)
+        $matchedDirs = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Descending
+        if ($matchedDirs) { @($matchedDirs) } else { @() }
     }
 
     $results = @()
@@ -1039,7 +1040,14 @@ function Get-BackupInfo
         }
     }
 
-    return $results
+    # Ensure we always return an array for PowerShell 5.1 compatibility
+    if (-not $results) {
+        Write-Output @() -NoEnumerate
+    } elseif ($results.Count -eq 0) {
+        Write-Output @() -NoEnumerate
+    } else {
+        Write-Output @($results) -NoEnumerate
+    }
 }
 
 function Restore-BackupFile
@@ -1435,14 +1443,14 @@ function Restore-DailyBackup
         }
 
         # Filter backups by name pattern if specified
-        $backupsToRestore = if ($BackupName)
-        {
-            $selectedBackup.Backups | Where-Object { $_.Name -like $BackupName }
-        }
-        else
-        {
-            $selectedBackup.Backups
-        }
+        $backupsToRestore = @(if ($BackupName)
+            {
+                $selectedBackup.Backups | Where-Object { $_.Name -like $BackupName }
+            }
+            else
+            {
+                $selectedBackup.Backups
+            })
 
         if ($backupsToRestore.Count -eq 0)
         {
@@ -1512,7 +1520,8 @@ function Restore-DailyBackup
 
     end
     {
-        $successCount = ($results | Where-Object { $_.Success }).Count
+        $successfulResults = @($results | Where-Object { $_.Success })
+        $successCount = $successfulResults.Count
         $totalCount = $results.Count
 
         Write-Host "`nRestore Summary:" -ForegroundColor Cyan

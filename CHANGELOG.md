@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW FEATURE**: `Get-BackupInfo` command for backup discovery and analysis
   - List all available backup dates and files
   - Filter by date ranges and backup name patterns
+
+### Fixed
+
+- **PowerShell 5.1 Compatibility**: Fixed critical array handling and return value issues
+  - **CRITICAL**: Fixed `Get-BackupInfo` returning `$null` instead of empty arrays in PowerShell 5.1
+  - Replaced `@()` array wrapping with explicit null checks and `Write-Output -NoEnumerate`
+  - Simplified date folder regex pattern from complex word-boundary pattern to `^\d{4}-\d{2}-\d{2}$`
+  - Resolved `Where-Object` result inconsistencies between PowerShell versions
+  - Fixed array return semantics to ensure consistent behavior across all PowerShell versions
+  - Ensured restore summary displays correctly in all PowerShell versions
+  - All 43 unit tests now pass in PowerShell 5.1, 6.x, and 7.x
   - Detailed backup metadata information
   - Cross-platform backup inventory management
 - **Metadata System**: Automatic metadata generation for all backups
