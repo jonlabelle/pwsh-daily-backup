@@ -72,7 +72,7 @@ Update-Module -Name DailyBackup
 
 - **[Full Documentation](docs/help.md)** - Comprehensive user guide with examples and troubleshooting
 - **[Development Guide](docs/development.md)** - Testing, contributing, and development setup
-- **[Parameter Reference](#parameters)** - Detailed parameter descriptions (below)
+- **[Command Reference](#command-reference)** - Detailed command and parameter descriptions (above)
 - **[Changelog](CHANGELOG.md)** - Version history and improvements
 
 ### Command Reference
@@ -122,60 +122,6 @@ Get-BackupInfo [-BackupRoot] <String> [-Date <String>]
 
 - **-BackupRoot** (required): Root directory containing daily backup folders
 - **-Date**: Specific date to query (YYYY-MM-DD format, default: all dates)
-
-## Parameters
-
-### -Path &lt;String[]&gt;
-
-The source file or directory path(s) to backup.
-
-- **Required:** Yes
-- **Position:** 1
-- **Pipeline input:** Yes (ByValue, ByPropertyName)
-- **Wildcards:** No
-
-### -Destination &lt;String&gt;
-
-The root directory path where daily backups will be stored.
-
-- **Required:** No
-- **Position:** 2
-- **Default:** Current working directory (`.`)
-- **Pipeline input:** No
-- **Wildcards:** No
-
-### -Keep &lt;Int32&gt;
-
-The number of daily backups to keep when purging old backups. Oldest backups are deleted first.
-
-- **Required:** No
-- **Position:** Named
-- **Default:** -1 (keep all backups)
-- **Range:** -1 to 2147483647
-- **Pipeline input:** No
-- **Aliases:** DailyBackupsToKeep
-
-### -FileBackupMode &lt;String&gt;
-
-Controls how individual files are handled during backup operations.
-
-- **Required:** No
-- **Position:** Named
-- **Default:** Auto
-- **Valid values:** Individual, Combined, Auto
-- **Pipeline input:** No
-
-**Values:**
-
-- **Individual**: Each file gets its own ZIP archive
-- **Combined**: All files are placed into a single archive per backup session
-- **Auto**: Smart decision based on file count and sizes (default)
-
-### Common Parameters
-
-Supports all PowerShell common parameters: `-WhatIf`, `-Verbose`, `-ErrorAction`, `-WarningAction`, etc.
-
-[Learn more about CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216)
 
 ## Examples
 
