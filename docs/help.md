@@ -87,9 +87,53 @@ Preview what would be backed up without actually creating files:
 New-DailyBackup -Path "C:\Data" -Destination "C:\Backups" -WhatIf
 ```
 
+## Quick Start - Restore
+
+### Basic Restore
+
+Restore the most recent backup to a specific location:
+
+```powershell
+Restore-DailyBackup -BackupRoot "C:\Backups" -DestinationPath "C:\Restored"
+```
+
+### Restore to Original Locations
+
+Restore files to their original paths using metadata:
+
+```powershell
+Restore-DailyBackup -BackupRoot "C:\Backups" -UseOriginalPaths
+```
+
+### Restore Specific Date
+
+Restore backups from a specific date:
+
+```powershell
+Restore-DailyBackup -BackupRoot "C:\Backups" -Date "2025-09-15" -DestinationPath "C:\Emergency"
+```
+
+### Get Backup Information
+
+View available backups before restoring:
+
+```powershell
+Get-BackupInfo -BackupRoot "C:\Backups"
+```
+
+### Test Restore
+
+Preview what would be restored without actually extracting files:
+
+```powershell
+Restore-DailyBackup -BackupRoot "C:\Backups" -DestinationPath "C:\Test" -WhatIf
+```
+
 ## Detailed Usage
 
-### Command Syntax
+### Backup Commands
+
+#### New-DailyBackup
 
 ```powershell
 New-DailyBackup
@@ -98,6 +142,33 @@ New-DailyBackup
     [-Keep <Int32>]
     [-WhatIf]
     [-Verbose]
+    [<CommonParameters>]
+```
+
+### Restore Commands
+
+#### Restore-DailyBackup
+
+```powershell
+Restore-DailyBackup
+    -BackupRoot <String>
+    [-DestinationPath <String>]
+    [-Date <String>]
+    [-BackupName <String>]
+    [-UseOriginalPaths]
+    [-PreservePaths]
+    [-Force]
+    [-WhatIf]
+    [-Verbose]
+    [<CommonParameters>]
+```
+
+#### Get-BackupInfo
+
+```powershell
+Get-BackupInfo
+    -BackupRoot <String>
+    [-Date <String>]
     [<CommonParameters>]
 ```
 
@@ -151,6 +222,65 @@ Number of daily backup folders to retain. When exceeded, the oldest backups are 
 - `1`: Keep only today's backup
 - `7`: Keep the last week of backups
 - `30`: Keep the last month of backups
+
+## Restore Parameters
+
+### -BackupRoot (Required)
+
+**Type**: `String`
+**Position**: 0
+**Pipeline Input**: No
+
+The root directory containing daily backup folders in YYYY-MM-DD format. This should be the same directory that was used as the `-Destination` parameter when creating backups with `New-DailyBackup`.
+
+### -DestinationPath
+
+**Type**: `String`
+**Position**: Named
+**Pipeline Input**: No
+
+The destination directory where restored files will be placed. Required unless `-UseOriginalPaths` is specified.
+
+### -Date
+
+**Type**: `String`
+**Position**: Named
+**Pipeline Input**: No
+**Validation**: Must match YYYY-MM-DD pattern
+
+Specific backup date to restore from. If not specified, uses the most recent backup date available.
+
+### -BackupName
+
+**Type**: `String`
+**Position**: Named
+**Pipeline Input**: No
+
+Optional pattern to match specific backup files by name. Supports wildcards (e.g., `*Documents*`, `*.pdf*`). If not specified, restores all backups from the specified date.
+
+### -UseOriginalPaths
+
+**Type**: `Switch`
+**Position**: Named
+**Pipeline Input**: No
+
+When enabled, attempts to restore files to their original source locations using metadata information. Requires metadata files to be present. When disabled, restores all files to the specified `-DestinationPath`.
+
+### -PreservePaths
+
+**Type**: `Switch`
+**Position**: Named
+**Pipeline Input**: No
+
+Controls whether directory structure within backups is preserved during restoration. When enabled, maintains folder hierarchy from the backup.
+
+### -Force
+
+**Type**: `Switch`
+**Position**: Named
+**Pipeline Input**: No
+
+Overwrites existing files during restoration without prompting. Use with caution as this can replace current files.
 
 ### Common Parameters
 
@@ -231,6 +361,54 @@ catch {
     Write-Error "Backup failed: $_"
     # Send notification, log to file, etc.
 }
+```
+
+### Example 7: Restore Latest Backup
+
+```powershell
+# Restore the most recent backup to a new location
+Restore-DailyBackup -BackupRoot "D:\Backups\Documents" -DestinationPath "C:\Restored\Documents" -Verbose
+```
+
+### Example 8: Restore Specific Date
+
+```powershell
+# Restore backup from a specific date
+Restore-DailyBackup -BackupRoot "D:\Backups\Documents" -Date "2024-01-15" -DestinationPath "C:\Restored\January15" -Verbose
+```
+
+### Example 9: Restore to Original Locations
+
+```powershell
+# Restore files back to their original source locations
+Restore-DailyBackup -BackupRoot "D:\Backups\Documents" -UseOriginalPaths -Force -Verbose
+```
+
+### Example 10: Restore Specific Files
+
+```powershell
+# Restore only specific files matching a pattern
+Restore-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Project*" -DestinationPath "C:\Restored\Projects" -Verbose
+```
+
+### Example 11: Preview Restore Operation
+
+```powershell
+# See what would be restored without actually doing it
+Restore-DailyBackup -BackupRoot "D:\Backups\Documents" -DestinationPath "C:\Restored" -WhatIf -Verbose
+```
+
+### Example 12: Get Backup Information
+
+```powershell
+# List all available backups
+Get-BackupInfo -BackupRoot "D:\Backups\Documents"
+
+# Get detailed info for a specific date
+Get-BackupInfo -BackupRoot "D:\Backups\Documents" -Date "2024-01-15" -Verbose
+
+# Find backups matching a pattern
+Get-BackupInfo -BackupRoot "D:\Backups" -BackupName "*Documents*"
 ```
 
 ## Configuration
@@ -346,13 +524,28 @@ foreach ($Path in $BackupPaths) {
 - **Retention Policy**: Set appropriate `Keep` values
 - **Compression**: ZIP compression is automatic but consider external tools for better compression
 
-### 4. Security
+### 4. Restore Strategy
+
+- **Test Restores**: Regularly test restore operations to verify backup integrity
+- **Restore Location**: Never restore directly over live data without backups
+- **Preview First**: Use `-WhatIf` to preview restore operations
+- **Document Procedures**: Document restore procedures for emergency situations
+
+```powershell
+# Good practice: test restore to temporary location first
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\RestoreTest" -WhatIf -Verbose
+
+# If satisfied, perform actual restore
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\RestoreTest" -Verbose
+```
+
+### 5. Security
 
 - **Permissions**: Ensure backup destinations have appropriate access controls
 - **Encryption**: Consider encrypting backup destinations
 - **Network Security**: Use secure protocols for remote backups
 
-### 5. Monitoring
+### 6. Monitoring
 
 - **Logging**: Enable verbose logging for automated backups
 - **Notifications**: Set up alerts for backup failures
@@ -395,10 +588,20 @@ $FilteredPaths | ForEach-Object { New-DailyBackup -Path $_.FullName -Destination
 
 ### Q: How do I restore files from a backup?
 
-**A**: Backups are standard ZIP files. Extract them using any ZIP utility:
+**A**: Use the built-in restore functionality for the best experience:
 
 ```powershell
-# Using PowerShell
+# Restore the latest backup
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Restored"
+
+# Or restore to original locations
+Restore-DailyBackup -BackupRoot "D:\Backups" -UseOriginalPaths
+```
+
+You can also extract ZIP files manually using any ZIP utility:
+
+```powershell
+# Manual extraction using PowerShell
 Expand-Archive -Path "D:\Backups\2023-12-01\MyData.zip" -DestinationPath "C:\Restored"
 ```
 

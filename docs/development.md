@@ -2,16 +2,16 @@
 
 This guide covers testing, development setup, and contribution guidelines for the PowerShell Daily Backup module.
 
-## 🧪 Testing & Quality Assurance
+## Testing & Quality Assurance
 
 This module includes comprehensive testing to ensure reliability and professional quality.
 
 ### Test Suite Overview
 
-- ✅ **unit tests** - Module functions, parameters, error handling
-- ✅ **integration tests** - Real-world backup scenarios
-- ✅ **Static analysis** - Code quality and PowerShell best practices
-- ✅ **Cross-platform** - Tested on Windows, macOS, and Linux
+- **unit tests** - Module functions, parameters, error handling
+- **integration tests** - Real-world backup scenarios
+- **Static analysis** - Code quality and PowerShell best practices
+- **Cross-platform** - Tested on Windows, macOS, and Linux
 
 ### Running Tests Locally
 
@@ -97,7 +97,60 @@ The project uses GitHub Actions for automated testing:
 - **Static analysis** - PSScriptAnalyzer validation
 - **Build verification** - Module packaging validation
 
-## 🛠️ Development Setup
+## Development Setup
+
+### Module Architecture
+
+The DailyBackup module consists of three primary commands:
+
+#### Core Commands
+
+- **`New-DailyBackup`** - Creates compressed backup archives with automatic cleanup
+- **`Restore-DailyBackup`** - Restores files from backup archives to specified locations
+- **`Get-BackupInfo`** - Discovers and analyzes available backups
+
+#### Internal Functions
+
+```powershell
+# Backup-related functions
+CompressBackup           # Creates ZIP archives from source paths
+RemoveDailyBackup        # Cleanup old backup directories
+GenerateBackupFileName   # Creates unique backup filenames
+CreateMetadata           # Generates backup metadata files
+
+# Restore-related functions
+ExtractBackup            # Extracts ZIP archives to destinations
+ReadMetadata             # Reads backup metadata information
+ResolveRestorePath       # Determines appropriate restore paths
+
+# Utility functions
+ResolveUnverifiedPath    # Path resolution and validation
+RemoveItemAlternative    # Cloud storage compatible file deletion
+Test-ValidDateString     # Date format validation
+```
+
+#### File Structure
+
+```text
+DailyBackup.psm1         # Main module with all functions
+DailyBackup.psd1         # Module manifest and metadata
+README.md                # Primary documentation
+docs/help.md             # Comprehensive user guide
+docs/development.md      # This development guide
+test/DailyBackup.Tests.ps1    # Unit tests (43 test cases)
+test/IntegrationTests.ps1     # Integration scenarios
+scripts/run-all-tests.ps1     # Test runner
+Build.ps1                     # Build and package automation
+```
+
+#### Metadata System
+
+The module automatically creates metadata files alongside backups:
+
+- **Purpose**: Enable intelligent restore operations
+- **Content**: Original source paths, creation timestamps, system information
+- **Format**: JSON structure for cross-platform compatibility
+- **Usage**: Powers `-UseOriginalPaths` restore functionality
 
 ### Initial Setup
 
@@ -182,11 +235,11 @@ We welcome contributions! Here's how to help:
 
 ### Ways to Contribute
 
-1. **🐛 Report Issues** - [GitHub Issues](https://github.com/jonlabelle/pwsh-daily-backup/issues)
-2. **💡 Suggest Features** - [GitHub Discussions](https://github.com/jonlabelle/pwsh-daily-backup/discussions)
-3. **🔧 Submit Pull Requests** - Code improvements and bug fixes
-4. **📝 Improve Documentation** - Help expand guides and examples
-5. **🧪 Add Tests** - Improve test coverage and scenarios
+1. **Report Issues** - [GitHub Issues](https://github.com/jonlabelle/pwsh-daily-backup/issues)
+2. **Suggest Features** - [GitHub Discussions](https://github.com/jonlabelle/pwsh-daily-backup/discussions)
+3. **Submit Pull Requests** - Code improvements and bug fixes
+4. **Improve Documentation** - Help expand guides and examples
+5. **Add Tests** - Improve test coverage and scenarios
 
 ### Code Standards
 
@@ -286,11 +339,11 @@ $null = Trace-Command -Name ParameterBinding -Expression {
 
 Before any release:
 
-- ✅ All tests pass on all supported platforms
-- ✅ Static analysis passes with no errors
-- ✅ Documentation is updated
-- ✅ Changelog is updated
-- ✅ Version numbers are consistent
+- All tests pass on all supported platforms
+- Static analysis passes with no errors
+- Documentation is updated
+- Changelog is updated
+- Version numbers are consistent
 
 ## Development Support
 

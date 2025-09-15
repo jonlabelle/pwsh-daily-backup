@@ -5,27 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] - 2025-09-15
+
+### Added
+
+- **NEW FEATURE**: `Restore-DailyBackup` command for restoring files from backups
+  - Restore from specific dates or latest backup automatically
+  - Support for restoring to original paths using metadata
+  - Selective restoration using backup name patterns
+  - Preview mode with `-WhatIf` support
+  - Force overwrite option for existing files
+- **NEW FEATURE**: `Get-BackupInfo` command for backup discovery and analysis
+  - List all available backup dates and files
+  - Filter by date ranges and backup name patterns
+  - Detailed backup metadata information
+  - Cross-platform backup inventory management
+- **Metadata System**: Automatic metadata generation for all backups
+  - Records original source paths for restore operations
+  - Tracks backup creation time and system information
+  - Enables intelligent restore to original locations
+- **Enhanced Documentation**: Comprehensive restore examples and best practices
+  - Updated README.md with complete command reference
+  - Added restore scenarios to help documentation
+  - Included troubleshooting guide for restore operations
 
 ### Fixed
 
+- **PowerShell 5.1 Compatibility**: Removed all Unicode characters from output messages
+  - Replaced emoji icons with ASCII bracket notation (e.g., [SUCCESS], [FAILED])
+  - Ensures compatibility across all PowerShell versions and platforms
+  - Fixed output formatting issues in Windows PowerShell 5.1
 - **CI/CD Pipeline**: Fixed Pester test compatibility issues causing CI failures
 - **Testing Framework**: Updated unit tests to use Pester v5 syntax and proper test isolation
 - **Build System**: Corrected Build.ps1 to use appropriate Pester configuration for CI environments
+- **Cross-Platform Paths**: Improved temporary directory handling for all operating systems
 
 ### Changed
 
+- **BREAKING**: Module now includes three commands instead of one
+  - `New-DailyBackup`: Original backup functionality (unchanged)
+  - `Restore-DailyBackup`: New restore functionality
+  - `Get-BackupInfo`: New backup information retrieval
+- **Output Format**: All status messages now use ASCII-compatible format
+  - Changed from Unicode symbols to text-based indicators
+  - Maintains readability while ensuring broad compatibility
 - **Developer Experience**: Integrated `Build.ps1` throughout CI/CD and development workflows
 - **GitHub Actions**: Simplified CI/CD workflows to use unified build script instead of inline commands
 - **VS Code Integration**: Added comprehensive VS Code tasks for all build operations
 - **Build System**: Enhanced `Build.ps1` package task to create proper PowerShell Gallery directory structure
 - **Documentation**: Updated development guide with new VS Code tasks and build workflow
-
-### Added
-
-- VS Code tasks for `Build: All`, `Build: Test`, `Build: Analyze`, and `Build: Package`
-- Enhanced build script package validation for release builds
-- Comprehensive developer documentation for VS Code integration
 
 ## [1.4.0] - 2025-08-24
 

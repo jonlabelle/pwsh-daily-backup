@@ -11,12 +11,16 @@
 
 ## Features
 
+- **Complete backup and restore solution** - Full-featured backup creation and intelligent restoration
+- **Enhanced file and directory support** - Intelligent handling of individual files with optimized naming and metadata
 - **Date-organized backups** - Automatically creates folders with YYYY-MM-DD format
 - **Multiple source support** - Backup multiple files and directories in a single operation
 - **Automatic cleanup** - Configurable retention policy to automatically remove old backups
+- **Metadata preservation** - Stores detailed information about backed up items for tracking and restoration
+- **Flexible restore options** - Restore to original locations or custom destinations with filtering
 - **Cross-platform** - Works on Windows, macOS, and Linux with PowerShell Core
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -27,14 +31,33 @@ Install-Module -Name DailyBackup -Scope CurrentUser
 ### Basic Usage
 
 ```powershell
-# Simple backup
+# Simple directory backup
 New-DailyBackup -Path "C:\MyDocuments" -Destination "D:\Backups"
 
-# Multiple sources with cleanup (keep last 7 days)
-New-DailyBackup -Path @("C:\Documents", "C:\Pictures") -Destination "D:\Backups" -Keep 7
+# Individual file backup with metadata
+New-DailyBackup -Path "C:\important-report.pdf" -Destination "D:\Backups"
+
+# Multiple files and directories with cleanup (keep last 7 days)
+New-DailyBackup -Path @("C:\Documents", "C:\Pictures", "C:\config.txt") -Destination "D:\Backups" -Keep 7
 
 # Test run (see what would be backed up)
 New-DailyBackup -Path "C:\Important" -Destination "D:\Backups" -WhatIf -Verbose
+```
+
+### Restore Usage
+
+```powershell
+# Restore most recent backup to a specific location
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Restored"
+
+# Restore specific date to original locations
+Restore-DailyBackup -BackupRoot "D:\Backups" -Date "2025-09-15" -UseOriginalPaths
+
+# Restore only specific files
+Restore-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Documents*" -DestinationPath "C:\Emergency"
+
+# See what would be restored (dry run)
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Test" -WhatIf
 ```
 
 ### Updating
@@ -54,16 +77,51 @@ Update-Module -Name DailyBackup
 
 ### Command Reference
 
-```console
-NAME
-    New-DailyBackup
+#### New-DailyBackup
 
-SYNOPSIS
-    Perform a daily backup with progress tracking and automatic cleanup.
+Creates automated daily backups with progress tracking and cleanup.
 
-SYNTAX
-    New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-WhatIf] [-Verbose]
+```powershell
+New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-FileBackupMode <String>] [-WhatIf] [-Verbose]
 ```
+
+**Parameters:**
+
+- **-Path** (required): Source file(s) or directory(ies) to backup
+- **-Destination**: Root directory for backups (default: current directory)
+- **-Keep**: Number of daily backups to retain (default: -1, keep all)
+- **-FileBackupMode**: How to handle files - Individual, Combined, or Auto (default: Auto)
+
+#### Restore-DailyBackup
+
+Restores files and directories from backup archives with flexible destination options.
+
+```powershell
+Restore-DailyBackup [-BackupRoot] <String> [-DestinationPath <String>] [-Date <String>] [-BackupName <String>] [-UseOriginalPaths] [-PreservePaths] [-Force] [-WhatIf] [-Verbose]
+```
+
+**Parameters:**
+
+- **-BackupRoot** (required): Root directory containing daily backup folders
+- **-DestinationPath**: Where to restore files (required unless -UseOriginalPaths)
+- **-Date**: Specific backup date to restore (YYYY-MM-DD format, default: latest)
+- **-BackupName**: Pattern to match specific backup files (supports wildcards)
+- **-UseOriginalPaths**: Restore to original source locations using metadata
+- **-PreservePaths**: Maintain directory structure during extraction
+- **-Force**: Overwrite existing files without prompting
+
+#### Get-BackupInfo
+
+Retrieves detailed information about available backups.
+
+```powershell
+Get-BackupInfo [-BackupRoot] <String> [-Date <String>]
+```
+
+**Parameters:**
+
+- **-BackupRoot** (required): Root directory containing daily backup folders
+- **-Date**: Specific date to query (YYYY-MM-DD format, default: all dates)
 
 ## Parameters
 
@@ -97,6 +155,22 @@ The number of daily backups to keep when purging old backups. Oldest backups are
 - **Pipeline input:** No
 - **Aliases:** DailyBackupsToKeep
 
+### -FileBackupMode &lt;String&gt;
+
+Controls how individual files are handled during backup operations.
+
+- **Required:** No
+- **Position:** Named
+- **Default:** Auto
+- **Valid values:** Individual, Combined, Auto
+- **Pipeline input:** No
+
+**Values:**
+
+- **Individual**: Each file gets its own ZIP archive
+- **Combined**: All files are placed into a single archive per backup session
+- **Auto**: Smart decision based on file count and sizes (default)
+
 ### Common Parameters
 
 Supports all PowerShell common parameters: `-WhatIf`, `-Verbose`, `-ErrorAction`, `-WarningAction`, etc.
@@ -111,19 +185,27 @@ Supports all PowerShell common parameters: `-WhatIf`, `-Verbose`, `-ErrorAction`
 New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups"
 ```
 
-Creates a backup in `D:\Backups\2025-08-24` with ZIP files containing your documents.
+Creates a backup in `D:\Backups\2025-09-15` with ZIP files containing your documents and metadata files.
+
+### Example 2: Individual File Backup
+
+```powershell
+New-DailyBackup -Path "C:\Users\$env:USERNAME\important-report.pdf" -Destination "D:\Backups"
+```
+
+Creates a backup of a single file with enhanced naming: `D:\Backups\2025-09-15\Users__[username]__important-report.pdf.zip`
 
 ### Example 2: Multiple Sources with Cleanup
 
 ```powershell
 New-DailyBackup `
-    -Path @('C:\Users\Ron\Documents', 'C:\Users\Ron\Music') `
+    -Path @('C:\Users\Ron\Documents', 'C:\Users\Ron\Music', 'C:\Users\Ron\config.json') `
     -Destination 'C:\Users\Ron\iCloudDrive' `
     -Keep 7 `
     -Verbose
 ```
 
-Backs up multiple directories and keeps only the latest 7 daily backups, with detailed progress output.
+Backs up multiple directories and files, keeps only the latest 7 daily backups, with detailed progress output and metadata.
 
 ### Example 3: Test Run (WhatIf)
 
@@ -132,6 +214,30 @@ New-DailyBackup -Path "C:\Important" -Destination "D:\Backup" -WhatIf -Verbose
 ```
 
 Shows exactly what would be backed up without actually creating any files.
+
+### Example 4: Basic Restore
+
+```powershell
+Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Restored"
+```
+
+Restores the most recent backup set to `C:\Restored` directory.
+
+### Example 5: Restore to Original Locations
+
+```powershell
+Restore-DailyBackup -BackupRoot "D:\Backups" -Date "2025-09-15" -UseOriginalPaths
+```
+
+Restores backups from September 15, 2025 to their original source locations using metadata.
+
+### Example 6: Selective Restore
+
+```powershell
+Restore-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Documents*" -DestinationPath "C:\Emergency"
+```
+
+Restores only backup files matching the "_Documents_" pattern to an emergency recovery location.
 
 ### Example 4: Scheduled Backup Script
 
@@ -145,10 +251,10 @@ $BackupPaths = @(
 
 try {
     New-DailyBackup -Path $BackupPaths -Destination "D:\DailyBackups" -Keep 30 -Verbose
-    Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
+    Write-Host "[SUCCESS] Backup completed successfully!" -ForegroundColor Green
 }
 catch {
-    Write-Error "❌ Backup failed: $_"
+    Write-Error "[FAILED] Backup failed: $_"
     # Send email notification, write to event log, etc.
 }
 ```

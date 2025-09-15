@@ -34,7 +34,7 @@
   Copyright = '(c) Jon LaBelle. All rights reserved.'
 
   # Description of the functionality provided by this module
-  Description = 'Perform simple, daily backups.'
+  Description = 'Complete backup and restore solution with automated daily backups, intelligent file handling, and flexible restoration options.'
 
   # Minimum version of the PowerShell engine required by this module
   PowerShellVersion = '5.1'
@@ -73,7 +73,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport = @('New-DailyBackup')
+  FunctionsToExport = @('New-DailyBackup', 'Restore-DailyBackup', 'Get-BackupInfo')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport = @()
@@ -99,7 +99,7 @@
     PSData = @{
 
       # Tags applied to this module. These help with module discovery in online galleries.
-      Tags = @('backup', 'archive', 'daily', 'compress')
+      Tags = @('backup', 'restore', 'archive', 'daily', 'compress', 'recovery')
 
       # A URL to the license for this module.
       LicenseUri = 'https://github.com/jonlabelle/pwsh-daily-backup/blob/main/LICENSE.txt'

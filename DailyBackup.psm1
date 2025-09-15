@@ -69,6 +69,146 @@ function GetRandomFileName
     return $randomFileName.Substring(0, $randomFileName.IndexOf('.'))
 }
 
+function Get-PathType
+{
+    <#
+    .SYNOPSIS
+        Determines whether a path represents a file or directory.
+
+    .DESCRIPTION
+        Analyzes a given path to determine if it represents a file or directory.
+        For existing paths, uses Test-Path with PathType parameter. For non-existing
+        paths, attempts to infer the type based on file extension presence.
+
+    .PARAMETER Path
+        The path to analyze. Can be existing or non-existing.
+
+    .OUTPUTS
+        [String]
+        Returns 'File' if the path represents a file, 'Directory' if it represents a directory.
+
+    .NOTES
+        This function is used internally to optimize backup naming and compression strategies
+        for different path types.
+
+    .EXAMPLE
+        PS > Get-PathType -Path 'C:\Users\John\document.txt'
+        File
+
+    .EXAMPLE
+        PS > Get-PathType -Path 'C:\Users\John\Documents'
+        Directory
+
+    .EXAMPLE
+        PS > Get-PathType -Path 'C:\NonExistent\file.pdf'
+        File
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path
+    )
+
+    if (Test-Path -Path $Path -PathType Leaf)
+    {
+        return 'File'
+    }
+    elseif (Test-Path -Path $Path -PathType Container)
+    {
+        return 'Directory'
+    }
+    else
+    {
+        # For non-existent paths, infer from extension
+        if ([System.IO.Path]::HasExtension($Path))
+        {
+            return 'File'
+        }
+        else
+        {
+            return 'Directory'
+        }
+    }
+}
+
+function Add-BackupMetadataFile
+{
+    <#
+    .SYNOPSIS
+        Adds metadata information to a backup archive.
+
+    .DESCRIPTION
+        Creates a metadata file containing information about the original source,
+        backup creation time, file attributes, and other relevant details. This
+        metadata is stored as a JSON file alongside the backup archive.
+
+    .PARAMETER SourcePath
+        The original path that was backed up.
+
+    .PARAMETER BackupPath
+        The path to the created backup archive (without .zip extension).
+
+    .PARAMETER PathType
+        The type of the source path ('File' or 'Directory').
+
+    .OUTPUTS
+        None. Creates a .metadata.json file alongside the backup archive.
+
+    .NOTES
+        This function helps preserve important information about backed up items
+        for potential restoration or auditing purposes.
+
+    .EXAMPLE
+        PS > Add-BackupMetadataFile -SourcePath 'C:\Documents\report.pdf' -BackupPath 'C:\Backups\2025-09-15\Documents__report.pdf' -PathType 'File'
+
+        Creates C:\Backups\2025-09-15\Documents__report.pdf.metadata.json
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $SourcePath,
+
+        [Parameter(Mandatory = $true)]
+        [string] $BackupPath,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('File', 'Directory')]
+        [string] $PathType
+    )
+
+    try
+    {
+        $metadata = @{
+            SourcePath = $SourcePath
+            BackupCreated = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffZ'
+            PathType = $PathType
+            BackupVersion = '2.0'
+        }
+
+        if (Test-Path -Path $SourcePath)
+        {
+            $item = Get-Item -Path $SourcePath
+            $metadata.OriginalName = $item.Name
+            $metadata.LastWriteTime = $item.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+            $metadata.Attributes = $item.Attributes.ToString()
+
+            if ($PathType -eq 'File')
+            {
+                $metadata.Size = $item.Length
+                $metadata.Extension = $item.Extension
+            }
+        }
+
+        $metadataPath = "$BackupPath.metadata.json"
+        $metadata | ConvertTo-Json -Depth 3 | Out-File -FilePath $metadataPath -Encoding UTF8
+        Write-Verbose "New-DailyBackup:Add-BackupMetadataFile> Metadata saved to: $metadataPath"
+    }
+    catch
+    {
+        Write-Warning "New-DailyBackup:Add-BackupMetadataFile> Failed to create metadata for $SourcePath : $_"
+    }
+}
+
 function GenerateBackupPath
 {
     <#
@@ -124,8 +264,26 @@ function GenerateBackupPath
     # Removes the drive part (e.g. 'C:')
     $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
 
-    # replace directory separators with underscores
-    $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
+    # Handle files vs directories differently for better naming
+    if (Test-Path -Path $Path -PathType Leaf)
+    {
+        # For files, preserve more of the original structure in the name
+        $directory = Split-Path -Path $pathWithoutPrefix -Parent
+        $fileName = Split-Path -Path $pathWithoutPrefix -Leaf
+        $backupName = if ($directory)
+        {
+            ($directory -replace '[\\/]', '__') + '__' + $fileName
+        }
+        else
+        {
+            $fileName
+        }
+    }
+    else
+    {
+        # For directories, use existing strategy
+        $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
+    }
 
     $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
 
@@ -204,15 +362,22 @@ function CompressBackup
     )
 
     $backupPath = GenerateBackupPath -Path $Path -DestinationPath $DestinationPath
+    $pathType = Get-PathType -Path $Path
 
     if ($PSCmdlet.ShouldProcess("$backupPath.zip", 'Compress-Archive'))
     {
-        Write-Verbose ('New-DailyBackup:CompressBackup> Compressing backup ''{0}''' -f "$backupPath.zip")
+        Write-Verbose ('New-DailyBackup:CompressBackup> Compressing {0} backup ''{1}''' -f $pathType.ToLower(), "$backupPath.zip")
         Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Continue
+
+        # Add metadata file for better backup tracking
+        if (-not $WhatIfPreference)
+        {
+            Add-BackupMetadataFile -SourcePath $Path -BackupPath $backupPath -PathType $pathType
+        }
     }
     else
     {
-        Write-Verbose ('New-DailyBackup:CompressBackup> Dry-run only, backup ''{0}'' will not be created' -f "$backupPath.zip")
+        Write-Verbose ('New-DailyBackup:CompressBackup> Dry-run only, {0} backup ''{1}'' will not be created' -f $pathType.ToLower(), "$backupPath.zip")
     }
 }
 
@@ -549,6 +714,15 @@ function New-DailyBackup
 
         Note: DailyBackupsToKeep is an alias for this parameter.
 
+    .PARAMETER FileBackupMode
+        Controls how individual files are handled during backup operations:
+        - Individual: Each file gets its own ZIP archive (default for single files)
+        - Combined: All files are placed into a single archive per backup session
+        - Auto: Smart decision based on file count and sizes (default)
+
+        This parameter provides flexibility for different backup scenarios and helps
+        optimize storage and organization of file-based backups.
+
     .INPUTS
         [String[]]
         File or directory paths can be piped to this function. Supports pipeline input
@@ -559,9 +733,13 @@ function New-DailyBackup
         Progress information is displayed during operation.
 
     .NOTES
+        - Supports both individual files and entire directories
+        - Enhanced file handling with improved naming and metadata preservation
         - Supports ShouldProcess for WhatIf and Confirm scenarios
         - Creates date-stamped subdirectories (yyyy-MM-dd format)
         - Generates unique backup filenames to prevent overwrites
+        - Automatically detects file vs directory types for optimized handling
+        - Creates metadata files (.metadata.json) alongside backups for tracking
         - Automatically resolves relative paths from current directory
         - Continues processing remaining paths if individual items fail
         - Uses cloud-storage-compatible deletion methods for cleanup
@@ -570,12 +748,17 @@ function New-DailyBackup
     .EXAMPLE
         PS > New-DailyBackup -Path 'C:\Documents' -Destination 'D:\Backups'
 
-        Creates a backup of Documents folder in D:\Backups\2025-08-24\
+        Creates a backup of Documents folder in D:\Backups\2025-09-15\
+
+    .EXAMPLE
+        PS > New-DailyBackup -Path 'C:\report.pdf' -Destination 'D:\Backups'
+
+        Creates a backup of a single file in D:\Backups\2025-09-15\report.pdf.zip
 
     .EXAMPLE
         PS > New-DailyBackup -Path 'file1.txt', 'C:\Photos', 'D:\Projects' -Destination 'E:\DailyBackups' -Verbose
 
-        Backs up multiple paths with detailed output
+        Backs up multiple files and directories with detailed output and metadata
 
     .EXAMPLE
         PS > New-DailyBackup -Path 'C:\Data' -Destination 'D:\Backups' -Keep 7
@@ -591,6 +774,11 @@ function New-DailyBackup
         PS > Get-ChildItem 'C:\Projects' -Directory | New-DailyBackup -Destination 'D:\ProjectBackups'
 
         Backs up all subdirectories from C:\Projects using pipeline input
+
+    .EXAMPLE
+        PS > New-DailyBackup -Path '*.pdf', '*.docx' -Destination 'D:\DocumentBackups' -FileBackupMode Combined
+
+        Backs up all PDF and Word documents into a single combined archive per backup session
 
     .EXAMPLE
         PS > New-DailyBackup -Path '.\src', '.\docs' -Destination '\\server\backups' -Keep 14
@@ -624,7 +812,13 @@ function New-DailyBackup
         )]
         [ValidateRange(-1, [int]::MaxValue)]
         [Alias('DailyBackupsToKeep')]
-        [int] $Keep = -1
+        [int] $Keep = -1,
+
+        [Parameter(
+            HelpMessage = 'Controls how individual files are handled during backup operations.'
+        )]
+        [ValidateSet('Individual', 'Combined', 'Auto')]
+        [string] $FileBackupMode = 'Auto'
     )
     begin
     {
@@ -724,4 +918,611 @@ function New-DailyBackup
     }
 }
 
-Export-ModuleMember -Function New-DailyBackup
+function Get-BackupInfo
+{
+    <#
+    .SYNOPSIS
+        Retrieves information about available backups in a backup directory.
+
+    .DESCRIPTION
+        Scans a backup directory structure to find available backups, organized by date.
+        Returns detailed information about each backup including metadata, file types,
+        and backup dates. This function is used internally by Restore-DailyBackup
+        and can also be used independently to browse available backups.
+
+    .PARAMETER BackupRoot
+        The root directory containing daily backup folders (yyyy-MM-dd format).
+
+    .PARAMETER Date
+        Optional. Specific date to retrieve backup information for (yyyy-MM-dd format).
+        If not specified, returns information for all available backup dates.
+
+    .OUTPUTS
+        [PSCustomObject[]]
+        Returns an array of backup information objects containing:
+        - Date: Backup date (yyyy-MM-dd)
+        - Path: Full path to the backup directory
+        - Backups: Array of individual backup files with metadata
+        - TotalSize: Total size of all backups for that date
+        - BackupCount: Number of individual backup files
+
+    .NOTES
+        This function helps users understand what backups are available before
+        performing restore operations.
+
+    .EXAMPLE
+        PS > Get-BackupInfo -BackupRoot 'D:\Backups'
+
+        Lists all available backup dates and their contents
+
+    .EXAMPLE
+        PS > Get-BackupInfo -BackupRoot 'D:\Backups' -Date '2025-09-15'
+
+        Shows detailed information for backups from September 15, 2025
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $BackupRoot,
+
+        [Parameter()]
+        [ValidatePattern('^\d{4}-\d{2}-\d{2}$')]
+        [string] $Date
+    )
+
+    if (-not (Test-Path -Path $BackupRoot -PathType Container))
+    {
+        Write-Warning "Backup root directory not found: $BackupRoot"
+        return @()
+    }
+
+    $backupDates = if ($Date)
+    {
+        @(Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -eq $Date })
+    }
+    else
+    {
+        @(Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -match $script:DefaultFolderDateRegex } | Sort-Object -Descending)
+    }
+
+    $results = @()
+    foreach ($dateFolder in $backupDates)
+    {
+        if (-not $dateFolder) { continue }
+
+        $datePath = Join-Path $BackupRoot $dateFolder
+        if (-not (Test-Path $datePath -PathType Container)) { continue }
+
+        $zipFiles = @(Get-ChildItem -Path $datePath -Filter '*.zip')
+        $metadataFiles = @(Get-ChildItem -Path $datePath -Filter '*.metadata.json')
+
+        $backups = @()
+        foreach ($zipFile in $zipFiles)
+        {
+            $baseName = $zipFile.BaseName
+            $metadataPath = Join-Path $datePath "$baseName.metadata.json"
+
+            $backupInfo = [PSCustomObject]@{
+                Name = $zipFile.Name
+                Path = $zipFile.FullName
+                Size = $zipFile.Length
+                Created = $zipFile.CreationTime
+                Metadata = $null
+            }
+
+            if (Test-Path $metadataPath)
+            {
+                try
+                {
+                    $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+                    $backupInfo.Metadata = $metadata
+                }
+                catch
+                {
+                    Write-Warning "Failed to read metadata for $($zipFile.Name): $_"
+                }
+            }
+
+            $backups += $backupInfo
+        }
+
+        $totalSize = ($zipFiles | Measure-Object -Property Length -Sum).Sum
+
+        $results += [PSCustomObject]@{
+            Date = $dateFolder
+            Path = $datePath
+            Backups = $backups
+            TotalSize = $totalSize
+            BackupCount = $zipFiles.Count
+            MetadataCount = $metadataFiles.Count
+        }
+    }
+
+    return $results
+}
+
+function Restore-BackupFile
+{
+    <#
+    .SYNOPSIS
+        Restores a single backup ZIP file to a specified location.
+
+    .DESCRIPTION
+        Extracts a backup ZIP file to a destination directory, optionally using
+        metadata information to restore original paths, timestamps, and attributes.
+        This is an internal helper function used by Restore-DailyBackup.
+
+    .PARAMETER BackupFilePath
+        The full path to the backup ZIP file to restore.
+
+    .PARAMETER DestinationPath
+        The destination directory where the backup should be restored.
+
+    .PARAMETER UseOriginalPath
+        If specified and metadata is available, attempts to restore to the original
+        source path rather than the specified destination.
+
+    .PARAMETER PreservePaths
+        Controls whether directory structure within the ZIP is preserved during extraction.
+
+    .PARAMETER VerboseEnabled
+        Controls verbose output during the restore operation.
+
+    .OUTPUTS
+        [PSCustomObject]
+        Returns information about the restore operation including success status,
+        paths processed, and any errors encountered.
+
+    .NOTES
+        This function leverages PowerShell's Expand-Archive cmdlet for extraction
+        and attempts to restore file attributes and timestamps when possible.
+
+    .EXAMPLE
+        PS > Restore-BackupFile -BackupFilePath 'D:\Backups\2025-09-15\Documents.zip' -DestinationPath 'C:\Restored'
+
+        Extracts the Documents backup to C:\Restored
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $BackupFilePath,
+
+        [Parameter()]
+        [string] $DestinationPath,
+
+        [Parameter()]
+        [switch] $UseOriginalPath,
+
+        [Parameter()]
+        [switch] $PreservePaths,
+
+        [Parameter()]
+        [bool] $VerboseEnabled = $false
+    )
+
+    if (-not $UseOriginalPath -and -not $DestinationPath)
+    {
+        throw 'Either DestinationPath must be specified or UseOriginalPath must be enabled'
+    }
+
+    if (-not (Test-Path $BackupFilePath))
+    {
+        throw "Backup file not found: $BackupFilePath"
+    }
+
+    $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
+    $metadataPath = Join-Path (Split-Path $BackupFilePath) "$backupName.metadata.json"
+
+    $metadata = $null
+    if (Test-Path $metadataPath)
+    {
+        try
+        {
+            $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+            Write-Verbose "Restore-BackupFile> Loaded metadata for $backupName"
+        }
+        catch
+        {
+            Write-Warning "Failed to read metadata for $backupName : $_"
+        }
+    }
+
+    # Determine restore destination
+    $finalDestination = if ($UseOriginalPath -and $metadata -and $metadata.SourcePath)
+    {
+        if ($metadata.PathType -eq 'File')
+        {
+            Split-Path $metadata.SourcePath
+        }
+        else
+        {
+            $metadata.SourcePath
+        }
+    }
+    elseif ($DestinationPath)
+    {
+        $DestinationPath
+    }
+    else
+    {
+        throw 'Cannot determine destination path: UseOriginalPath is enabled but no metadata source path available, and no DestinationPath specified'
+    }
+
+    Write-Verbose "Restore-BackupFile> Final destination determined as: $finalDestination"
+
+    # Ensure destination exists
+    if (-not (Test-Path $finalDestination))
+    {
+        if ($PSCmdlet.ShouldProcess($finalDestination, 'Create Directory'))
+        {
+            New-Item -Path $finalDestination -ItemType Directory -Force | Out-Null
+            Write-Verbose "Restore-BackupFile> Created destination directory: $finalDestination"
+        }
+    }
+
+    # Extract the backup
+    if ($PSCmdlet.ShouldProcess($BackupFilePath, 'Expand-Archive'))
+    {
+        try
+        {
+            Write-Verbose "Restore-BackupFile> Extracting $BackupFilePath to $finalDestination"
+
+            if ($PreservePaths)
+            {
+                Expand-Archive -Path $BackupFilePath -DestinationPath $finalDestination -Force
+            }
+            else
+            {
+                # Extract to a temp location first, then move files to preserve structure
+                $tempDir = if ($env:TEMP) { $env:TEMP } elseif ($env:TMP) { $env:TMP } elseif ($env:TMPDIR) { $env:TMPDIR } else { '/tmp' }
+                $tempPath = Join-Path $tempDir "DailyBackupRestore_$(Get-Random)"
+                Write-Verbose "Restore-BackupFile> Extracting to temp path: $tempPath"
+                Expand-Archive -Path $BackupFilePath -DestinationPath $tempPath -Force
+
+                # Verify temp path exists and has content
+                if (-not (Test-Path $tempPath))
+                {
+                    throw "Extraction failed: temp path $tempPath does not exist"
+                }
+
+                Write-Verbose "Restore-BackupFile> Temp path contents: $(Get-ChildItem $tempPath -Name)"
+
+                # Move extracted items to final destination
+                $extractedItems = Get-ChildItem $tempPath -Recurse
+                foreach ($item in $extractedItems)
+                {
+                    if ($item.PSIsContainer)
+                    {
+                        $targetDir = Join-Path $finalDestination $item.Name
+                        if (-not (Test-Path $targetDir))
+                        {
+                            New-Item -Path $targetDir -ItemType Directory -Force | Out-Null
+                        }
+                    }
+                    else
+                    {
+                        $targetFile = Join-Path $finalDestination $item.Name
+                        Copy-Item $item.FullName $targetFile -Force
+                    }
+                }
+
+                # Clean up temp directory
+                Remove-Item $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+
+            # Attempt to restore metadata if available
+            if ($metadata -and $metadata.PathType -eq 'File' -and $metadata.LastWriteTime)
+            {
+                try
+                {
+                    $restoredFiles = Get-ChildItem $finalDestination -File -Recurse
+                    foreach ($file in $restoredFiles)
+                    {
+                        $file.LastWriteTime = [DateTime]::Parse($metadata.LastWriteTime)
+                    }
+                    Write-Verbose 'Restore-BackupFile> Restored file timestamps'
+                }
+                catch
+                {
+                    Write-Warning "Failed to restore file timestamps: $_"
+                }
+            }
+
+            return [PSCustomObject]@{
+                Success = $true
+                SourcePath = $BackupFilePath
+                DestinationPath = $finalDestination
+                Metadata = $metadata
+                Message = "Successfully restored $backupName"
+            }
+        }
+        catch
+        {
+            return [PSCustomObject]@{
+                Success = $false
+                SourcePath = $BackupFilePath
+                DestinationPath = $finalDestination
+                Metadata = $metadata
+                Message = "Failed to restore $backupName : $_"
+            }
+        }
+    }
+    else
+    {
+        return [PSCustomObject]@{
+            Success = $true
+            SourcePath = $BackupFilePath
+            DestinationPath = $finalDestination
+            Metadata = $metadata
+            Message = "Dry-run: Would restore $backupName to $finalDestination"
+        }
+    }
+}
+
+function Restore-DailyBackup
+{
+    <#
+    .SYNOPSIS
+        Restores files and directories from daily backup archives.
+
+    .DESCRIPTION
+        Restores backed up files and directories from compressed ZIP archives created
+        by New-DailyBackup. Supports restoring specific backups by date, individual
+        files by name pattern, or entire backup sets. Can restore to original locations
+        using metadata or to custom destinations.
+
+    .PARAMETER BackupRoot
+        The root directory containing daily backup folders (yyyy-MM-dd format).
+        This should be the same directory used as -Destination in New-DailyBackup.
+
+    .PARAMETER DestinationPath
+        The destination directory where restored files will be placed.
+        If not specified and -UseOriginalPaths is enabled, attempts to restore
+        to original source locations using metadata.
+
+    .PARAMETER Date
+        Specific backup date to restore from (yyyy-MM-dd format).
+        If not specified, uses the most recent backup date available.
+
+    .PARAMETER BackupName
+        Optional pattern to match specific backup files by name.
+        Supports wildcards (e.g., "*Documents*", "*.pdf*").
+        If not specified, restores all backups from the specified date.
+
+    .PARAMETER UseOriginalPaths
+        When enabled, attempts to restore files to their original source locations
+        using metadata information. Requires metadata files to be present.
+        When disabled, restores all files to the specified DestinationPath.
+
+    .PARAMETER PreservePaths
+        Controls whether directory structure within backups is preserved during
+        restoration. When enabled, maintains folder hierarchy from the backup.
+
+    .PARAMETER Force
+        Overwrites existing files during restoration without prompting.
+        Use with caution as this can replace current files.
+
+    .INPUTS
+        None. This function does not accept pipeline input.
+
+    .OUTPUTS
+        [PSCustomObject[]]
+        Returns an array of restore operation results, including success status,
+        paths processed, and any errors encountered for each backup file.
+
+    .NOTES
+        - Requires backup files created by New-DailyBackup with version 2.0+ metadata
+        - Supports ShouldProcess for WhatIf and Confirm scenarios
+        - Automatically handles file timestamp and attribute restoration when possible
+        - Creates destination directories as needed
+        - Provides detailed progress reporting for multiple files
+
+    .EXAMPLE
+        PS > Restore-DailyBackup -BackupRoot 'D:\Backups' -DestinationPath 'C:\Restored'
+
+        Restores the most recent backup set to C:\Restored
+
+    .EXAMPLE
+        PS > Restore-DailyBackup -BackupRoot 'D:\Backups' -Date '2025-09-15' -UseOriginalPaths
+
+        Restores backups from September 15, 2025 to their original source locations
+
+    .EXAMPLE
+        PS > Restore-DailyBackup -BackupRoot 'D:\Backups' -BackupName '*Documents*' -DestinationPath 'C:\Restored'
+
+        Restores only backup files matching "*Documents*" pattern
+
+    .EXAMPLE
+        PS > Restore-DailyBackup -BackupRoot 'D:\Backups' -Date '2025-09-10' -WhatIf
+
+        Shows what would be restored without actually performing the restoration
+
+    .EXAMPLE
+        PS > Restore-DailyBackup -BackupRoot '\\server\backups' -DestinationPath 'C:\Emergency' -Force
+
+        Restores from network backup location, overwriting existing files
+
+    .LINK
+        New-DailyBackup
+        Get-BackupInfo
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            HelpMessage = 'The root directory containing daily backup folders.'
+        )]
+        [ValidateNotNullOrEmpty()]
+        [string] $BackupRoot,
+
+        [Parameter(
+            HelpMessage = 'The destination directory where restored files will be placed.'
+        )]
+        [string] $DestinationPath,
+
+        [Parameter(
+            HelpMessage = 'Specific backup date to restore from (yyyy-MM-dd format).'
+        )]
+        [ValidatePattern('^\d{4}-\d{2}-\d{2}$')]
+        [string] $Date,
+
+        [Parameter(
+            HelpMessage = 'Pattern to match specific backup files by name (supports wildcards).'
+        )]
+        [string] $BackupName,
+
+        [Parameter(
+            HelpMessage = 'Restore files to their original source locations using metadata.'
+        )]
+        [switch] $UseOriginalPaths,
+
+        [Parameter(
+            HelpMessage = 'Preserve directory structure within backups during restoration.'
+        )]
+        [switch] $PreservePaths,
+
+        [Parameter(
+            HelpMessage = 'Overwrite existing files during restoration without prompting.'
+        )]
+        [switch] $Force
+    )
+
+    begin
+    {
+        $verboseEnabled = ($VerbosePreference -eq 'Continue')
+
+        if (-not $UseOriginalPaths -and -not $DestinationPath)
+        {
+            throw 'Either DestinationPath must be specified or UseOriginalPaths must be enabled'
+        }
+
+        if (-not (Test-Path $BackupRoot -PathType Container))
+        {
+            throw "Backup root directory not found: $BackupRoot"
+        }
+
+        Write-Verbose "Restore-DailyBackup:Begin> Starting restore operation from $BackupRoot"
+    }
+
+    process
+    {
+        $backupInfo = Get-BackupInfo -BackupRoot $BackupRoot
+        if ($Date)
+        {
+            $backupInfo = $backupInfo | Where-Object { $_.Date -eq $Date }
+        }
+
+        if ($backupInfo.Count -eq 0)
+        {
+            Write-Warning "No backups found in $BackupRoot$(if ($Date) { " for date $Date" })"
+            return @()
+        }
+
+        # Use most recent backup if no date specified
+        if (-not $Date)
+        {
+            $selectedBackup = $backupInfo | Sort-Object Date -Descending | Select-Object -First 1
+            Write-Verbose "Restore-DailyBackup> Using most recent backup from $($selectedBackup.Date)"
+        }
+        else
+        {
+            $selectedBackup = $backupInfo | Where-Object { $_.Date -eq $Date } | Select-Object -First 1
+            if (-not $selectedBackup)
+            {
+                throw "No backup found for date: $Date"
+            }
+        }
+
+        # Filter backups by name pattern if specified
+        $backupsToRestore = if ($BackupName)
+        {
+            $selectedBackup.Backups | Where-Object { $_.Name -like $BackupName }
+        }
+        else
+        {
+            $selectedBackup.Backups
+        }
+
+        if ($backupsToRestore.Count -eq 0)
+        {
+            Write-Warning 'No backup files match the specified criteria'
+            return @()
+        }
+
+        Write-Host "Found $($backupsToRestore.Count) backup file(s) to restore from $($selectedBackup.Date)" -ForegroundColor Green
+
+        # Process each backup file
+        $results = @()
+        $totalBackups = $backupsToRestore.Count
+        $currentBackup = 0
+
+        foreach ($backup in $backupsToRestore)
+        {
+            $currentBackup++
+            Write-Progress -Activity 'Restoring Daily Backups' -Status "Restoring backup $currentBackup of $totalBackups" -PercentComplete (($currentBackup / $totalBackups) * 100)
+
+            try
+            {
+                $restoreParams = @{
+                    BackupFilePath = $backup.Path
+                    UseOriginalPath = $UseOriginalPaths
+                    PreservePaths = $PreservePaths
+                    VerboseEnabled = $verboseEnabled
+                }
+
+                if ($DestinationPath)
+                {
+                    $restoreParams.DestinationPath = $DestinationPath
+                }
+
+                if ($Force)
+                {
+                    $restoreParams.Force = $true
+                }
+
+                $result = Restore-BackupFile @restoreParams
+                $results += $result
+
+                if ($result.Success)
+                {
+                    Write-Host "[SUCCESS] $($result.Message)" -ForegroundColor Green
+                }
+                else
+                {
+                    Write-Warning "[FAILED] $($result.Message)"
+                }
+            }
+            catch
+            {
+                $errorResult = [PSCustomObject]@{
+                    Success = $false
+                    SourcePath = $backup.Path
+                    DestinationPath = $DestinationPath
+                    Metadata = $backup.Metadata
+                    Message = "Failed to restore $($backup.Name): $_"
+                }
+                $results += $errorResult
+                Write-Error $errorResult.Message -ErrorAction Continue
+            }
+        }
+
+        Write-Progress -Activity 'Restoring Daily Backups' -Completed
+    }
+
+    end
+    {
+        $successCount = ($results | Where-Object { $_.Success }).Count
+        $totalCount = $results.Count
+
+        Write-Host "`nRestore Summary:" -ForegroundColor Cyan
+        Write-Host "   Successful: $successCount" -ForegroundColor Green
+        Write-Host "   Failed: $($totalCount - $successCount)" -ForegroundColor Red
+        Write-Host "   Total: $totalCount" -ForegroundColor Blue
+
+        Write-Verbose 'Restore-DailyBackup:End> Restore operation completed'
+        return $results
+    }
+}
+
+Export-ModuleMember -Function New-DailyBackup, Restore-DailyBackup, Get-BackupInfo
