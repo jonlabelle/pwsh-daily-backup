@@ -88,6 +88,39 @@ Describe 'New-DailyBackup Core Functionality' {
             $backup = $manifest.Content.Backups[0]
             $backup.SourcePath | Should -Be $testFile
         }
+
+        It 'Handles tilde expansion in source paths' {
+            # Skip test if not on Unix-like system where HOME is available
+            if (-not $env:HOME) {
+                Set-ItResult -Skipped -Because "Test only applicable on Unix-like systems with HOME environment variable"
+                return
+            }
+
+            # Create a test file in a subdirectory of HOME
+            $testSubDir = Join-Path $env:HOME '.test-tilde-backup'
+            $testFile = Join-Path $testSubDir 'tilde-test.txt'
+
+            try {
+                New-Item -Path $testSubDir -ItemType Directory -Force | Out-Null
+                'Tilde expansion test content' | Out-File -FilePath $testFile -Encoding UTF8
+
+                # Use tilde path for backup
+                $tildePath = $testFile -replace [regex]::Escape($env:HOME), '~'
+
+                { New-DailyBackup -Path $tildePath -Destination $TestEnv.BackupDir } | Should -Not -Throw
+
+                $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+                $result.ZipCount | Should -BeGreaterThan 0
+
+                # Check that the backup was created and metadata has the expanded path
+                $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+                $backup = $manifest.Content.Backups[0]
+                $backup.SourcePath | Should -Be $testFile  # Should be the full expanded path
+            }
+            finally {
+                Remove-Item $testSubDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
     }
 
     Context 'Cleanup Operations' {

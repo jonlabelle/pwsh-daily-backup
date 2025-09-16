@@ -192,6 +192,13 @@ function New-DailyBackup
             $currentPath++
             Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $totalPaths" -PercentComplete (($currentPath / $totalPaths) * 100)
 
+            # Expand tilde paths before checking if they're rooted
+            if ($item.StartsWith('~'))
+            {
+                $item = $item -replace '^~', $HOME
+                Write-Verbose ('New-DailyBackup:Process> Expanded tilde path to: {0}' -f $item) -Verbose:$verboseEnabled
+            }
+
             if (-not [System.IO.Path]::IsPathRooted($item))
             {
                 Write-Verbose ('New-DailyBackup:Process> {0} is not a full path, prepending current directory: {1}' -f $item, $pwd) -Verbose:$verboseEnabled

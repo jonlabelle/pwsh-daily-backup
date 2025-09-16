@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated test suite with comprehensive hash functionality testing
 - Cross-platform hash verification support
 
+### Fixed
+
+- **Tilde Path Expansion**: Fixed issue where paths starting with `~` (tilde) were not properly expanded to the user's home directory, causing backups to fail with empty destination folders
+
 ## [1.5.0] - 2025-09-15
 
 ### Added
