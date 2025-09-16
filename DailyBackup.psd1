@@ -101,6 +101,9 @@
       # Tags applied to this module. These help with module discovery in online galleries.
       Tags = @('backup', 'restore', 'archive', 'daily', 'compress', 'recovery')
 
+      # License for this module.
+      License = 'MIT'
+
       # A URL to the license for this module.
       LicenseUri = 'https://github.com/jonlabelle/pwsh-daily-backup/blob/main/LICENSE.txt'
 
@@ -112,6 +115,9 @@
 
       # ReleaseNotes of this module
       ReleaseNotes = 'Routine updates and maintenance.'
+
+      # README file for this module
+      ReadmeUri = 'https://github.com/jonlabelle/pwsh-daily-backup/blob/main/README.md'
 
       # Prerelease string of this module
       # Prerelease = ''
