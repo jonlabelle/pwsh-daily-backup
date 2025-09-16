@@ -362,9 +362,9 @@ Releases are published to the PowerShell Gallery by [manually dispatching](https
 
 1. **[Manually trigger release workflow](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/release.yml)** via GitHub Actions workflow dispatch with desired version number
 2. **Automated process** handles:
+   - Full build and test validation
    - Version update in `DailyBackup.psd1`
    - Git commit and tag creation
-   - Full build and test validation
    - Publication to PowerShell Gallery
 
 ### Manual Steps (if needed)

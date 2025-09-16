@@ -48,6 +48,10 @@ jobs:
           $manifest = Test-ModuleManifest -Path $manifestPath
           Write-Host "Updated module version to: $($manifest.Version)" -ForegroundColor Green
 
+      - name: Build and validate module
+        shell: pwsh
+        run: ./Build.ps1 -Task All -Configuration Release
+
       - name: Commit version update
         run: |
           git config --local user.email "action@github.com"
@@ -60,10 +64,6 @@ jobs:
         run: |
           git tag -f "v${{ github.event.inputs.version }}"
           git push -f origin "v${{ github.event.inputs.version }}"
-
-      - name: Build and validate module
-        shell: pwsh
-        run: ./Build.ps1 -Task All -Configuration Release
 
       - name: Publish to PSGallery
         shell: pwsh
