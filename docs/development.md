@@ -356,13 +356,22 @@ $null = Trace-Command -Name ParameterBinding -Expression {
 
 ## Release Process
 
+Releases are published to the PowerShell Gallery by [manually dispatching](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/release.yml) the [`release.yml`](../.github/workflows/release.yml) workflow. The workflow automates version updates, testing, tagging, and publishing.
+
 ### Version Management
 
-1. **Update version** in `DailyBackup.psd1`
-2. **Update changelog** in `CHANGELOG.md`
-3. **Run full test suite** to ensure quality
-4. **Create release tag** following semantic versioning
-5. **Publish to PowerShell Gallery** (automated via CI/CD)
+1. **[Manually trigger release workflow](https://github.com/jonlabelle/pwsh-daily-backup/actions/workflows/release.yml)** via GitHub Actions workflow dispatch with desired version number
+2. **Automated process** handles:
+   - Version update in `DailyBackup.psd1`
+   - Git commit and tag creation
+   - Full build and test validation
+   - Publication to PowerShell Gallery
+
+### Manual Steps (if needed)
+
+1. **Update changelog** in `CHANGELOG.md`
+2. **Run full test suite** to ensure quality before triggering release
+3. **Verify version format** follows semantic versioning (x.y.z)
 
 ### Quality Gates
 
