@@ -88,12 +88,14 @@ function New-TestBackup
     # Return backup info
     $DateFolder = Get-Date -Format 'yyyy-MM-dd'
     $BackupLocation = Join-Path $BackupPath $DateFolder
+    $manifestPath = Join-Path $BackupLocation 'backup-manifest.json'
 
     return @{
         BackupLocation = $BackupLocation
         Date = $DateFolder
         ZipFiles = Get-ChildItem -Path $BackupLocation -Filter '*.zip' -ErrorAction SilentlyContinue
-        MetadataFiles = Get-ChildItem -Path $BackupLocation -Filter '*.metadata.json' -ErrorAction SilentlyContinue
+        ManifestFile = if (Test-Path $manifestPath) { Get-Item $manifestPath } else { $null }
+        MetadataFiles = @()  # Legacy compatibility
     }
 }
 
@@ -120,12 +122,49 @@ function Test-BackupStructure
     if ($result.BackupLocationExists)
     {
         $result.ZipFiles = Get-ChildItem -Path $BackupLocation -Filter '*.zip' -ErrorAction SilentlyContinue
-        $result.MetadataFiles = Get-ChildItem -Path $BackupLocation -Filter '*.metadata.json' -ErrorAction SilentlyContinue
+        $manifestPath = Join-Path $BackupLocation 'backup-manifest.json'
+        $result.ManifestFile = if (Test-Path $manifestPath) { Get-Item $manifestPath } else { $null }
+        $result.MetadataFiles = @()  # Legacy compatibility
         $result.ZipCount = $result.ZipFiles.Count
-        $result.MetadataCount = $result.MetadataFiles.Count
+        $result.MetadataCount = if ($result.ManifestFile) { 1 } else { 0 }
     }
 
     return $result
+}
+
+# Test consolidated backup manifest content
+function Test-BackupManifest
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ManifestPath
+    )
+
+    if (-not (Test-Path $ManifestPath))
+    {
+        return $null
+    }
+
+    try
+    {
+        $content = Get-Content -Path $ManifestPath -Raw | ConvertFrom-Json
+        return @{
+            IsValid = $true
+            Content = $content
+            HasBackupDate = -not [string]::IsNullOrEmpty($content.BackupDate)
+            HasBackupVersion = $content.BackupVersion -eq '1.0'
+            HasModuleVersion = -not [string]::IsNullOrEmpty($content.ModuleVersion)
+            HasBackupsArray = $content.Backups -is [Array]
+            BackupCount = if ($content.Backups) { $content.Backups.Count } else { 0 }
+        }
+    }
+    catch
+    {
+        return @{
+            IsValid = $false
+            Error = $_.Exception.Message
+        }
+    }
 }
 
 # Verify metadata content

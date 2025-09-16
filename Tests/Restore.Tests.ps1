@@ -116,7 +116,7 @@ Describe 'Restore-DailyBackup Functionality' {
                 $backup = $backupInfo[0].Backups[0]
                 if ($backup.Metadata)
                 {
-                    $backup.Metadata.BackupVersion | Should -Be '2.0'
+                    $backup.Metadata.BackupCreated | Should -Not -BeNullOrEmpty
                     $backup.Metadata.SourcePath | Should -Not -BeNullOrEmpty
                     $backup.Metadata.PathType | Should -Match '^(File|Directory)$'
                 }

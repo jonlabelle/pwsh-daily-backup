@@ -64,10 +64,11 @@ function Compress-Backup
         Write-Verbose ('New-DailyBackup:Compress-Backup> Compressing {0} backup ''{1}''' -f $pathType.ToLower(), "$backupPath.zip")
         Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Continue
 
-        # Add metadata file for better backup tracking
+        # Add backup to consolidated daily manifest
         if (-not $WhatIfPreference)
         {
-            Add-BackupMetadataFile -SourcePath $Path -BackupPath $backupPath -PathType $pathType
+            $datePath = Split-Path $backupPath
+            Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath
         }
     }
     else

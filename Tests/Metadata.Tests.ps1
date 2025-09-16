@@ -13,9 +13,10 @@ Describe 'Metadata and Path Type Detection' {
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.PathType | Should -Be 'File'
+            $backup = $manifest.Content.Backups[0]
+            $backup.PathType | Should -Be 'File'
         }
 
         It 'Correctly identifies directory types' {
@@ -23,9 +24,10 @@ Describe 'Metadata and Path Type Detection' {
             New-DailyBackup -Path $testDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.PathType | Should -Be 'Directory'
+            $backup = $manifest.Content.Backups[0]
+            $backup.PathType | Should -Be 'Directory'
         }
 
         It 'Handles mixed file and directory paths' {
@@ -34,72 +36,61 @@ Describe 'Metadata and Path Type Detection' {
 
             New-DailyBackup -Path @($testFile, $testDir) -Destination $TestEnv.BackupDir
 
-            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir -ExpectedMetadataCount 2
+            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $pathTypes = @()
-            foreach ($metadataFile in $result.MetadataFiles)
-            {
-                $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
-                $pathTypes += $metadata.Content.PathType
-            }
-
+            $pathTypes = $manifest.Content.Backups | ForEach-Object { $_.PathType }
             $pathTypes | Should -Contain 'File'
             $pathTypes | Should -Contain 'Directory'
         }
     }
 
     Context 'Metadata Structure Validation' {
-        It 'Creates valid JSON metadata files' {
+        It 'Creates consolidated backup manifest with valid metadata' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+            $result.ManifestFile | Should -Not -BeNullOrEmpty
+            $result.ManifestFile.Name | Should -Be 'backup-manifest.json'
 
-            foreach ($metadataFile in $result.MetadataFiles)
-            {
-                $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
-                $metadata.IsValid | Should -Be $true
-            }
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+            $manifest.IsValid | Should -Be $true
+            $manifest.HasBackupDate | Should -Be $true
+            $manifest.HasBackupVersion | Should -Be $true
+            $manifest.HasModuleVersion | Should -Be $true
+            $manifest.HasBackupsArray | Should -Be $true
+            $manifest.BackupCount | Should -BeGreaterThan 0
         }
 
-        It 'Includes all required metadata properties' {
+        It 'Uses correct backup version format in manifest' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.HasSourcePath | Should -Be $true
-            $metadata.HasBackupCreated | Should -Be $true
-            $metadata.HasPathType | Should -Be $true
-            $metadata.HasBackupVersion | Should -Be $true
+            $manifest.Content.BackupVersion | Should -Be '1.0'
         }
 
-        It 'Uses correct backup version format' {
-            New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
-
-            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
-
-            $metadata.Content.BackupVersion | Should -Be '2.0'
-        }
-
-        It 'Preserves original source path information' {
+        It 'Preserves original source path information in manifest' {
             $testFile = Join-Path $TestEnv.SourceDir 'test1.txt'
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.SourcePath | Should -Be $testFile
+            $backupEntry = $manifest.Content.Backups[0]
+            $backupEntry.SourcePath | Should -Be $testFile
         }
 
         It 'Includes timestamp information' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.BackupCreated | Should -Not -BeNullOrEmpty
-            { [DateTime]::Parse($metadata.Content.BackupCreated) } | Should -Not -Throw
+            $backup = $manifest.Content.Backups[0]
+            $backup.BackupCreated | Should -Not -BeNullOrEmpty
+            { [DateTime]::Parse($backup.BackupCreated) } | Should -Not -Throw
         }
     }
 
@@ -111,9 +102,10 @@ Describe 'Metadata and Path Type Detection' {
             New-DailyBackup -Path $spacePath -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.SourcePath | Should -Be $spacePath
+            $backup = $manifest.Content.Backups[0]
+            $backup.SourcePath | Should -Be $spacePath
         }
 
         It 'Handles Unicode characters in paths' {

@@ -174,12 +174,13 @@ Build.ps1                     # Build and package automation
 
 #### Metadata System
 
-The module automatically creates metadata files alongside backups:
+The module automatically creates a consolidated metadata manifest alongside backups:
 
-- **Purpose**: Enable intelligent restore operations
-- **Content**: Original source paths, creation timestamps, system information
-- **Format**: JSON structure for cross-platform compatibility
-- **Usage**: Powers `-UseOriginalPaths` restore functionality
+- **Purpose**: Enable intelligent restore operations with reduced file clutter
+- **Content**: Consolidated backup manifest containing all backup metadata for the date
+- **Format**: JSON structure with array of backup entries for cross-platform compatibility
+- **Usage**: Powers `-UseOriginalPaths` restore functionality and `Get-BackupInfo` operations
+- **File**: Single `backup-manifest.json` per date folder instead of individual `.metadata.json` files
 
 ### Initial Setup
 

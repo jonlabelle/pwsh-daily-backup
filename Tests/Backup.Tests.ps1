@@ -16,16 +16,17 @@ Describe 'New-DailyBackup Core Functionality' {
             $result.ZipCount | Should -BeGreaterThan 0
         }
 
-        It 'Creates metadata files for each backup' {
+        It 'Creates consolidated metadata manifest for each backup date' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $result.MetadataCount | Should -BeGreaterThan 0
+            $result.MetadataCount | Should -Be 1
+            $result.ManifestFile | Should -Not -BeNullOrEmpty
 
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
-            $metadata.IsValid | Should -Be $true
-            $metadata.HasSourcePath | Should -Be $true
-            $metadata.HasBackupVersion | Should -Be $true
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+            $manifest.IsValid | Should -Be $true
+            $manifest.HasBackupDate | Should -Be $true
+            $manifest.HasBackupVersion | Should -Be $true
         }
 
         It 'Handles multiple source paths correctly' {
@@ -34,9 +35,13 @@ Describe 'New-DailyBackup Core Functionality' {
 
             New-DailyBackup -Path @($file1, $file2) -Destination $TestEnv.BackupDir
 
-            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir -ExpectedZipCount 2 -ExpectedMetadataCount 2
+            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
             $result.ZipCount | Should -Be 2
-            $result.MetadataCount | Should -Be 2
+            $result.MetadataCount | Should -Be 1  # One manifest file
+
+            # Check manifest content for multiple backups
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+            $manifest.BackupCount | Should -Be 2
         }
 
         It 'Differentiates between file and directory backups' {
@@ -45,14 +50,19 @@ Describe 'New-DailyBackup Core Functionality' {
 
             New-DailyBackup -Path @($testFile, $testDir) -Destination $TestEnv.BackupDir
 
-            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir -ExpectedZipCount 2 -ExpectedMetadataCount 2
+            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+            $result.ZipCount | Should -Be 2
+            $result.MetadataCount | Should -Be 1  # One manifest file
 
-            # Verify metadata contains correct PathType
-            foreach ($metadataFile in $result.MetadataFiles)
-            {
-                $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
-                $metadata.Content.PathType | Should -Match '^(File|Directory)$'
-            }
+            # Check manifest content for multiple backups
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+            $manifest.BackupCount | Should -Be 2
+
+            # Verify metadata contains correct PathType for each backup
+            $fileBackup = $manifest.Content.Backups | Where-Object { $_.PathType -eq 'File' }
+            $dirBackup = $manifest.Content.Backups | Where-Object { $_.PathType -eq 'Directory' }
+            $fileBackup | Should -Not -BeNullOrEmpty
+            $dirBackup | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -72,9 +82,11 @@ Describe 'New-DailyBackup Core Functionality' {
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $metadata = Test-MetadataContent -MetadataPath $result.MetadataFiles[0].FullName
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
 
-            $metadata.Content.SourcePath | Should -Be $testFile
+            # Get the first backup entry from the manifest
+            $backup = $manifest.Content.Backups[0]
+            $backup.SourcePath | Should -Be $testFile
         }
     }
 

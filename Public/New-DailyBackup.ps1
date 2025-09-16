@@ -54,7 +54,7 @@ function New-DailyBackup
         - Creates date-stamped subdirectories (yyyy-MM-dd format)
         - Generates unique backup filenames to prevent overwrites
         - Automatically detects file vs directory types for optimized handling
-        - Creates metadata files (.metadata.json) alongside backups for tracking
+        - Creates consolidated metadata manifest (backup-manifest.json) for tracking
         - Automatically resolves relative paths from current directory
         - Continues processing remaining paths if individual items fail
         - Uses cloud-storage-compatible deletion methods for cleanup

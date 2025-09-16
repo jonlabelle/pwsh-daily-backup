@@ -77,14 +77,27 @@ function Get-BackupInfo
         if (-not (Test-Path $datePath -PathType Container)) { continue }
 
         $zipFiles = @(Get-ChildItem -Path $datePath -Filter '*.zip')
-        $metadataFiles = @(Get-ChildItem -Path $datePath -Filter '*.metadata.json')
+
+        # Check for consolidated manifest
+        $manifestPath = Join-Path $datePath 'backup-manifest.json'
+        $manifestData = $null
+
+        if (Test-Path $manifestPath)
+        {
+            try
+            {
+                $manifestData = Get-Content $manifestPath -Raw | ConvertFrom-Json
+                Write-Verbose "Get-BackupInfo> Using consolidated manifest for $dateFolder"
+            }
+            catch
+            {
+                Write-Warning "Failed to read backup manifest for $dateFolder : $_"
+            }
+        }
 
         $backups = @()
         foreach ($zipFile in $zipFiles)
         {
-            $baseName = $zipFile.BaseName
-            $metadataPath = Join-Path $datePath "$baseName.metadata.json"
-
             $backupInfo = [PSCustomObject]@{
                 Name = $zipFile.Name
                 Path = $zipFile.FullName
@@ -93,16 +106,13 @@ function Get-BackupInfo
                 Metadata = $null
             }
 
-            if (Test-Path $metadataPath)
+            # Try to get metadata from consolidated manifest
+            if ($manifestData -and $manifestData.Backups)
             {
-                try
+                $metadata = $manifestData.Backups | Where-Object { $_.ArchiveName -eq $zipFile.Name }
+                if ($metadata)
                 {
-                    $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
                     $backupInfo.Metadata = $metadata
-                }
-                catch
-                {
-                    Write-Warning "Failed to read metadata for $($zipFile.Name): $_"
                 }
             }
 
@@ -111,13 +121,16 @@ function Get-BackupInfo
 
         $totalSize = ($zipFiles | Measure-Object -Property Length -Sum).Sum
 
+        # Count metadata sources (manifest file)
+        $metadataCount = if ($manifestData) { 1 } else { 0 }
+
         $results += [PSCustomObject]@{
             Date = $dateFolder
             Path = $datePath
             Backups = $backups
             TotalSize = $totalSize
             BackupCount = $zipFiles.Count
-            MetadataCount = $metadataFiles.Count
+            MetadataCount = $metadataCount
         }
     }
 

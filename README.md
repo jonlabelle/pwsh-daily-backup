@@ -131,7 +131,7 @@ Get-BackupInfo [-BackupRoot] <String> [-Date <String>]
 New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups"
 ```
 
-Creates a backup in `D:\Backups\2025-09-15` with ZIP files containing your documents and metadata files.
+Creates a backup in `D:\Backups\2025-09-15` with ZIP files containing your documents and a consolidated metadata manifest.
 
 ### Example 2: Individual File Backup
 
@@ -151,7 +151,7 @@ New-DailyBackup `
     -Verbose
 ```
 
-Backs up multiple directories and files, keeps only the latest 7 daily backups, with detailed progress output and metadata.
+Backs up multiple directories and files, keeps only the latest 7 daily backups, with detailed progress output and consolidated metadata.
 
 ### Example 3: Test Run (WhatIf)
 

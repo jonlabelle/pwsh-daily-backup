@@ -68,20 +68,12 @@ function Restore-BackupFile
     }
 
     $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
-    $metadataPath = Join-Path (Split-Path $BackupFilePath) "$backupName.metadata.json"
 
-    $metadata = $null
-    if (Test-Path $metadataPath)
+    # Use consolidated metadata retrieval
+    $metadata = Get-BackupMetadataInfo -BackupFilePath $BackupFilePath
+    if ($metadata)
     {
-        try
-        {
-            $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
-            Write-Verbose "Restore-BackupFile> Loaded metadata for $backupName"
-        }
-        catch
-        {
-            Write-Warning "Failed to read metadata for $backupName : $_"
-        }
+        Write-Verbose "Restore-BackupFile> Loaded metadata for $backupName"
     }
 
     # Determine restore destination
