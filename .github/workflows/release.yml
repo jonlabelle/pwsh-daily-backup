@@ -3,14 +3,24 @@ name: release
 on:
   workflow_dispatch:
     inputs:
+      bump_type:
+        description: "Bump version"
+        required: false
+        type: choice
+        options:
+          - "none"
+          - "major"
+          - "minor"
+          - "patch"
+        default: "patch"
       version:
-        description: "Version number (e.g., 1.3.1)"
-        required: true
+        description: "Specific version"
+        required: false
         type: string
 
 jobs:
   release:
-    name: Release v${{ github.event.inputs.version }}
+    name: Release (bump ${{ github.event.inputs.bump_type != 'none' && github.event.inputs.bump_type || format('v{0}', github.event.inputs.version) }})
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Git repository
@@ -18,22 +28,80 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate version format
+      - name: Validate inputs and determine version
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version }}"
-          if ($version -notmatch '^\d+\.\d+\.\d+$') {
-            Write-Error "Version must be in format x.y.z (e.g., 1.3.1)" -ErrorAction Stop
+          $bumpType = "${{ github.event.inputs.bump_type }}"
+          $inputVersion = "${{ github.event.inputs.version }}"
+
+          Write-Host "Bump type: '$bumpType'" -ForegroundColor Cyan
+          Write-Host "Input version: '$inputVersion'" -ForegroundColor Cyan
+
+          # Validate inputs: cannot specify both bump_type and version together
+          if ($bumpType -ne "none" -and $bumpType -ne "" -and -not [string]::IsNullOrEmpty($inputVersion)) {
+            Write-Error "Cannot specify both 'version' and 'bump_type' parameters. Use either version bumping (bump_type) OR manual version input (version), not both." -ErrorAction Stop
           }
-          Write-Host "Version format is valid: $version" -ForegroundColor Green
+
+          # Mode 1: Automatic version bumping (default behavior)
+          if ($bumpType -ne "none" -and $bumpType -ne "") {
+            Write-Host "Using version bump mode: $bumpType" -ForegroundColor Green
+
+            # Read current version from manifest
+            $manifestPath = './DailyBackup.psd1'
+            $manifest = Test-ModuleManifest -Path $manifestPath
+            $currentVersion = $manifest.Version
+            Write-Host "Current version: $currentVersion" -ForegroundColor Yellow
+
+            # Calculate new version based on bump type
+            $major = $currentVersion.Major
+            $minor = $currentVersion.Minor
+            $build = $currentVersion.Build
+
+            switch ($bumpType) {
+              "major" {
+                $major++
+                $minor = 0
+                $build = 0
+              }
+              "minor" {
+                $minor++
+                $build = 0
+              }
+              "patch" {
+                $build++
+              }
+            }
+
+            $newVersion = "$major.$minor.$build"
+            Write-Host "New version (bumped): $newVersion" -ForegroundColor Green
+
+            # Set environment variable for next steps
+            echo "RELEASE_VERSION=$newVersion" >> $env:GITHUB_ENV
+            echo "VERSION_MODE=bump" >> $env:GITHUB_ENV
+
+          } else {
+            # Mode 2: Manual version input (when bump_type is 'none')
+            if ([string]::IsNullOrEmpty($inputVersion)) {
+              Write-Error "When bump_type is 'none', a manual version must be provided" -ErrorAction Stop
+            }
+
+            if ($inputVersion -notmatch '^\d+\.\d+\.\d+$') {
+              Write-Error "Version must be in format x.y.z (e.g., 1.3.1)" -ErrorAction Stop
+            }
+
+            Write-Host "Using manual version mode: $inputVersion" -ForegroundColor Green
+            echo "RELEASE_VERSION=$inputVersion" >> $env:GITHUB_ENV
+            echo "VERSION_MODE=manual" >> $env:GITHUB_ENV
+          }
 
       - name: Update module version
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version }}"
+          $version = $env:RELEASE_VERSION
+          $versionMode = $env:VERSION_MODE
           $manifestPath = './DailyBackup.psd1'
 
-          Write-Host "Updating module version to $version..." -ForegroundColor Green
+          Write-Host "Updating module version to $version (mode: $versionMode)..." -ForegroundColor Green
 
           # Read the manifest content
           $content = Get-Content -Path $manifestPath -Raw
@@ -58,16 +126,20 @@ jobs:
           git config --local user.name "GitHub Action"
           git add DailyBackup.psd1
           if git diff --cached --quiet; then
-            echo "No changes to commit - version is already ${{ github.event.inputs.version }}"
+            echo "No changes to commit - version is already $RELEASE_VERSION"
           else
-            git commit -m "chore: release v${{ github.event.inputs.version }}"
+            if [ "$VERSION_MODE" = "bump" ]; then
+              git commit -m "chore: bump version to v$RELEASE_VERSION"
+            else
+              git commit -m "chore: release v$RELEASE_VERSION"
+            fi
             git push
           fi
 
       - name: Create Git tag
         run: |
-          git tag -f "v${{ github.event.inputs.version }}"
-          git push -f origin "v${{ github.event.inputs.version }}"
+          git tag -f "v$RELEASE_VERSION"
+          git push -f origin "v$RELEASE_VERSION"
 
       - name: Publish to PSGallery
         shell: pwsh
