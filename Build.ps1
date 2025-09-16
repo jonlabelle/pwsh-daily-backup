@@ -220,6 +220,23 @@ function New-ModulePackage
         }
     }
 
+    # Copy Public and Private folders
+    $foldersToRecursiveCopy = @('Public', 'Private')
+    foreach ($folder in $foldersToRecursiveCopy)
+    {
+        $sourcePath = Join-Path $ProjectRoot $folder
+        if (Test-Path $sourcePath)
+        {
+            $destinationPath = Join-Path $modulePackagePath $folder
+            Copy-Item -Path $sourcePath -Destination $destinationPath -Recurse -Force
+            Write-BuildMessage "Copied folder: $folder"
+        }
+        else
+        {
+            Write-BuildMessage "Folder not found: $folder" -Type Warning
+        }
+    }
+
     # Validate the module manifest
     $packagedManifest = Join-Path $modulePackagePath "$ModuleName.psd1"
     $manifest = Test-ModuleManifest $packagedManifest

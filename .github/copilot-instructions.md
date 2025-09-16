@@ -9,12 +9,80 @@
 
 ## Architecture Overview
 
-This is a **single-file PowerShell module** (`DailyBackup.psm1`) that provides automated backup functionality. The module follows PowerShell best practices with three public functions and several internal helpers:
+This is a **modular PowerShell module** with separated Public and Private functions organized in dedicated folders. The module follows PowerShell best practices with three public functions and several internal helpers:
 
-- **Public**: `New-DailyBackup`, `Restore-DailyBackup`, `Get-BackupInfo`
-- **Internal**: `CompressBackup`, `GenerateBackupPath`, `Add-BackupMetadataFile`, etc.
+- **Public** (in `/Public/` folder): `New-DailyBackup`, `Restore-DailyBackup`, `Get-BackupInfo`
+- **Private** (in `/Private/` folder): All helper functions following proper Verb-Noun naming conventions
+
+### Module Structure
+
+```
+DailyBackup.psm1           # Main module with import logic
+DailyBackup.psd1           # Module manifest
+Public/                    # Public (exported) functions
+├── Get-BackupInfo.ps1
+├── New-DailyBackup.ps1
+└── Restore-DailyBackup.ps1
+Private/                   # Private (internal) functions
+├── Add-BackupMetadataFile.ps1
+├── Compress-Backup.ps1
+├── Get-PathType.ps1
+├── Get-RandomFileName.ps1
+├── New-BackupPath.ps1
+├── Remove-DailyBackup.ps1
+├── Remove-ItemAlternative.ps1
+├── Resolve-UnverifiedPath.ps1
+└── Restore-BackupFile.ps1
+```
+
+### Function Import Pattern
+
+The main module (`DailyBackup.psm1`) uses dot-sourcing to import all functions:
+
+```powershell
+# Get public and private function definition files
+$PublicFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Public\*.ps1" -ErrorAction SilentlyContinue)
+$PrivateFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Private\*.ps1" -ErrorAction SilentlyContinue)
+
+# Dot source the functions
+foreach ($function in @($PublicFunctions + $PrivateFunctions))
+{
+    try
+    {
+        . $function.FullName
+    }
+    catch
+    {
+        Write-Error -Message "Failed to import function $($function.FullName): $_"
+    }
+}
+
+# Export only the public functions
+Export-ModuleMember -Function $PublicFunctions.BaseName
+```
 
 ## Key Design Patterns
+
+### Modular Function Organization
+
+- **Public functions** in `/Public/` folder - exported and user-facing
+- **Private functions** in `/Private/` folder - internal helpers with proper Verb-Noun naming
+- **Automatic importing** via dot-sourcing pattern in main module
+- **Clean separation** of concerns and improved maintainability
+
+### PowerShell Naming Conventions
+
+All private functions follow standard PowerShell Verb-Noun naming:
+
+- `Get-PathType` (was `Get-PathType`)
+- `Get-RandomFileName` (was `GetRandomFileName`)
+- `New-BackupPath` (was `GenerateBackupPath`)
+- `Compress-Backup` (was `CompressBackup`)
+- `Add-BackupMetadataFile` (was `Add-BackupMetadataFile`)
+- `Resolve-UnverifiedPath` (was `ResolveUnverifiedPath`)
+- `Remove-ItemAlternative` (was `RemoveItemAlternative`)
+- `Remove-DailyBackup` (was `RemoveDailyBackup`)
+- `Restore-BackupFile` (was internal, now properly named)
 
 ### Date-Organized Storage Strategy
 
@@ -59,14 +127,25 @@ This is a **single-file PowerShell module** (`DailyBackup.psm1`) that provides a
 - PSScriptAnalyzer must pass with zero errors
 - Warnings are acceptable but tracked
 
+### Commit Standards
+
+- **Use Conventional Commits** for all commits to maintain clear change history
+- Format: `<type>(<scope>): <description>`
+- Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+- Examples:
+  - `feat(backup): add metadata preservation for file restoration`
+  - `fix(restore): handle cloud storage path compatibility`
+  - `docs(readme): update installation instructions`
+  - `refactor(module): extract functions into Public/Private folders`
+
 ## Critical Implementation Details
 
 ### Unique Filename Generation
 
-When duplicate backup names exist, appends random suffix using `GetRandomFileName()`:
+When duplicate backup names exist, appends random suffix using `Get-RandomFileName`:
 
 ```powershell
-$backupPath = '{0}__{1}' -f $backupPath, (GetRandomFileName)
+$backupPath = '{0}__{1}' -f $backupPath, (Get-RandomFileName)
 ```
 
 ### Progress Reporting

@@ -132,11 +132,25 @@ Test-ValidDateString     # Date format validation
 #### File Structure
 
 ```text
-DailyBackup.psm1         # Main module with all functions
-DailyBackup.psd1         # Module manifest and metadata
-README.md                # Primary documentation
-docs/help.md             # Comprehensive user guide
-docs/development.md      # This development guide
+DailyBackup.psm1              # Main module with import logic
+DailyBackup.psd1              # Module manifest and metadata
+Public/                       # Public (exported) functions
+├── Get-BackupInfo.ps1
+├── New-DailyBackup.ps1
+└── Restore-DailyBackup.ps1
+Private/                      # Private (internal) functions
+├── Add-BackupMetadataFile.ps1
+├── Compress-Backup.ps1
+├── Get-PathType.ps1
+├── Get-RandomFileName.ps1
+├── New-BackupPath.ps1
+├── Remove-DailyBackup.ps1
+├── Remove-ItemAlternative.ps1
+├── Resolve-UnverifiedPath.ps1
+└── Restore-BackupFile.ps1
+README.md                     # Primary documentation
+docs/help.md                  # Comprehensive user guide
+docs/development.md           # This development guide
 test/DailyBackup.Tests.ps1    # Unit tests (43 test cases)
 test/IntegrationTests.ps1     # Integration scenarios
 scripts/run-all-tests.ps1     # Test runner
@@ -269,7 +283,7 @@ Before submitting a PR, ensure:
 ./Build.ps1 -Task Analyze
 
 # Module loads correctly
-Import-Module ./DailyBackup.psm1 -Force
+Import-Module ./DailyBackup.psd1 -Force
 
 # Basic functionality works
 New-DailyBackup -Path ./test/stubs -Destination ./temp -WhatIf
@@ -294,10 +308,10 @@ Remove-Module DailyBackup -Force
 
 ```powershell
 # Run analysis with detailed output
-Invoke-ScriptAnalyzer ./DailyBackup.psm1 -Settings ./PSScriptAnalyzerSettings.psd1
+Invoke-ScriptAnalyzer ./Public/*.ps1 ./Private/*.ps1 -Settings ./PSScriptAnalyzerSettings.psd1
 
 # Fix common issues automatically
-Invoke-ScriptAnalyzer ./DailyBackup.psm1 -Fix
+Invoke-ScriptAnalyzer ./Public/*.ps1 ./Private/*.ps1 -Fix
 ```
 
 #### Cross-Platform Issues
