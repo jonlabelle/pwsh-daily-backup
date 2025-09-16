@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **NEW FEATURE**: Backup integrity verification with SHA-256 hashes
   - Automatic hash calculation for all backup sources and archives
-  - `Test-DailyBackupIntegrity` command for verifying backup integrity
+  - `Test-DailyBackup` command for verifying backup integrity
   - Support for detecting corrupted archives and changed source files
   - Hash information stored in backup manifests for comprehensive verification
 
@@ -45,14 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Selective restoration using backup name patterns
   - Preview mode with `-WhatIf` support
   - Force overwrite option for existing files
-- **NEW FEATURE**: `Get-DailyBackupInfo` command for backup discovery and analysis
+- **NEW FEATURE**: `Get-DailyBackup` command for backup discovery and analysis
   - List all available backup dates and files
   - Filter by date ranges and backup name patterns
 
 ### Fixed
 
 - **PowerShell 5.1 Compatibility**: Fixed critical array handling and return value issues
-  - **CRITICAL**: Fixed `Get-DailyBackupInfo` returning `$null` instead of empty arrays in PowerShell 5.1
+  - **CRITICAL**: Fixed `Get-DailyBackup` returning `$null` instead of empty arrays in PowerShell 5.1
   - Replaced `@()` array wrapping with explicit null checks and `Write-Output -NoEnumerate`
   - Simplified date folder regex pattern from complex word-boundary pattern to `^\d{4}-\d{2}-\d{2}$`
   - Resolved `Where-Object` result inconsistencies between PowerShell versions
@@ -86,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: Module now includes three commands instead of one
   - `New-DailyBackup`: Original backup functionality (unchanged)
   - `Restore-DailyBackup`: New restore functionality
-  - `Get-DailyBackupInfo`: New backup information retrieval
+  - `Get-DailyBackup`: New backup information retrieval
 - **Output Format**: All status messages now use ASCII-compatible format
   - Changed from Unicode symbols to text-based indicators
   - Maintains readability while ensuring broad compatibility

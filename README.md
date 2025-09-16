@@ -64,10 +64,10 @@ Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Test" -WhatIf
 
 ```powershell
 # Verify integrity of recent backups
-Test-DailyBackupIntegrity -BackupRoot "D:\Backups"
+Test-DailyBackup -BackupRoot "D:\Backups"
 
 # Verify specific date and source files
-Test-DailyBackupIntegrity -BackupRoot "D:\Backups" -Date "2025-09-15" -VerifySource
+Test-DailyBackup -BackupRoot "D:\Backups" -Date "2025-09-15" -VerifySource
 
 # Performance mode (skip hash calculation)
 New-DailyBackup -Path "C:\Documents" -Destination "D:\Backups" -NoHash
@@ -124,12 +124,12 @@ Restore-DailyBackup [-BackupRoot] <String> [-DestinationPath <String>] [-Date <S
 - **-PreservePaths**: Maintain directory structure during extraction
 - **-Force**: Overwrite existing files without prompting
 
-#### Get-DailyBackupInfo
+#### Get-DailyBackup
 
 Retrieves detailed information about available backups.
 
 ```powershell
-Get-DailyBackupInfo [-BackupRoot] <String> [-Date <String>]
+Get-DailyBackup [-BackupRoot] <String> [-Date <String>]
 ```
 
 **Parameters:**
@@ -137,12 +137,12 @@ Get-DailyBackupInfo [-BackupRoot] <String> [-Date <String>]
 - **-BackupRoot** (required): Root directory containing daily backup folders
 - **-Date**: Specific date to query (YYYY-MM-DD format, default: all dates)
 
-#### Test-DailyBackupIntegrity
+#### Test-DailyBackup
 
 Verifies backup integrity using SHA-256 hash values stored in backup metadata.
 
 ```powershell
-Test-DailyBackupIntegrity [-BackupRoot] <String> [-Date <String>] [-BackupName <String>] [-VerifySource]
+Test-DailyBackup [-BackupRoot] <String> [-Date <String>] [-BackupName <String>] [-VerifySource]
 ```
 
 **Parameters:**

@@ -111,7 +111,7 @@ function New-DailyBackup
         Creates backup without hash calculation for improved performance
 
     .LINK
-        Test-DailyBackupIntegrity
+        Test-DailyBackup
         https://github.com/jonlabelle/pwsh-daily-backup
     #>
     [CmdletBinding(SupportsShouldProcess)]

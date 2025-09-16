@@ -19,7 +19,7 @@ The DailyBackup PowerShell module provides a simple yet powerful solution for cr
 
 - **Logging**: Enable verbose logging for automated backups
 - **Notifications**: Set up alerts for backup failures
-- **Validation**: Regularly verify backup integrity using `Test-DailyBackupIntegrity`rchives organized by date, making it easy to track and manage your backup history.
+- **Validation**: Regularly verify backup integrity using `Test-DailyBackup`rchives organized by date, making it easy to track and manage your backup history.
 
 ### Key Features
 
@@ -122,7 +122,7 @@ Restore-DailyBackup -BackupRoot "C:\Backups" -Date "2025-09-15" -DestinationPath
 View available backups before restoring:
 
 ```powershell
-Get-DailyBackupInfo -BackupRoot "C:\Backups"
+Get-DailyBackup -BackupRoot "C:\Backups"
 ```
 
 ### Test Restore
@@ -167,10 +167,10 @@ Restore-DailyBackup
     [<CommonParameters>]
 ```
 
-#### Get-DailyBackupInfo
+#### Get-DailyBackup
 
 ```powershell
-Get-DailyBackupInfo
+Get-DailyBackup
     -BackupRoot <String>
     [-Date <String>]
     [<CommonParameters>]
@@ -406,13 +406,13 @@ Restore-DailyBackup -BackupRoot "D:\Backups\Documents" -DestinationPath "C:\Rest
 
 ```powershell
 # List all available backups
-Get-DailyBackupInfo -BackupRoot "D:\Backups\Documents"
+Get-DailyBackup -BackupRoot "D:\Backups\Documents"
 
 # Get detailed info for a specific date
-Get-DailyBackupInfo -BackupRoot "D:\Backups\Documents" -Date "2024-01-15" -Verbose
+Get-DailyBackup -BackupRoot "D:\Backups\Documents" -Date "2024-01-15" -Verbose
 
 # Find backups matching a pattern
-Get-DailyBackupInfo -BackupRoot "D:\Backups" -BackupName "*Documents*"
+Get-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Documents*"
 ```
 
 ## Configuration
@@ -545,17 +545,17 @@ Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\RestoreTest" -
 
 ### 5. Backup Integrity Verification
 
-- **Regular Verification**: Use `Test-DailyBackupIntegrity` to verify backup archives
+- **Regular Verification**: Use `Test-DailyBackup` to verify backup archives
 - **Hash Calculation**: Enabled by default using SHA-256 for all backups
 - **Performance Trade-off**: Use `-NoHash` for simple scenarios where verification isn't needed
 - **Source Verification**: Use `-VerifySource` to check if original files have changed
 
 ```powershell
 # Verify recent backup integrity
-Test-DailyBackupIntegrity -BackupRoot "D:\Backups" -Verbose
+Test-DailyBackup -BackupRoot "D:\Backups" -Verbose
 
 # Verify specific date with source file checking
-Test-DailyBackupIntegrity -BackupRoot "D:\Backups" -Date "2025-09-15" -VerifySource
+Test-DailyBackup -BackupRoot "D:\Backups" -Date "2025-09-15" -VerifySource
 
 # Performance mode for large backups
 New-DailyBackup -Path "C:\BigData" -Destination "D:\Backups" -NoHash

@@ -155,7 +155,7 @@ Describe 'Hash Functionality' {
         }
     }
 
-    Context 'Test-DailyBackupIntegrity Function' {
+    Context 'Test-DailyBackup Function' {
         BeforeEach {
             # Clean backup directory for each test
             if (Test-Path $TestEnv.BackupDir)
@@ -171,7 +171,7 @@ Describe 'Hash Functionality' {
 
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir
             $result | Should -Not -BeNullOrEmpty
             $result[0].ArchiveIntegrityValid | Should -Be $true
             $result[0].ArchiveHashMatch | Should -Be $true
@@ -192,7 +192,7 @@ Describe 'Hash Functionality' {
             # Corrupt the zip file by appending data
             'corrupt' | Add-Content -Path $zipFile.FullName -Encoding ASCII
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir
             $result[0].ArchiveIntegrityValid | Should -Be $false
             $result[0].ArchiveHashMatch | Should -Be $false
             $result[0].ErrorMessage | Should -Match 'corrupted'
@@ -204,7 +204,7 @@ Describe 'Hash Functionality' {
 
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir -NoHash
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir
             $result[0].HasHashData | Should -Be $false
             $result[0].ErrorMessage | Should -Match 'No hash data available'
         }
@@ -215,7 +215,7 @@ Describe 'Hash Functionality' {
 
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir -VerifySource
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir -VerifySource
             $result[0].SourceIntegrityValid | Should -Be $true
             $result[0].SourceHashMatch | Should -Be $true
         }
@@ -229,7 +229,7 @@ Describe 'Hash Functionality' {
             # Modify source file after backup
             'Modified content' | Out-File -FilePath $testFile -Encoding UTF8
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir -VerifySource
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir -VerifySource
             $result[0].SourceIntegrityValid | Should -Be $false
             $result[0].SourceHashMatch | Should -Be $false
             $result[0].ErrorMessage | Should -Match 'Source files have changed'
@@ -244,7 +244,7 @@ Describe 'Hash Functionality' {
             # Delete source file after backup
             Remove-Item $testFile -Force
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir -VerifySource
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir -VerifySource
             $result[0].SourceIntegrityValid | Should -Be $false
             $result[0].ErrorMessage | Should -Match 'Source path no longer exists'
         }
@@ -257,25 +257,25 @@ Describe 'Hash Functionality' {
 
             New-DailyBackup -Path @($testFile1, $testFile2) -Destination $TestEnv.BackupDir
 
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir -BackupName '*document*'
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir -BackupName '*document*'
             $result.Count | Should -Be 1
             $result[0].BackupName | Should -Match 'document'
         }
 
         It 'Returns empty array for no backups found' {
-            $result = Test-DailyBackupIntegrity -BackupRoot $TestEnv.BackupDir
+            $result = Test-DailyBackup -BackupRoot $TestEnv.BackupDir
             $result | Should -Be @()
         }
     }
 
-    Context 'Integration with Get-DailyBackupInfo' {
+    Context 'Integration with Get-DailyBackup' {
         It 'Includes hash information in backup metadata' {
             $testFile = Join-Path $TestEnv.SourceDir 'info-hash.txt'
             'Info hash test' | Out-File -FilePath $testFile -Encoding UTF8
 
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir
 
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $TestEnv.BackupDir
+            $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             $metadata = $backupInfo[0].Backups[0].Metadata
 
             $metadata.SourceHash | Should -Not -BeNullOrEmpty

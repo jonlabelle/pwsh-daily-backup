@@ -6,7 +6,7 @@ BeforeAll {
     $TestEnv = Initialize-TestEnvironment -TestName 'Restore'
 }
 
-Describe 'Get-DailyBackupInfo Functionality' {
+Describe 'Get-DailyBackup Functionality' {
     BeforeAll {
         # Create test backups for info retrieval
         New-TestBackup -SourcePath $TestEnv.SourceDir -BackupPath $TestEnv.BackupDir
@@ -14,13 +14,13 @@ Describe 'Get-DailyBackupInfo Functionality' {
 
     Context 'Backup Information Retrieval' {
         It 'Returns available backup information' {
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $TestEnv.BackupDir
+            $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             $backupInfo | Should -Not -BeNullOrEmpty
             $backupInfo.Count | Should -BeGreaterThan 0
         }
 
         It 'Returns backup information with required properties' {
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $TestEnv.BackupDir
+            $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             $backup = $backupInfo[0]
 
             $backup.Date | Should -Not -BeNullOrEmpty
@@ -32,7 +32,7 @@ Describe 'Get-DailyBackupInfo Functionality' {
 
         It 'Filters backups by specific date' {
             $today = Get-Date -Format 'yyyy-MM-dd'
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $TestEnv.BackupDir -Date $today
+            $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir -Date $today
 
             if ($backupInfo.Count -gt 0)
             {
@@ -42,7 +42,7 @@ Describe 'Get-DailyBackupInfo Functionality' {
 
         It 'Handles non-existent backup directory gracefully' {
             $nonExistentPath = Join-Path $TestEnv.TestRoot 'NonExistent'
-            $result = Get-DailyBackupInfo -BackupRoot $nonExistentPath -WarningAction SilentlyContinue
+            $result = Get-DailyBackup -BackupRoot $nonExistentPath -WarningAction SilentlyContinue
             $result | Should -Be @()
         }
     }
@@ -110,7 +110,7 @@ Describe 'Restore-DailyBackup Functionality' {
         }
 
         It 'Maintains metadata information during restore' {
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $TestEnv.BackupDir
+            $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             if ($backupInfo.Count -gt 0 -and $backupInfo[0].Backups.Count -gt 0)
             {
                 $backup = $backupInfo[0].Backups[0]
@@ -145,7 +145,7 @@ Describe 'End-to-End Backup and Restore' {
             New-DailyBackup -Path $E2ESource -Destination $E2EBackup
 
             # Verify backup exists
-            $backupInfo = Get-DailyBackupInfo -BackupRoot $E2EBackup
+            $backupInfo = Get-DailyBackup -BackupRoot $E2EBackup
             $backupInfo.Count | Should -BeGreaterThan 0
 
             # Execute restore

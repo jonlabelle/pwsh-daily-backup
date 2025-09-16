@@ -1,8 +1,8 @@
-function Test-DailyBackupIntegrity
+function Test-DailyBackup
 {
     <#
     .SYNOPSIS
-        Verifies the integrity of backup archives using stored hash values.
+        Tests the integrity of daily backup archives using hash verification.
 
     .DESCRIPTION
         Validates backup integrity by comparing current hash values against those
@@ -32,23 +32,23 @@ function Test-DailyBackupIntegrity
         Backups created with -NoHash cannot be verified using this function.
 
     .EXAMPLE
-        PS > Test-DailyBackupIntegrity -BackupRoot 'D:\Backups'
+        PS > Test-DailyBackup -BackupRoot 'D:\Backups'
 
         Verifies integrity of the most recent backup
 
     .EXAMPLE
-        PS > Test-DailyBackupIntegrity -BackupRoot 'D:\Backups' -Date '2025-09-15'
+        PS > Test-DailyBackup -BackupRoot 'D:\Backups' -Date '2025-09-15'
 
         Verifies integrity of backups from specific date
 
     .EXAMPLE
-        PS > Test-DailyBackupIntegrity -BackupRoot 'D:\Backups' -BackupName '*Documents*' -VerifySource
+        PS > Test-DailyBackup -BackupRoot 'D:\Backups' -BackupName '*Documents*' -VerifySource
 
         Verifies specific backups and their source files
 
     .LINK
         New-DailyBackup
-        Get-DailyBackupInfo
+        Get-DailyBackup
     #>
     [CmdletBinding()]
     param(
@@ -74,23 +74,23 @@ function Test-DailyBackupIntegrity
             throw "Backup root directory does not exist: $BackupRoot"
         }
 
-        Write-Verbose "Test-DailyBackupIntegrity> Starting integrity verification for: $BackupRoot"
+        Write-Verbose "Test-DailyBackup> Starting integrity verification for: $BackupRoot"
 
         # Get backup information
         $backupInfoParams = @{ BackupRoot = $BackupRoot }
         if ($Date) { $backupInfoParams.Date = $Date }
 
-        $backupInfo = Get-DailyBackupInfo @backupInfoParams
+        $backupInfo = Get-DailyBackup @backupInfoParams
         if (-not $backupInfo -or $backupInfo.Count -eq 0)
         {
-            Write-Warning 'Test-DailyBackupIntegrity> No backups found to verify'
+            Write-Warning 'Test-DailyBackup> No backups found to verify'
             return @()
         }
 
         $results = @()
         foreach ($dateInfo in $backupInfo)
         {
-            Write-Verbose "Test-DailyBackupIntegrity> Verifying backups for date: $($dateInfo.Date)"
+            Write-Verbose "Test-DailyBackup> Verifying backups for date: $($dateInfo.Date)"
 
             $backupsToVerify = $dateInfo.Backups
             if ($BackupName)
@@ -137,7 +137,7 @@ function Test-DailyBackupIntegrity
                     # Verify archive hash
                     if ($hasArchiveHash)
                     {
-                        Write-Verbose "Test-DailyBackupIntegrity> Verifying archive hash for: $($backup.Name)"
+                        Write-Verbose "Test-DailyBackup> Verifying archive hash for: $($backup.Name)"
 
                         if (-not (Test-Path $backup.Path))
                         {
@@ -156,14 +156,14 @@ function Test-DailyBackupIntegrity
                         }
                         else
                         {
-                            Write-Verbose 'Test-DailyBackupIntegrity> Archive hash verified successfully'
+                            Write-Verbose 'Test-DailyBackup> Archive hash verified successfully'
                         }
                     }
 
                     # Verify source hash if requested and available
                     if ($VerifySource -and $hasSourceHash)
                     {
-                        Write-Verbose "Test-DailyBackupIntegrity> Verifying source hash for: $($backup.Metadata.SourcePath)"
+                        Write-Verbose "Test-DailyBackup> Verifying source hash for: $($backup.Metadata.SourcePath)"
 
                         if (Test-Path $backup.Metadata.SourcePath)
                         {
@@ -184,7 +184,7 @@ function Test-DailyBackupIntegrity
                             }
                             else
                             {
-                                Write-Verbose 'Test-DailyBackupIntegrity> Source hash verified successfully'
+                                Write-Verbose 'Test-DailyBackup> Source hash verified successfully'
                             }
                         }
                         else
@@ -209,7 +209,7 @@ function Test-DailyBackupIntegrity
                 catch
                 {
                     $result.ErrorMessage = "Verification failed: $_"
-                    Write-Warning "Test-DailyBackupIntegrity> Error verifying $($backup.Name): $_"
+                    Write-Warning "Test-DailyBackup> Error verifying $($backup.Name): $_"
                 }
 
                 $results += $result
@@ -222,22 +222,22 @@ function Test-DailyBackupIntegrity
         $sourceValid = ($results | Where-Object { $_.SourceIntegrityValid -eq $true }).Count
         $withoutHashes = ($results | Where-Object { -not $_.HasHashData }).Count
 
-        Write-Verbose "Test-DailyBackupIntegrity> Verification complete: $totalVerified backups checked"
-        Write-Verbose "Test-DailyBackupIntegrity> Archive integrity: $archiveValid/$totalVerified valid"
+        Write-Verbose "Test-DailyBackup> Verification complete: $totalVerified backups checked"
+        Write-Verbose "Test-DailyBackup> Archive integrity: $archiveValid/$totalVerified valid"
         if ($VerifySource)
         {
-            Write-Verbose "Test-DailyBackupIntegrity> Source integrity: $sourceValid/$totalVerified valid"
+            Write-Verbose "Test-DailyBackup> Source integrity: $sourceValid/$totalVerified valid"
         }
         if ($withoutHashes -gt 0)
         {
-            Write-Verbose "Test-DailyBackupIntegrity> $withoutHashes backups had no hash data for verification"
+            Write-Verbose "Test-DailyBackup> $withoutHashes backups had no hash data for verification"
         }
 
         return $results
     }
     catch
     {
-        Write-Error "Test-DailyBackupIntegrity> Failed to verify backup integrity: $_"
+        Write-Error "Test-DailyBackup> Failed to verify backup integrity: $_"
         return @()
     }
 }
