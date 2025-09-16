@@ -57,8 +57,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add DailyBackup.psd1
-          git commit -m "chore: release v${{ github.event.inputs.version }}"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit - version is already ${{ github.event.inputs.version }}"
+          else
+            git commit -m "chore: release v${{ github.event.inputs.version }}"
+            git push
+          fi
 
       - name: Create Git tag
         run: |

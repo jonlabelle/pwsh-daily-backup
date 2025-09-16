@@ -200,7 +200,15 @@ function New-DailyBackup
 
             try
             {
-                $resolvedPath = (Resolve-Path $item -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
+                # Handle long paths on Windows
+                $pathToResolve = $item
+                if ($PSVersionTable.Platform -eq 'Win32NT' -and $item.Length -ge 260)
+                {
+                    Write-Verbose ('New-DailyBackup:Process> Long path detected ({0} characters), using extended path syntax' -f $item.Length) -Verbose:$verboseEnabled
+                    $pathToResolve = "\\?\$item"
+                }
+
+                $resolvedPath = (Resolve-Path $pathToResolve -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
                 if ($null -eq $resolvedPath)
                 {
                     Write-Warning ('New-DailyBackup:Process> Failed to resolve path for: {0}' -f $item)
@@ -212,7 +220,14 @@ function New-DailyBackup
                     foreach ($globItem in $resolvedPath)
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing glob item: {0}' -f $globItem) -Verbose:$verboseEnabled
-                        Compress-Backup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                        try
+                        {
+                            Compress-Backup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                        }
+                        catch
+                        {
+                            Write-Warning ('New-DailyBackup:Process> Error compressing {0}: {1}' -f $globItem, $_.Exception.Message)
+                        }
                     }
                 }
                 else
@@ -224,13 +239,20 @@ function New-DailyBackup
                     else
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing single item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
-                        Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                        try
+                        {
+                            Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                        }
+                        catch
+                        {
+                            Write-Warning ('New-DailyBackup:Process> Error compressing {0}: {1}' -f $resolvedPath, $_.Exception.Message)
+                        }
                     }
                 }
             }
             catch
             {
-                Write-Error ('New-DailyBackup:Process> Error processing path {0}: {1}' -f $item, $_.Exception.Message) -ErrorAction Continue
+                Write-Warning ('New-DailyBackup:Process> Error processing path {0}: {1}' -f $item, $_.Exception.Message)
             }
         }
 

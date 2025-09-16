@@ -65,13 +65,21 @@ function Compress-Backup
     if ($PSCmdlet.ShouldProcess("$backupPath.zip", 'Compress-Archive'))
     {
         Write-Verbose ('New-DailyBackup:Compress-Backup> Compressing {0} backup ''{1}''' -f $pathType.ToLower(), "$backupPath.zip")
-        Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Continue
 
-        # Add backup to consolidated daily manifest
-        if (-not $WhatIfPreference)
+        try
         {
-            $datePath = Split-Path $backupPath
-            Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath -NoHash:$NoHash
+            Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Stop
+
+            # Add backup to consolidated daily manifest
+            if (-not $WhatIfPreference)
+            {
+                $datePath = Split-Path $backupPath
+                Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath -NoHash:$NoHash
+            }
+        }
+        catch
+        {
+            Write-Warning ('New-DailyBackup:Compress-Backup> Failed to compress {0} ''{1}'': {2}' -f $pathType.ToLower(), $Path, $_.Exception.Message)
         }
     }
     else
