@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resolved `Where-Object` result inconsistencies between PowerShell versions
   - Fixed array return semantics to ensure consistent behavior across all PowerShell versions
   - Ensured restore summary displays correctly in all PowerShell versions
-  - All 43 unit tests now pass in PowerShell 5.1, 6.x, and 7.x
+  - All 43+ focused unit tests now pass in PowerShell 5.1, 6.x, and 7.x
   - Detailed backup metadata information
   - Cross-platform backup inventory management
 - **Metadata System**: Automatic metadata generation for all backups

@@ -8,9 +8,15 @@ This module includes comprehensive testing to ensure reliability and professiona
 
 ### Test Suite Overview
 
-- **unit tests** - Module functions, parameters, error handling
-- **integration tests** - Real-world backup scenarios
-- **Static analysis** - Code quality and PowerShell best practices
+The module uses a **focused test architecture** with separate test files for different areas of concern:
+
+- **Backup.Tests.ps1** - Core backup functionality and operations
+- **Restore.Tests.ps1** - Restore operations and Get-BackupInfo functionality
+- **ErrorHandling.Tests.ps1** - Error handling, edge cases, and validation
+- **Metadata.Tests.ps1** - Metadata generation and path type detection
+- **TestHelpers.ps1** - Shared test utilities and setup functions
+- **IntegrationTests.ps1** - Real-world backup scenarios
+- **Static analysis** - Code quality and PowerShell best practices (PSScriptAnalyzer)
 - **Cross-platform** - Tested on Windows, macOS, and Linux
 
 ### Running Tests Locally
@@ -19,22 +25,28 @@ This module includes comprehensive testing to ensure reliability and professiona
 
 ```powershell
 # Install test dependencies
-# Install-Module Pester -Scope CurrentUser
-
-# Install Pester v4 specifically for compatibility
-Install-Module Pester -RequiredVersion 4.10.1 -Force -SkipPublisherCheck -ErrorAction Stop
-
+Install-Module Pester -Scope CurrentUser
 Install-Module PSScriptAnalyzer -Scope CurrentUser
 ```
 
-#### Unit Tests
+#### Focused Unit Tests
 
 ```powershell
-# Run unit tests (14 test cases)
-Invoke-Pester ./test/DailyBackup.Tests.ps1
+# Run all focused test suites (43+ test cases)
+./test/RunAllTests.ps1
 
-# Run with detailed output
-Invoke-Pester ./test/DailyBackup.Tests.ps1 -Detailed
+# Run specific test area
+Invoke-Pester ./test/Backup.Tests.ps1
+Invoke-Pester ./test/Restore.Tests.ps1
+Invoke-Pester ./test/ErrorHandling.Tests.ps1
+Invoke-Pester ./test/Metadata.Tests.ps1
+
+# Run tests with filtering
+./test/RunAllTests.ps1 -TestName "Backup"
+./test/RunAllTests.ps1 -OutputFormat "Detailed"
+
+# Legacy test runner (redirects to focused tests)
+Invoke-Pester ./test/DailyBackup.Tests.ps1
 ```
 
 #### Integration Tests
@@ -50,10 +62,16 @@ Invoke-Pester ./test/DailyBackup.Tests.ps1 -Detailed
 #### Run All Tests
 
 ```powershell
-# Run comprehensive test suite
-./scripts/run-all-tests.ps1
+# Run comprehensive test suite via build system
+./Build.ps1 -Task Test
+
+# Run focused test runner directly
+./test/RunAllTests.ps1
 
 # Run with verbose output
+./test/RunAllTests.ps1 -OutputFormat "Detailed"
+
+# Run legacy script (now uses focused tests internally)
 ./scripts/run-all-tests.ps1 -Verbose
 ```
 
@@ -61,18 +79,28 @@ Invoke-Pester ./test/DailyBackup.Tests.ps1 -Detailed
 
 - Task: `Ctrl+Shift+P` → "Tasks: Run Task" → Choose from available build tasks:
   - **"Build: All"** - Complete build and test suite
-  - **"Build: Test"** - Run all tests only
+  - **"Build: Test"** - Run focused test suites via build system
   - **"Build: Analyze"** - Static analysis only
   - **"Build: Package"** - Create release package
-  - **"Run all tests"** - Legacy test runner (scripts/run-all-tests.ps1)
+  - **"Run all tests"** - Legacy test runner (now uses focused tests)
 - Debug: `F5` → "PowerShell: Run all tests"
 
-The comprehensive test runner executes:
+The build system automatically detects and uses the new focused test structure:
 
-- Static analysis (PSScriptAnalyzer)
-- Unit tests (Pester)
-- Integration tests
-- Provides detailed reporting with pass/fail status
+- **RunAllTests.ps1** - Discovers and runs all focused test files
+- **Legacy compatibility** - DailyBackup.Tests.ps1 redirects to focused tests
+- **Build integration** - Build.ps1 prefers focused tests over legacy
+- **Comprehensive reporting** - Detailed pass/fail status and exit codes
+
+#### Test Architecture Benefits
+
+The focused test structure provides:
+
+- **Maintainability** - Smaller, focused test files are easier to understand and modify
+- **Parallel development** - Multiple developers can work on different test areas
+- **Selective testing** - Run only relevant tests during development
+- **Clear organization** - Tests are grouped by functional area
+- **Reduced complexity** - No more monolithic 500+ line test files
 
 #### Full Build Pipeline
 
@@ -103,30 +131,22 @@ The project uses GitHub Actions for automated testing:
 
 The DailyBackup module consists of three primary commands:
 
-#### Core Commands
+#### Module Organization
 
-- **`New-DailyBackup`** - Creates compressed backup archives with automatic cleanup
-- **`Restore-DailyBackup`** - Restores files from backup archives to specified locations
-- **`Get-BackupInfo`** - Discovers and analyzes available backups
+The module follows PowerShell best practices with a clean separation between public and private functionality:
 
-#### Internal Functions
+- **Public Functions** - User-facing commands exported by the module (located in `/Public/` folder)
+- **Private Functions** - Internal helper functions that support the public API (located in `/Private/` folder)
+- **Modular Design** - Each function has a single responsibility and follows PowerShell Verb-Noun naming conventions
+
+For the current list of available commands, use:
 
 ```powershell
-# Backup-related functions
-CompressBackup           # Creates ZIP archives from source paths
-RemoveDailyBackup        # Cleanup old backup directories
-GenerateBackupFileName   # Creates unique backup filenames
-CreateMetadata           # Generates backup metadata files
+# List all exported commands
+Get-Command -Module DailyBackup
 
-# Restore-related functions
-ExtractBackup            # Extracts ZIP archives to destinations
-ReadMetadata             # Reads backup metadata information
-ResolveRestorePath       # Determines appropriate restore paths
-
-# Utility functions
-ResolveUnverifiedPath    # Path resolution and validation
-RemoveItemAlternative    # Cloud storage compatible file deletion
-Test-ValidDateString     # Date format validation
+# Get detailed help for any command
+Get-Help New-DailyBackup -Full
 ```
 
 #### File Structure
@@ -135,25 +155,20 @@ Test-ValidDateString     # Date format validation
 DailyBackup.psm1              # Main module with import logic
 DailyBackup.psd1              # Module manifest and metadata
 Public/                       # Public (exported) functions
-├── Get-BackupInfo.ps1
-├── New-DailyBackup.ps1
-└── Restore-DailyBackup.ps1
+└── *.ps1                     # User-facing commands
 Private/                      # Private (internal) functions
-├── Add-BackupMetadataFile.ps1
-├── Compress-Backup.ps1
-├── Get-PathType.ps1
-├── Get-RandomFileName.ps1
-├── New-BackupPath.ps1
-├── Remove-DailyBackup.ps1
-├── Remove-ItemAlternative.ps1
-├── Resolve-UnverifiedPath.ps1
-└── Restore-BackupFile.ps1
+└── *.ps1                     # Helper functions and utilities
 README.md                     # Primary documentation
 docs/help.md                  # Comprehensive user guide
 docs/development.md           # This development guide
-test/DailyBackup.Tests.ps1    # Unit tests (43 test cases)
-test/IntegrationTests.ps1     # Integration scenarios
-scripts/run-all-tests.ps1     # Test runner
+test/                         # Focused test architecture
+├── TestHelpers.ps1           # Shared test utilities
+├── RunAllTests.ps1           # Test discovery and runner
+├── DailyBackup.Tests.ps1     # Legacy compatibility (redirects)
+├── *.Tests.ps1               # Focused test files by area
+└── IntegrationTests.ps1      # Integration scenarios
+scripts/                      # Build and utility scripts
+└── *.ps1                     # Various automation scripts
 Build.ps1                     # Build and package automation
 ```
 
@@ -297,7 +312,7 @@ New-DailyBackup -Path ./test/stubs -Destination ./temp -WhatIf
 
 ```powershell
 # Run specific test with detailed output
-Invoke-Pester ./test/DailyBackup.Tests.ps1 -TestName "Should create backup directory" -Detailed
+Invoke-Pester ./test/Backup.Tests.ps1 -TestName "*backup directory*" -Detailed
 
 # Check for module conflicts
 Get-Module DailyBackup -ListAvailable
