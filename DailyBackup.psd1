@@ -16,7 +16,7 @@
   RootModule = 'DailyBackup.psm1'
 
   # Version number of this module.
-  ModuleVersion = '1.5.2'
+  ModuleVersion = '1.5.3'
 
   # Supported PSEditions
   CompatiblePSEditions = @('Desktop', 'Core')
