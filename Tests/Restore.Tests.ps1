@@ -34,7 +34,8 @@ Describe 'Get-BackupInfo Functionality' {
             $today = Get-Date -Format 'yyyy-MM-dd'
             $backupInfo = Get-BackupInfo -BackupRoot $TestEnv.BackupDir -Date $today
 
-            if ($backupInfo.Count -gt 0) {
+            if ($backupInfo.Count -gt 0)
+            {
                 $backupInfo[0].Date | Should -Be $today
             }
         }
@@ -51,7 +52,8 @@ Describe 'Restore-DailyBackup Functionality' {
     BeforeEach {
         # Create fresh backup for each restore test
         $RestoreTestSource = Join-Path $TestEnv.TestRoot 'RestoreSource'
-        if (Test-Path $RestoreTestSource) {
+        if (Test-Path $RestoreTestSource)
+        {
             Remove-Item $RestoreTestSource -Recurse -Force
         }
         New-Item -Path $RestoreTestSource -ItemType Directory -Force | Out-Null
@@ -100,7 +102,8 @@ Describe 'Restore-DailyBackup Functionality' {
             Restore-DailyBackup -BackupRoot $TestEnv.BackupDir -DestinationPath $RestoreDestination
 
             $restoredFile = Get-ChildItem $RestoreDestination -Recurse -File | Where-Object { $_.Name -eq 'restore-test.txt' } | Select-Object -First 1
-            if ($restoredFile) {
+            if ($restoredFile)
+            {
                 $content = Get-Content $restoredFile.FullName -Raw
                 $content.Trim() | Should -Be 'Restore test content'
             }
@@ -108,9 +111,11 @@ Describe 'Restore-DailyBackup Functionality' {
 
         It 'Maintains metadata information during restore' {
             $backupInfo = Get-BackupInfo -BackupRoot $TestEnv.BackupDir
-            if ($backupInfo.Count -gt 0 -and $backupInfo[0].Backups.Count -gt 0) {
+            if ($backupInfo.Count -gt 0 -and $backupInfo[0].Backups.Count -gt 0)
+            {
                 $backup = $backupInfo[0].Backups[0]
-                if ($backup.Metadata) {
+                if ($backup.Metadata)
+                {
                     $backup.Metadata.BackupVersion | Should -Be '2.0'
                     $backup.Metadata.SourcePath | Should -Not -BeNullOrEmpty
                     $backup.Metadata.PathType | Should -Match '^(File|Directory)$'

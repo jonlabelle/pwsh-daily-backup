@@ -37,7 +37,8 @@ Describe 'Metadata and Path Type Detection' {
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir -ExpectedMetadataCount 2
 
             $pathTypes = @()
-            foreach ($metadataFile in $result.MetadataFiles) {
+            foreach ($metadataFile in $result.MetadataFiles)
+            {
                 $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
                 $pathTypes += $metadata.Content.PathType
             }
@@ -53,7 +54,8 @@ Describe 'Metadata and Path Type Detection' {
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
 
-            foreach ($metadataFile in $result.MetadataFiles) {
+            foreach ($metadataFile in $result.MetadataFiles)
+            {
                 $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
                 $metadata.IsValid | Should -Be $true
             }

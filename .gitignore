@@ -35,4 +35,5 @@ dist/
 coverage.xml
 
 # Ignore stub destination backup
-test/stubs/files-backed-up/
+# Test artifacts
+Tests/stubs/files-backed-up/

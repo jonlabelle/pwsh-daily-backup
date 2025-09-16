@@ -10,7 +10,8 @@
 #>
 
 # Import the module for testing
-function Initialize-TestModule {
+function Initialize-TestModule
+{
     param(
         [string]$ModuleName = 'DailyBackup'
     )
@@ -26,7 +27,8 @@ function Initialize-TestModule {
 }
 
 # Setup test directories and files
-function Initialize-TestEnvironment {
+function Initialize-TestEnvironment
+{
     param(
         [string]$TestName
     )
@@ -36,7 +38,8 @@ function Initialize-TestEnvironment {
     $script:BackupDir = Join-Path $script:TestRoot 'Backup'
 
     # Create test directories
-    if (Test-Path $script:TestRoot) {
+    if (Test-Path $script:TestRoot)
+    {
         Remove-Item $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
     New-Item -Path $script:TestRoot -ItemType Directory -Force | Out-Null
@@ -60,18 +63,21 @@ function Initialize-TestEnvironment {
 }
 
 # Cleanup test environment
-function Remove-TestEnvironment {
+function Remove-TestEnvironment
+{
     param(
         [string]$TestRoot
     )
 
-    if (Test-Path $TestRoot) {
+    if (Test-Path $TestRoot)
+    {
         Remove-Item $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
 # Create backup files for restore testing
-function New-TestBackup {
+function New-TestBackup
+{
     param(
         [string]$SourcePath,
         [string]$BackupPath
@@ -92,7 +98,8 @@ function New-TestBackup {
 }
 
 # Verify backup structure
-function Test-BackupStructure {
+function Test-BackupStructure
+{
     param(
         [string]$BackupPath,
         [int]$ExpectedZipCount = 1,
@@ -110,7 +117,8 @@ function Test-BackupStructure {
         MetadataCount = 0
     }
 
-    if ($result.BackupLocationExists) {
+    if ($result.BackupLocationExists)
+    {
         $result.ZipFiles = Get-ChildItem -Path $BackupLocation -Filter '*.zip' -ErrorAction SilentlyContinue
         $result.MetadataFiles = Get-ChildItem -Path $BackupLocation -Filter '*.metadata.json' -ErrorAction SilentlyContinue
         $result.ZipCount = $result.ZipFiles.Count
@@ -121,16 +129,19 @@ function Test-BackupStructure {
 }
 
 # Verify metadata content
-function Test-MetadataContent {
+function Test-MetadataContent
+{
     param(
         [string]$MetadataPath
     )
 
-    if (-not (Test-Path $MetadataPath)) {
+    if (-not (Test-Path $MetadataPath))
+    {
         return $null
     }
 
-    try {
+    try
+    {
         $content = Get-Content -Path $MetadataPath -Raw | ConvertFrom-Json
         return @{
             IsValid = $true
@@ -141,7 +152,8 @@ function Test-MetadataContent {
             HasBackupVersion = $content.BackupVersion -eq '2.0'
         }
     }
-    catch {
+    catch
+    {
         return @{
             IsValid = $false
             Error = $_.Exception.Message

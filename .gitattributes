@@ -4,7 +4,8 @@
 .github/   export-ignore
 .vscode/   export-ignore
 scripts/   export-ignore
-test/      export-ignore
+# Exclude test files from releases (Git archive)
+Tests/      export-ignore
 
 # Exclude these files from being exported:
 .editorconfig                   export-ignore

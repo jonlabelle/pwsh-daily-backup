@@ -115,8 +115,8 @@ All private functions follow standard PowerShell Verb-Noun naming:
 
 ### Testing Strategy
 
-- **Unit tests**: `test/DailyBackup.Tests.ps1` (Pester-based, 14+ test cases)
-- **Integration tests**: `test/IntegrationTests.ps1` (real backup scenarios)
+- **Unit tests**: `Tests/DailyBackup.Tests.ps1` (Pester-based, 14+ test cases)
+- **Integration tests**: `Tests/IntegrationTests.ps1` (real backup scenarios)
 - **Test setup**: Creates `TestData/Source` and `TestData/Backup` directories
 - **CI**: Runs on Windows, macOS, Linux via `.github/workflows/ci.yml`
 
@@ -182,6 +182,6 @@ All destructive operations support `-WhatIf` and implement `[CmdletBinding(Suppo
 ## Testing Conventions
 
 - Test directories: `$script:TestRoot`, `$script:SourceDir`, `$script:BackupDir`
-- BeforeAll/BeforeEach setup in `test/DailyBackup.Tests.ps1`
+- BeforeAll/BeforeEach setup in `Tests/DailyBackup.Tests.ps1`
 - Verify backup creation, metadata files, and date folder structure
 - Test both individual files and directory scenarios

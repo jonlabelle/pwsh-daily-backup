@@ -27,14 +27,14 @@
 #>
 
 # Legacy compatibility - redirect to new test runner
-Write-Host "This test file has been refactored into focused modules." -ForegroundColor Yellow
-Write-Host "Use RunAllTests.ps1 or run individual test files directly:" -ForegroundColor Gray
-Write-Host "  - Backup.Tests.ps1" -ForegroundColor Gray
-Write-Host "  - Restore.Tests.ps1" -ForegroundColor Gray
-Write-Host "  - ErrorHandling.Tests.ps1" -ForegroundColor Gray
-Write-Host "  - Metadata.Tests.ps1" -ForegroundColor Gray
-Write-Host ""
-Write-Host "Running all focused tests..." -ForegroundColor Green
+Write-Host 'This test file has been refactored into focused modules.' -ForegroundColor Yellow
+Write-Host 'Use RunAllTests.ps1 or run individual test files directly:' -ForegroundColor Gray
+Write-Host '  - Backup.Tests.ps1' -ForegroundColor Gray
+Write-Host '  - Restore.Tests.ps1' -ForegroundColor Gray
+Write-Host '  - ErrorHandling.Tests.ps1' -ForegroundColor Gray
+Write-Host '  - Metadata.Tests.ps1' -ForegroundColor Gray
+Write-Host ''
+Write-Host 'Running all focused tests...' -ForegroundColor Green
 
 # Execute the new test runner
 & "$PSScriptRoot\RunAllTests.ps1" @args

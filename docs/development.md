@@ -33,30 +33,30 @@ Install-Module PSScriptAnalyzer -Scope CurrentUser
 
 ```powershell
 # Run all focused test suites (43+ test cases)
-./test/RunAllTests.ps1
+./Tests/RunAllTests.ps1
 
 # Run specific test area
-Invoke-Pester ./test/Backup.Tests.ps1
-Invoke-Pester ./test/Restore.Tests.ps1
-Invoke-Pester ./test/ErrorHandling.Tests.ps1
-Invoke-Pester ./test/Metadata.Tests.ps1
+Invoke-Pester ./Tests/Backup.Tests.ps1
+Invoke-Pester ./Tests/Restore.Tests.ps1
+Invoke-Pester ./Tests/ErrorHandling.Tests.ps1
+Invoke-Pester ./Tests/Metadata.Tests.ps1
 
 # Run tests with filtering
-./test/RunAllTests.ps1 -TestName "Backup"
-./test/RunAllTests.ps1 -OutputFormat "Detailed"
+./Tests/RunAllTests.ps1 -TestName "Backup"
+./Tests/RunAllTests.ps1 -OutputFormat "Detailed"
 
 # Legacy test runner (redirects to focused tests)
-Invoke-Pester ./test/DailyBackup.Tests.ps1
+Invoke-Pester ./Tests/DailyBackup.Tests.ps1
 ```
 
 #### Integration Tests
 
 ```powershell
 # Run integration tests (6 scenarios)
-./test/IntegrationTests.ps1
+./Tests/IntegrationTests.ps1
 
 # Run with verbose output
-./test/IntegrationTests.ps1 -Verbose
+./Tests/IntegrationTests.ps1 -Verbose
 ```
 
 #### Run All Tests
@@ -66,10 +66,10 @@ Invoke-Pester ./test/DailyBackup.Tests.ps1
 ./Build.ps1 -Task Test
 
 # Run focused test runner directly
-./test/RunAllTests.ps1
+./Tests/RunAllTests.ps1
 
 # Run with verbose output
-./test/RunAllTests.ps1 -OutputFormat "Detailed"
+./Tests/RunAllTests.ps1 -OutputFormat "Detailed"
 
 # Run legacy script (now uses focused tests internally)
 ./scripts/run-all-tests.ps1 -Verbose
@@ -161,7 +161,7 @@ Private/                      # Private (internal) functions
 README.md                     # Primary documentation
 docs/help.md                  # Comprehensive user guide
 docs/development.md           # This development guide
-test/                         # Focused test architecture
+Tests/                        # Focused test architecture
 ├── TestHelpers.ps1           # Shared test utilities
 ├── RunAllTests.ps1           # Test discovery and runner
 ├── DailyBackup.Tests.ps1     # Legacy compatibility (redirects)
@@ -301,7 +301,7 @@ Before submitting a PR, ensure:
 Import-Module ./DailyBackup.psd1 -Force
 
 # Basic functionality works
-New-DailyBackup -Path ./test/stubs -Destination ./temp -WhatIf
+New-DailyBackup -Path ./Tests/stubs -Destination ./temp -WhatIf
 ```
 
 ## Debugging and Troubleshooting
@@ -312,7 +312,7 @@ New-DailyBackup -Path ./test/stubs -Destination ./temp -WhatIf
 
 ```powershell
 # Run specific test with detailed output
-Invoke-Pester ./test/Backup.Tests.ps1 -TestName "*backup directory*" -Detailed
+Invoke-Pester ./Tests/Backup.Tests.ps1 -TestName "*backup directory*" -Detailed
 
 # Check for module conflicts
 Get-Module DailyBackup -ListAvailable
@@ -345,12 +345,12 @@ $PSVersionTable.PSVersion  # Should be 5.1+ or 7.x
 ```powershell
 # Measure backup performance
 Measure-Command {
-    New-DailyBackup -Path ./test/stubs -Destination ./temp
+    New-DailyBackup -Path ./Tests/stubs -Destination ./temp
 }
 
 # Profile specific operations
 $null = Trace-Command -Name ParameterBinding -Expression {
-    New-DailyBackup -Path ./test/stubs -Destination ./temp -WhatIf
+    New-DailyBackup -Path ./Tests/stubs -Destination ./temp -WhatIf
 } -PSHost
 ```
 

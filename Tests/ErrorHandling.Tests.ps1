@@ -14,11 +14,13 @@ Describe 'Error Handling and Edge Cases' {
         }
 
         It 'Validates Keep parameter range' {
-            try {
+            try
+            {
                 New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir -Keep -2
                 $false | Should -Be $true  # Should not reach here
             }
-            catch {
+            catch
+            {
                 $true | Should -Be $true  # Expected behavior
             }
         }

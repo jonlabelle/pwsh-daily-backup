@@ -134,10 +134,10 @@ function Invoke-UnitTest
 {
     Write-BuildMessage 'Running unit tests...'
 
-    $testPath = Join-Path $ProjectRoot 'test'
+    $testPath = Join-Path $ProjectRoot 'Tests'
     if (!(Test-Path $testPath))
     {
-        Write-BuildMessage 'No test directory found, skipping unit tests' -Type Warning
+        Write-BuildMessage 'No Tests directory found, skipping unit tests' -Type Warning
         return
     }
 
@@ -194,7 +194,7 @@ function Invoke-IntegrationTest
 {
     Write-BuildMessage 'Running integration tests...'
 
-    $integrationTest = Join-Path $ProjectRoot 'test\IntegrationTests.ps1'
+    $integrationTest = Join-Path $ProjectRoot 'Tests\IntegrationTests.ps1'
     if (Test-Path $integrationTest)
     {
         & $integrationTest -CleanupAfterTests:$true

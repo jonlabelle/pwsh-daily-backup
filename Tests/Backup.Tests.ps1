@@ -48,7 +48,8 @@ Describe 'New-DailyBackup Core Functionality' {
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir -ExpectedZipCount 2 -ExpectedMetadataCount 2
 
             # Verify metadata contains correct PathType
-            foreach ($metadataFile in $result.MetadataFiles) {
+            foreach ($metadataFile in $result.MetadataFiles)
+            {
                 $metadata = Test-MetadataContent -MetadataPath $metadataFile.FullName
                 $metadata.Content.PathType | Should -Match '^(File|Directory)$'
             }
@@ -85,7 +86,8 @@ Describe 'New-DailyBackup Core Functionality' {
                 (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
             )
 
-            foreach ($date in $oldDates) {
+            foreach ($date in $oldDates)
+            {
                 New-Item -Path (Join-Path $TestEnv.BackupDir $date) -ItemType Directory -Force | Out-Null
             }
 
@@ -102,7 +104,8 @@ Describe 'New-DailyBackup Core Functionality' {
                 (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
             )
 
-            foreach ($date in $oldDates) {
+            foreach ($date in $oldDates)
+            {
                 New-Item -Path (Join-Path $TestEnv.BackupDir $date) -ItemType Directory -Force | Out-Null
             }
 

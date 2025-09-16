@@ -50,7 +50,7 @@ jobs:
 
       - name: Run integration tests
         shell: pwsh
-        run: ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
+        run: ./Tests/IntegrationTests.ps1 -CleanupAfterTests:$true
 
   build-windows-powershell:
     name: Build on Windows PowerShell Desktop
@@ -84,4 +84,4 @@ jobs:
 
       - name: Run integration tests (Windows PowerShell)
         shell: powershell
-        run: ./test/IntegrationTests.ps1 -CleanupAfterTests:$true
+        run: ./Tests/IntegrationTests.ps1 -CleanupAfterTests:$true

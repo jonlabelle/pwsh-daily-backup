@@ -12,7 +12,7 @@
             "script": "Invoke-Pester",
             // prettier-ignore
             "args": [
-                "./test/DailyBackup.Tests.ps1",
+                "./Tests/DailyBackup.Tests.ps1",
                 "-Verbose"
             ],
             "cwd": "${workspaceFolder}"
@@ -21,7 +21,7 @@
             "name": "PowerShell: Run integration tests",
             "type": "PowerShell",
             "request": "launch",
-            "script": "./test/IntegrationTests.ps1",
+            "script": "./Tests/IntegrationTests.ps1",
             // prettier-ignore
             "args": [
                 "-Verbose",
@@ -33,7 +33,7 @@
             "name": "PowerShell: Run integration tests (dry-run)",
             "type": "PowerShell",
             "request": "launch",
-            "script": "./test/IntegrationTests.ps1",
+            "script": "./Tests/IntegrationTests.ps1",
             // prettier-ignore
             "args": [
                 "-WhatIf",

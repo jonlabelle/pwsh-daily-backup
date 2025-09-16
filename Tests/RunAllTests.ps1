@@ -40,20 +40,22 @@ param(
 )
 
 # Discover test files
-$testFiles = Get-ChildItem -Path $PSScriptRoot -Filter "*.Tests.ps1" | Where-Object { $_.Name -ne 'DailyBackup.Tests.ps1' }
+$testFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.Tests.ps1' | Where-Object { $_.Name -ne 'DailyBackup.Tests.ps1' }
 
-if ($TestName) {
+if ($TestName)
+{
     $testFiles = $testFiles | Where-Object { $_.BaseName -like "*$TestName*" }
 }
 
-if ($testFiles.Count -eq 0) {
-    Write-Warning "No test files found matching criteria."
+if ($testFiles.Count -eq 0)
+{
+    Write-Warning 'No test files found matching criteria.'
     return
 }
 
 Write-Host "Found $($testFiles.Count) test file(s):" -ForegroundColor Green
 $testFiles | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Gray }
-Write-Host ""
+Write-Host ''
 
 # Configure Pester
 $pesterConfig = @{
@@ -66,7 +68,8 @@ $pesterConfig = @{
     }
 }
 
-if ($Tag) {
+if ($Tag)
+{
     $pesterConfig.Filter = @{
         Tag = $Tag
     }
@@ -82,7 +85,8 @@ Write-Host "Passed: $($results.PassedCount)" -ForegroundColor Green
 Write-Host "Failed: $($results.FailedCount)" -ForegroundColor $(if ($results.FailedCount -gt 0) { 'Red' } else { 'Green' })
 Write-Host "Skipped: $($results.SkippedCount)" -ForegroundColor Yellow
 
-if ($results.FailedCount -gt 0) {
+if ($results.FailedCount -gt 0)
+{
     Write-Host "`nFailed Tests:" -ForegroundColor Red
     $results.Failed | ForEach-Object {
         Write-Host "  - $($_.FullName)" -ForegroundColor Red
