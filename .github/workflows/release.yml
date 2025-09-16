@@ -63,7 +63,7 @@ jobs:
 
       - name: Build and validate module
         shell: pwsh
-        run: ./Build.ps1 -Task Build -Configuration Release
+        run: ./Build.ps1 -Task All -Configuration Release
 
       - name: Publish to PSGallery
         shell: pwsh
