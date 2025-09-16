@@ -43,6 +43,12 @@ function New-DailyBackup
         When specified, backup integrity verification will not be available for
         these backups. Hash calculation is enabled by default for all backups.
 
+    .PARAMETER NoCleanup
+        Skip automatic cleanup of old backup directories. When specified, the Keep
+        parameter is ignored and no old backups will be removed regardless of the
+        retention policy. Use this when you want to manually manage backup cleanup
+        or when running backups that should not affect existing backup retention.
+
     .INPUTS
         [String[]]
         File or directory paths can be piped to this function. Supports pipeline input
@@ -110,6 +116,11 @@ function New-DailyBackup
 
         Creates backup without hash calculation for improved performance
 
+    .EXAMPLE
+        PS > New-DailyBackup -Path 'C:\Projects' -Destination 'D:\Backups' -NoCleanup
+
+        Creates backup without removing old backup directories, regardless of Keep setting
+
     .LINK
         Test-DailyBackup
         https://github.com/jonlabelle/pwsh-daily-backup
@@ -149,7 +160,12 @@ function New-DailyBackup
         [Parameter(
             HelpMessage = 'Skip hash calculation to improve performance in simple backup scenarios.'
         )]
-        [switch] $NoHash
+        [switch] $NoHash,
+
+        [Parameter(
+            HelpMessage = 'Skip automatic cleanup of old backup directories.'
+        )]
+        [switch] $NoCleanup
     )
     begin
     {
@@ -269,9 +285,13 @@ function New-DailyBackup
     {
         Write-Verbose 'New-DailyBackup:End> Running post backup operations' -Verbose:$verboseEnabled
 
-        if ($Keep -ge 0)
+        if (-not $NoCleanup -and $Keep -ge 0)
         {
-            Remove-DailyBackup -Path $Destination -BackupsToKeep $Keep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+            Remove-DailyBackupInternal -Path $Destination -BackupsToKeep $Keep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+        }
+        elseif ($NoCleanup)
+        {
+            Write-Verbose 'New-DailyBackup:End> Skipping cleanup due to -NoCleanup parameter' -Verbose:$verboseEnabled
         }
 
         Write-Verbose 'New-DailyBackup:End> Finished' -Verbose:$verboseEnabled

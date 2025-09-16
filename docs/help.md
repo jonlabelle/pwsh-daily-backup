@@ -176,6 +176,23 @@ Get-DailyBackup
     [<CommonParameters>]
 ```
 
+### Management Commands
+
+#### Remove-DailyBackup
+
+```powershell
+Remove-DailyBackup
+    -Path <String>
+    [-Keep <Int32>]
+    [-Date <String>]
+    [-Force]
+    [-WhatIf]
+    [-Verbose]
+    [<CommonParameters>]
+```
+
+Removes old backup directories based on retention policies or specific dates.
+
 ### Pipeline Support
 
 The cmdlet supports pipeline input for the Path parameter:
@@ -226,6 +243,23 @@ Number of daily backup folders to retain. When exceeded, the oldest backups are 
 - `1`: Keep only today's backup
 - `7`: Keep the last week of backups
 - `30`: Keep the last month of backups
+
+### -NoCleanup
+
+**Type**: `SwitchParameter`
+**Default**: `$false`
+
+Skips automatic cleanup of old backup directories. When specified, the Keep parameter is ignored and no old backups will be removed regardless of the retention policy. Use this when you want to manually manage backup cleanup or when running backups that should not affect existing backup retention.
+
+**Examples:**
+
+```powershell
+# Create backup without any cleanup
+New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -NoCleanup
+
+# Create backup with Keep setting but skip cleanup
+New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -Keep 7 -NoCleanup
+```
 
 ## Restore Parameters
 
@@ -294,6 +328,42 @@ The cmdlet supports all PowerShell common parameters:
 - `-Verbose`: Show detailed operation information
 - `-ErrorAction`: Control how errors are handled
 - `-WarningAction`: Control how warnings are handled
+
+## Remove-DailyBackup Parameters
+
+### Remove-DailyBackup -Path (Required)
+
+**Type**: `String`
+**Position**: 0
+**Pipeline Input**: Yes (ByValue, ByPropertyName)
+**Aliases**: `BackupRoot`, `DestinationPath`
+
+The root directory path where daily backup folders are stored, or the specific backup directory to remove when using -Date parameter. This should be the parent directory containing date-named subdirectories (e.g., '2025-08-24').
+
+### Remove-DailyBackup -Keep
+
+**Type**: `Int32`
+**Default**: `7`
+**Position**: Named
+**Aliases**: `BackupsToKeep`
+**Validation**: Must be 0 or greater
+
+The minimum number of backup directories to retain when using retention-based cleanup. Older backups beyond this number will be deleted, sorted by date with oldest removed first. Set to 0 to remove all backups. Cannot be used with -Date parameter.
+
+### Remove-DailyBackup -Date
+
+**Type**: `String`
+**Position**: Named
+**Validation**: Must match YYYY-MM-DD pattern
+
+Specific backup date to remove (yyyy-MM-dd format). When specified, only the backup directory for this date will be removed. Cannot be used with -Keep parameter.
+
+### Remove-DailyBackup -Force
+
+**Type**: `SwitchParameter`
+**Default**: `$false`
+
+Bypass confirmation prompts and remove backups without user interaction. Use with caution as this will permanently delete backup data.
 
 ## Examples
 
@@ -413,6 +483,42 @@ Get-DailyBackup -BackupRoot "D:\Backups\Documents" -Date "2024-01-15" -Verbose
 
 # Find backups matching a pattern
 Get-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Documents*"
+```
+
+### Example 13: Remove Old Backups
+
+```powershell
+# Remove old backups, keeping only the last 7 days
+Remove-DailyBackup -Path "D:\Backups" -Keep 7
+
+# Remove all backups older than 30 days
+Remove-DailyBackup -Path "D:\Backups" -Keep 30 -Verbose
+
+# Preview what would be removed
+Remove-DailyBackup -Path "D:\Backups" -Keep 7 -WhatIf
+```
+
+### Example 14: Remove Specific Backup Date
+
+```powershell
+# Remove backup for a specific date
+Remove-DailyBackup -Path "D:\Backups" -Date "2024-01-15"
+
+# Force removal without confirmation
+Remove-DailyBackup -Path "D:\Backups" -Date "2024-01-15" -Force
+
+# Pipeline support
+"D:\Backups" | Remove-DailyBackup -Date "2024-01-15"
+```
+
+### Example 15: Backup Without Cleanup
+
+```powershell
+# Create backup without removing old ones (manual cleanup)
+New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -NoCleanup
+
+# Create backup with Keep setting but skip cleanup this time
+New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -Keep 7 -NoCleanup
 ```
 
 ## Configuration

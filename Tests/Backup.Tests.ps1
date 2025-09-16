@@ -170,6 +170,46 @@ Describe 'New-DailyBackup Core Functionality' {
             $backupFolders = Get-ChildItem -Path $TestEnv.BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
             $backupFolders.Count | Should -Be 0
         }
+
+        It 'Skips cleanup when NoCleanup parameter is specified' {
+            # Create old backup folders
+            $oldDates = @(
+                (Get-Date).AddDays(-5).ToString('yyyy-MM-dd'),
+                (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
+            )
+
+            foreach ($date in $oldDates)
+            {
+                New-Item -Path (Join-Path $TestEnv.BackupDir $date) -ItemType Directory -Force | Out-Null
+            }
+
+            # Run backup with NoCleanup - should preserve all old backups
+            New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir -Keep 1 -NoCleanup
+
+            $backupFolders = Get-ChildItem -Path $TestEnv.BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
+            $backupFolders.Count | Should -Be 3  # 2 old + 1 new (no cleanup despite Keep=1)
+        }
+
+        It 'NoCleanup parameter overrides Keep setting' {
+            # Create multiple old backup folders
+            $oldDates = @(
+                (Get-Date).AddDays(-10).ToString('yyyy-MM-dd'),
+                (Get-Date).AddDays(-7).ToString('yyyy-MM-dd'),
+                (Get-Date).AddDays(-5).ToString('yyyy-MM-dd'),
+                (Get-Date).AddDays(-3).ToString('yyyy-MM-dd')
+            )
+
+            foreach ($date in $oldDates)
+            {
+                New-Item -Path (Join-Path $TestEnv.BackupDir $date) -ItemType Directory -Force | Out-Null
+            }
+
+            # Run backup with NoCleanup and aggressive Keep setting
+            New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir -Keep 0 -NoCleanup
+
+            $backupFolders = Get-ChildItem -Path $TestEnv.BackupDir -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
+            $backupFolders.Count | Should -Be 5  # 4 old + 1 new (no cleanup despite Keep=0)
+        }
     }
 
     Context 'FileBackupMode Parameter' {

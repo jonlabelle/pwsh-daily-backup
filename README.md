@@ -95,7 +95,7 @@ Update-Module -Name DailyBackup
 Creates automated daily backups with progress tracking and cleanup.
 
 ```powershell
-New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-FileBackupMode <String>] [-NoHash] [-WhatIf] [-Verbose]
+New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-FileBackupMode <String>] [-NoHash] [-NoCleanup] [-WhatIf] [-Verbose]
 ```
 
 **Parameters:**
@@ -105,6 +105,7 @@ New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-Fil
 - **-Keep**: Number of daily backups to retain (default: -1, keep all)
 - **-FileBackupMode**: How to handle files - Individual, Combined, or Auto (default: Auto)
 - **-NoHash**: Skip hash calculation for improved performance (disables integrity verification)
+- **-NoCleanup**: Skip automatic cleanup of old backups, ignoring Keep setting
 
 #### Restore-DailyBackup
 
@@ -151,6 +152,21 @@ Test-DailyBackup [-BackupRoot] <String> [-Date <String>] [-BackupName <String>] 
 - **-Date**: Specific backup date to verify (YYYY-MM-DD format, default: latest)
 - **-BackupName**: Pattern to match specific backup files (supports wildcards)
 - **-VerifySource**: Also verify that source files still match their original hashes
+
+#### Remove-DailyBackup
+
+Removes old backup directories based on retention policies or removes specific backup dates.
+
+```powershell
+Remove-DailyBackup [-Path] <String> [-Keep <Int32>] [-Date <String>] [-Force] [-WhatIf] [-Verbose]
+```
+
+**Parameters:**
+
+- **-Path** (required): Root directory containing daily backup folders
+- **-Keep**: Number of backup directories to retain (default: 7, cannot be used with -Date)
+- **-Date**: Specific backup date to remove (YYYY-MM-DD format, cannot be used with -Keep)
+- **-Force**: Bypass confirmation prompts
 
 ## Examples
 
@@ -245,6 +261,29 @@ $HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
 }
 
 New-DailyBackup -Path "$HomeDir/Documents" -Destination "$HomeDir/Backups" -Keep 14
+```
+
+### Example 6: Remove Old Backups
+
+```powershell
+# Remove old backups keeping only the last 7 days
+Remove-DailyBackup -Path "D:\Backups" -Keep 7
+
+# Remove a specific backup date
+Remove-DailyBackup -Path "D:\Backups" -Date "2025-09-01" -Force
+
+# Preview what would be removed
+Remove-DailyBackup -Path "D:\Backups" -Keep 14 -WhatIf
+```
+
+### Example 7: Backup Without Automatic Cleanup
+
+```powershell
+# Create backup without removing old ones
+New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -NoCleanup
+
+# Later, manually clean up old backups
+Remove-DailyBackup -Path "D:\Backups" -Keep 30
 ```
 
 ## Advanced Usage
