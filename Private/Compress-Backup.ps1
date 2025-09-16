@@ -53,7 +53,10 @@ function Compress-Backup
         [string] $DestinationPath,
 
         [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
+        [bool] $VerboseEnabled = $false,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $NoHash
     )
 
     $backupPath = New-BackupPath -Path $Path -DestinationPath $DestinationPath
@@ -68,7 +71,7 @@ function Compress-Backup
         if (-not $WhatIfPreference)
         {
             $datePath = Split-Path $backupPath
-            Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath
+            Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath -NoHash:$NoHash
         }
     }
     else

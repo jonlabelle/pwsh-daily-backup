@@ -7,7 +7,7 @@
 .DESCRIPTION
     The original monolithic test file has been refactored into smaller, focused test files:
     - Backup.Tests.ps1: Core backup functionality and operations
-    - Restore.Tests.ps1: Restore operations and Get-BackupInfo functionality
+    - Restore.Tests.ps1: Restore operations and Get-DailyBackupInfo functionality
     - ErrorHandling.Tests.ps1: Error handling, edge cases, and validation
     - Metadata.Tests.ps1: Metadata generation and path type detection
 

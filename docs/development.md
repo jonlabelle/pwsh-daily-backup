@@ -11,7 +11,7 @@ This module includes comprehensive testing to ensure reliability and professiona
 The module uses a **focused test architecture** with separate test files for different areas of concern:
 
 - **Backup.Tests.ps1** - Core backup functionality and operations
-- **Restore.Tests.ps1** - Restore operations and Get-BackupInfo functionality
+- **Restore.Tests.ps1** - Restore operations and Get-DailyBackupInfo functionality
 - **ErrorHandling.Tests.ps1** - Error handling, edge cases, and validation
 - **Metadata.Tests.ps1** - Metadata generation and path type detection
 - **TestHelpers.ps1** - Shared test utilities and setup functions
@@ -179,7 +179,7 @@ The module automatically creates a consolidated metadata manifest alongside back
 - **Purpose**: Enable intelligent restore operations with reduced file clutter
 - **Content**: Consolidated backup manifest containing all backup metadata for the date
 - **Format**: JSON structure with array of backup entries for cross-platform compatibility
-- **Usage**: Powers `-UseOriginalPaths` restore functionality and `Get-BackupInfo` operations
+- **Usage**: Powers `-UseOriginalPaths` restore functionality and `Get-DailyBackupInfo` operations
 - **File**: Single `backup-manifest.json` per date folder instead of individual `.metadata.json` files
 
 ### Initial Setup

@@ -46,7 +46,10 @@ function Add-BackupToManifest
         [string] $PathType,
 
         [Parameter(Mandatory = $true)]
-        [string] $DatePath
+        [string] $DatePath,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $NoHash
     )
 
     try
@@ -64,6 +67,38 @@ function Add-BackupToManifest
             SourcePath = $SourcePath
             PathType = $PathType
             BackupCreated = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffZ'
+        }
+
+        # Calculate hashes unless disabled
+        if (-not $NoHash)
+        {
+            Write-Verbose "New-DailyBackup:Add-BackupToManifest> Calculating source hash for: $SourcePath"
+            $sourceHash = Get-PathHash -Path $SourcePath -Algorithm 'SHA256'
+
+            if ($sourceHash)
+            {
+                $backupEntry.SourceHash = $sourceHash
+                $backupEntry.HashAlgorithm = 'SHA256'
+                Write-Verbose "New-DailyBackup:Add-BackupToManifest> Source hash: $sourceHash"
+
+                # Calculate archive hash after it's created
+                $archiveFullPath = "$BackupPath.zip"
+                if (Test-Path $archiveFullPath)
+                {
+                    Write-Verbose "New-DailyBackup:Add-BackupToManifest> Calculating archive hash for: $archiveFullPath"
+                    $archiveHash = Get-FileHash -Path $archiveFullPath -Algorithm SHA256
+                    $backupEntry.ArchiveHash = $archiveHash.Hash
+                    Write-Verbose "New-DailyBackup:Add-BackupToManifest> Archive hash: $($archiveHash.Hash)"
+                }
+                else
+                {
+                    Write-Warning "New-DailyBackup:Add-BackupToManifest> Archive not found for hash calculation: $archiveFullPath"
+                }
+            }
+            else
+            {
+                Write-Warning "New-DailyBackup:Add-BackupToManifest> Failed to calculate source hash for: $SourcePath"
+            }
         }
 
         # Add file/directory specific metadata

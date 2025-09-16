@@ -71,6 +71,19 @@ Describe 'Metadata and Path Type Detection' {
             $manifest.Content.BackupVersion | Should -Be '1.0'
         }
 
+        It 'Includes hash information in metadata by default' {
+            New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
+
+            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+            $manifest = Test-BackupManifest -ManifestPath $result.ManifestFile.FullName
+            $manifest.HasHashData | Should -Be $true
+
+            $backup = $manifest.Content.Backups[0]
+            $backup.SourceHash | Should -Not -BeNullOrEmpty
+            $backup.ArchiveHash | Should -Not -BeNullOrEmpty
+            $backup.HashAlgorithm | Should -Be 'SHA256'
+        }
+
         It 'Preserves original source path information in manifest' {
             $testFile = Join-Path $TestEnv.SourceDir 'test1.txt'
             New-DailyBackup -Path $testFile -Destination $TestEnv.BackupDir

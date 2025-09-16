@@ -1,4 +1,4 @@
-function Get-BackupInfo
+function Get-DailyBackupInfo
 {
     <#
     .SYNOPSIS
@@ -31,12 +31,12 @@ function Get-BackupInfo
         performing restore operations.
 
     .EXAMPLE
-        PS > Get-BackupInfo -BackupRoot 'D:\Backups'
+        PS > Get-DailyBackupInfo -BackupRoot 'D:\Backups'
 
         Lists all available backup dates and their contents
 
     .EXAMPLE
-        PS > Get-BackupInfo -BackupRoot 'D:\Backups' -Date '2025-09-15'
+        PS > Get-DailyBackupInfo -BackupRoot 'D:\Backups' -Date '2025-09-15'
 
         Shows detailed information for backups from September 15, 2025
     #>
@@ -87,7 +87,7 @@ function Get-BackupInfo
             try
             {
                 $manifestData = Get-Content $manifestPath -Raw | ConvertFrom-Json
-                Write-Verbose "Get-BackupInfo> Using consolidated manifest for $dateFolder"
+                Write-Verbose "Get-DailyBackupInfo> Using consolidated manifest for $dateFolder"
             }
             catch
             {

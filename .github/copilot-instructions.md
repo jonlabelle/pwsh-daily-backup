@@ -11,7 +11,7 @@
 
 This is a **modular PowerShell module** with separated Public and Private functions organized in dedicated folders. The module follows PowerShell best practices with three public functions and several internal helpers:
 
-- **Public** (in `/Public/` folder): `New-DailyBackup`, `Restore-DailyBackup`, `Get-BackupInfo`
+- **Public** (in `/Public/` folder): `New-DailyBackup`, `Restore-DailyBackup`, `Get-DailyBackupInfo`, `Test-DailyBackupIntegrity`
 - **Private** (in `/Private/` folder): All helper functions following proper Verb-Noun naming conventions
 
 ### Module Structure
@@ -20,7 +20,7 @@ This is a **modular PowerShell module** with separated Public and Private functi
 DailyBackup.psm1           # Main module with import logic
 DailyBackup.psd1           # Module manifest
 Public/                    # Public (exported) functions
-├── Get-BackupInfo.ps1
+├── Get-DailyBackupInfo.ps1
 ├── New-DailyBackup.ps1
 └── Restore-DailyBackup.ps1
 Private/                   # Private (internal) functions

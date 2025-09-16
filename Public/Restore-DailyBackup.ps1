@@ -83,7 +83,7 @@ function Restore-DailyBackup
 
     .LINK
         New-DailyBackup
-        Get-BackupInfo
+        Get-DailyBackupInfo
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param(
@@ -145,7 +145,7 @@ function Restore-DailyBackup
 
     process
     {
-        $backupInfo = Get-BackupInfo -BackupRoot $BackupRoot
+        $backupInfo = Get-DailyBackupInfo -BackupRoot $BackupRoot
         if ($Date)
         {
             $backupInfo = $backupInfo | Where-Object { $_.Date -eq $Date }

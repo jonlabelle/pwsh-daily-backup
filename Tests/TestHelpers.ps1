@@ -156,6 +156,12 @@ function Test-BackupManifest
             HasModuleVersion = -not [string]::IsNullOrEmpty($content.ModuleVersion)
             HasBackupsArray = $content.Backups -is [Array]
             BackupCount = if ($content.Backups) { $content.Backups.Count } else { 0 }
+            HasHashData = if ($content.Backups -and $content.Backups.Count -gt 0)
+            {
+                -not [string]::IsNullOrEmpty($content.Backups[0].SourceHash) -or
+                -not [string]::IsNullOrEmpty($content.Backups[0].ArchiveHash)
+            }
+            else { $false }
         }
     }
     catch

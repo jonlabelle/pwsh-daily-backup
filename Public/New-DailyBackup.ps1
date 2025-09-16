@@ -38,6 +38,11 @@ function New-DailyBackup
         This parameter provides flexibility for different backup scenarios and helps
         optimize storage and organization of file-based backups.
 
+    .PARAMETER NoHash
+        Skip hash calculation to improve performance in simple backup scenarios.
+        When specified, backup integrity verification will not be available for
+        these backups. Hash calculation is enabled by default for all backups.
+
     .INPUTS
         [String[]]
         File or directory paths can be piped to this function. Supports pipeline input
@@ -100,7 +105,13 @@ function New-DailyBackup
 
         Backs up relative paths to network location with 2-week retention
 
+    .EXAMPLE
+        PS > New-DailyBackup -Path 'C:\ImportantFiles' -Destination 'D:\Backups' -NoHash
+
+        Creates backup without hash calculation for improved performance
+
     .LINK
+        Test-DailyBackupIntegrity
         https://github.com/jonlabelle/pwsh-daily-backup
     #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -133,7 +144,12 @@ function New-DailyBackup
             HelpMessage = 'Controls how individual files are handled during backup operations.'
         )]
         [ValidateSet('Individual', 'Combined', 'Auto')]
-        [string] $FileBackupMode = 'Auto'
+        [string] $FileBackupMode = 'Auto',
+
+        [Parameter(
+            HelpMessage = 'Skip hash calculation to improve performance in simple backup scenarios.'
+        )]
+        [switch] $NoHash
     )
     begin
     {
@@ -196,7 +212,7 @@ function New-DailyBackup
                     foreach ($globItem in $resolvedPath)
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing glob item: {0}' -f $globItem) -Verbose:$verboseEnabled
-                        Compress-Backup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+                        Compress-Backup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
                     }
                 }
                 else
@@ -208,7 +224,7 @@ function New-DailyBackup
                     else
                     {
                         Write-Verbose ('New-DailyBackup:Process> Processing single item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
-                        Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+                        Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
                     }
                 }
             }
