@@ -12,6 +12,7 @@ The module uses a **focused test architecture** with separate test files for dif
 
 - **Backup.Tests.ps1** - Core backup functionality and operations
 - **Restore.Tests.ps1** - Restore operations and Get-DailyBackup functionality
+- **Remove.Tests.ps1** - Remove-DailyBackup functionality and cleanup operations
 - **ErrorHandling.Tests.ps1** - Error handling, edge cases, and validation
 - **Metadata.Tests.ps1** - Metadata generation and path type detection
 - **TestHelpers.ps1** - Shared test utilities and setup functions
@@ -32,12 +33,13 @@ Install-Module PSScriptAnalyzer -Scope CurrentUser
 #### Focused Unit Tests
 
 ```powershell
-# Run all focused test suites (43+ test cases)
+# Run all focused test suites (76+ test cases)
 ./Tests/RunAllTests.ps1
 
 # Run specific test area
 Invoke-Pester ./Tests/Backup.Tests.ps1
 Invoke-Pester ./Tests/Restore.Tests.ps1
+Invoke-Pester ./Tests/Remove.Tests.ps1
 Invoke-Pester ./Tests/ErrorHandling.Tests.ps1
 Invoke-Pester ./Tests/Metadata.Tests.ps1
 
@@ -129,7 +131,7 @@ The project uses GitHub Actions for automated testing:
 
 ### Module Architecture
 
-The DailyBackup module consists of three primary commands:
+The DailyBackup module consists of five primary commands:
 
 #### Module Organization
 

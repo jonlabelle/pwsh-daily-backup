@@ -193,6 +193,21 @@ Remove-DailyBackup
 
 Removes old backup directories based on retention policies or specific dates.
 
+#### Test-DailyBackup
+
+```powershell
+Test-DailyBackup
+    -BackupRoot <String>
+    [-Date <String>]
+    [-BackupName <String>]
+    [-VerifySource]
+    [-WhatIf]
+    [-Verbose]
+    [<CommonParameters>]
+```
+
+Verifies backup integrity using SHA-256 hash values stored in backup metadata. Can verify individual backup archives or compare with source files to detect changes.
+
 ### Pipeline Support
 
 The cmdlet supports pipeline input for the Path parameter:
@@ -365,6 +380,40 @@ Specific backup date to remove (yyyy-MM-dd format). When specified, only the bac
 
 Bypass confirmation prompts and remove backups without user interaction. Use with caution as this will permanently delete backup data.
 
+## Test-DailyBackup Parameters
+
+### Test-DailyBackup -BackupRoot (Required)
+
+**Type**: `String`
+**Position**: 0
+**Pipeline Input**: No
+
+The root directory path containing daily backup folders in YYYY-MM-DD format. This should be the same directory that was used as the `-Destination` parameter when creating backups with `New-DailyBackup`.
+
+### Test-DailyBackup -Date
+
+**Type**: `String`
+**Position**: Named
+**Pipeline Input**: No
+**Validation**: Must match YYYY-MM-DD pattern
+
+Specific backup date to verify (yyyy-MM-dd format). If not specified, verifies the most recent backup date available.
+
+### Test-DailyBackup -BackupName
+
+**Type**: `String`
+**Position**: Named
+**Pipeline Input**: No
+
+Optional pattern to match specific backup files by name. Supports wildcards (e.g., `*Documents*`, `*.pdf*`). If not specified, verifies all backups from the specified date.
+
+### Test-DailyBackup -VerifySource
+
+**Type**: `SwitchParameter`
+**Default**: `$false`
+
+When enabled, also verifies that source files still match their original SHA-256 hashes stored in backup metadata. This helps detect if source files have been modified since backup. Only works if source files are still accessible.
+
 ## Examples
 
 ### Example 1: Daily Document Backup
@@ -519,6 +568,22 @@ New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -NoCleanup
 
 # Create backup with Keep setting but skip cleanup this time
 New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -Keep 7 -NoCleanup
+```
+
+### Example 16: Verify Backup Integrity
+
+```powershell
+# Verify integrity of most recent backups
+Test-DailyBackup -BackupRoot "D:\Backups"
+
+# Verify specific backup date
+Test-DailyBackup -BackupRoot "D:\Backups" -Date "2024-01-15" -Verbose
+
+# Verify only specific backup files
+Test-DailyBackup -BackupRoot "D:\Backups" -BackupName "*Documents*"
+
+# Verify backups and check if source files have changed
+Test-DailyBackup -BackupRoot "D:\Backups" -Date "2024-01-15" -VerifySource -Verbose
 ```
 
 ## Configuration
