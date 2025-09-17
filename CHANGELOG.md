@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-09-16
+
+### Added
+
+- **NEW FEATURE**: `Remove-DailyBackup` command for manual backup removal
+  - Remove specific backups by date or name pattern
+  - Support for removing multiple backups in one operation
+  - Preview mode with `-WhatIf` support
+  - Force removal option for read-only files and directories
+  - Integration with existing cleanup functionality
+
 ## [1.6.0] - 2025-09-16
 
 ### Added
