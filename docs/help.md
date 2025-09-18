@@ -276,6 +276,42 @@ New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -NoCleanup
 New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -Keep 7 -NoCleanup
 ```
 
+### -FileBackupMode
+
+**Type**: `String`
+**Default**: `Auto`
+**ValidateSet**: `Individual`, `Combined`, `Auto`
+
+Controls how multiple files are packaged into backup archives. This parameter provides flexibility in organizing your backups based on your restoration and storage needs.
+
+**Modes:**
+
+- **`Individual`**: Creates separate ZIP archives for each source path
+  - Best for: Selective restoration, smaller individual backups
+  - Example: `file1.txt` → `file1.txt.zip`, `file2.txt` → `file2.txt.zip`
+
+- **`Combined`**: Creates a single ZIP archive containing all source paths
+  - Best for: Fewer archive files, backing up related files together
+  - Example: `file1.txt`, `file2.txt` → `CombinedFiles_123456.zip`
+
+- **`Auto`**: Intelligently chooses the best mode based on input
+  - Uses Combined mode for 4+ files (files only, no directories)
+  - Uses Individual mode for 3 or fewer files, or when directories are included
+  - Best for: Hands-off operation with optimal packaging
+
+**Examples:**
+
+```powershell
+# Individual mode - each file gets its own archive
+New-DailyBackup -Path @("file1.txt", "file2.txt") -Destination "D:\Backups" -FileBackupMode Individual
+
+# Combined mode - all files in one archive
+New-DailyBackup -Path @("*.txt") -Destination "D:\Backups" -FileBackupMode Combined
+
+# Auto mode - intelligent selection (default)
+New-DailyBackup -Path @("file1.txt", "file2.txt", "docs\") -Destination "D:\Backups" -FileBackupMode Auto
+```
+
 ## Restore Parameters
 
 ### -BackupRoot (Required)

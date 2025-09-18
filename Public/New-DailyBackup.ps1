@@ -203,11 +203,10 @@ function New-DailyBackup
         $totalPaths = $Path.Count
         $currentPath = 0
 
+        # Resolve all paths first
+        $allValidPaths = @()
         foreach ($item in $Path)
         {
-            $currentPath++
-            Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $totalPaths" -PercentComplete (($currentPath / $totalPaths) * 100)
-
             # Expand tilde paths before checking if they're rooted
             if ($item.StartsWith('~'))
             {
@@ -240,42 +239,89 @@ function New-DailyBackup
 
                 if ($resolvedPath.Count -gt 1)
                 {
-                    foreach ($globItem in $resolvedPath)
-                    {
-                        Write-Verbose ('New-DailyBackup:Process> Processing glob item: {0}' -f $globItem) -Verbose:$verboseEnabled
-                        try
-                        {
-                            Compress-Backup -Path $globItem -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
-                        }
-                        catch
-                        {
-                            Write-Warning ('New-DailyBackup:Process> Error compressing {0}: {1}' -f $globItem, $_.Exception.Message)
-                        }
-                    }
+                    $allValidPaths += $resolvedPath
                 }
                 else
                 {
-                    if (!(Test-Path -Path $resolvedPath -IsValid))
+                    if (Test-Path -Path $resolvedPath -IsValid)
                     {
-                        Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
+                        $allValidPaths += $resolvedPath
                     }
                     else
                     {
-                        Write-Verbose ('New-DailyBackup:Process> Processing single item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
-                        try
-                        {
-                            Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
-                        }
-                        catch
-                        {
-                            Write-Warning ('New-DailyBackup:Process> Error compressing {0}: {1}' -f $resolvedPath, $_.Exception.Message)
-                        }
+                        Write-Warning ('New-DailyBackup:Process> Backup source path does not exist: {0}' -f $resolvedPath)
                     }
                 }
             }
             catch
             {
                 Write-Warning ('New-DailyBackup:Process> Error processing path {0}: {1}' -f $item, $_.Exception.Message)
+            }
+        }
+
+        if ($allValidPaths.Count -eq 0)
+        {
+            Write-Warning 'New-DailyBackup:Process> No valid paths found to backup'
+            return
+        }
+
+        # Determine effective backup mode
+        $effectiveMode = if ($FileBackupMode -eq 'Auto')
+        {
+            # Auto logic: Combined if all items are files and count > 3, otherwise Individual
+            $allFiles = $allValidPaths | ForEach-Object {
+                Test-Path -Path $_ -PathType Leaf
+            }
+
+            if (($allFiles -notcontains $false) -and ($allValidPaths.Count -gt 3))
+            {
+                'Combined'
+            }
+            else
+            {
+                'Individual'
+            }
+        }
+        else
+        {
+            $FileBackupMode
+        }
+
+        Write-Verbose "New-DailyBackup:Process> Using backup mode: $effectiveMode for $($allValidPaths.Count) paths" -Verbose:$verboseEnabled
+
+        if ($effectiveMode -eq 'Combined')
+        {
+            # Combined mode: Create single archive with all paths
+            Write-Verbose 'New-DailyBackup:Process> Creating combined archive for all paths' -Verbose:$verboseEnabled
+
+            try
+            {
+                Compress-BackupCombined -Paths $allValidPaths -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+            }
+            catch
+            {
+                Write-Warning "New-DailyBackup:Process> Error creating combined backup: $($_.Exception.Message)"
+            }
+        }
+        else
+        {
+            # Individual mode: Process each path separately
+            Write-Verbose 'New-DailyBackup:Process> Creating individual archives for each path' -Verbose:$verboseEnabled
+
+            foreach ($resolvedPath in $allValidPaths)
+            {
+                $currentPath++
+                Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $($allValidPaths.Count)" -PercentComplete (($currentPath / $allValidPaths.Count) * 100)
+
+                Write-Verbose ('New-DailyBackup:Process> Processing individual item: {0}' -f $resolvedPath) -Verbose:$verboseEnabled
+                try
+                {
+                    Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                }
+                catch
+                {
+                    Write-Warning ('New-DailyBackup:Process> Error compressing {0}: {1}' -f $resolvedPath, $_.Exception.Message)
+                }
             }
         }
 

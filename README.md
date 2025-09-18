@@ -58,6 +58,16 @@
 Install-Module -Name DailyBackup -Scope CurrentUser
 ```
 
+### Quick Command Reference
+
+| Command               | Purpose                 | Example                                                                       |
+| --------------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| `New-DailyBackup`     | Create backups          | `New-DailyBackup -Path "C:\Documents" -Destination "D:\Backups" -Keep 7`      |
+| `Restore-DailyBackup` | Restore from backup     | `Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Restored"` |
+| `Get-DailyBackup`     | List available backups  | `Get-DailyBackup -BackupRoot "D:\Backups"`                                    |
+| `Test-DailyBackup`    | Verify backup integrity | `Test-DailyBackup -BackupRoot "D:\Backups" -VerifySource`                     |
+| `Remove-DailyBackup`  | Clean up old backups    | `Remove-DailyBackup -Path "D:\Backups" -Keep 30`                              |
+
 ### Basic Usage
 
 ```powershell
@@ -128,6 +138,34 @@ New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-Fil
 - **`-NoHash`**: Skip hash calculation for improved performance (disables integrity verification)
 - **`-NoCleanup`**: Skip automatic cleanup of old backups, ignoring Keep setting
 
+#### FileBackupMode Options
+
+The `-FileBackupMode` parameter controls how multiple files are packaged into backup archives:
+
+- **`Individual`**: Creates separate ZIP archives for each source path
+  - Best for: Selective restoration, smaller individual backups
+  - Example: `file1.txt` → `file1.txt.zip`, `file2.txt` → `file2.txt.zip`
+
+- **`Combined`**: Creates a single ZIP archive containing all source paths
+  - Best for: Fewer archive files, backing up related files together
+  - Example: `file1.txt`, `file2.txt` → `CombinedFiles_123456.zip`
+
+- **`Auto`** (default): Intelligently chooses the best mode
+  - Uses Combined mode for 4+ files (all files only, no directories)
+  - Uses Individual mode for 3 or fewer files, or when directories are included
+  - Best for: Hands-off operation with optimal packaging
+
+```powershell
+# Individual mode - each file gets its own archive
+New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Individual
+
+# Combined mode - all files in one archive
+New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Combined
+
+# Auto mode - intelligent selection based on file count and types
+New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Auto
+```
+
 ### `Restore-DailyBackup`
 
 Restores files and directories from backup archives with flexible destination options.
@@ -176,7 +214,7 @@ Test-DailyBackup [-BackupRoot] <String> [-Date <String>] [-BackupName <String>] 
 
 ### `Remove-DailyBackup`
 
-Removes old backup directories based on retention policies or removes specific backup dates. (Note: This is an internal helper function; for public cleanup, use the -Keep parameter in New-DailyBackup.)
+Removes old backup directories based on retention policies or removes specific backup dates.
 
 ```powershell
 Remove-DailyBackup [-Path] <String> [-Keep <Int32>] [-Date <String>] [-Force] [-WhatIf] [-Verbose]
@@ -319,6 +357,8 @@ Remove-DailyBackup -Path "D:\Backups" -Keep 30
 
 ### Automation with Task Scheduler
 
+#### Windows Task Scheduler
+
 ```powershell
 # Create scheduled task (Windows)
 $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30`""
@@ -326,9 +366,37 @@ $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 ```
 
+#### macOS/Linux Cron
+
+```bash
+# Add to crontab for daily backup at 2:00 AM
+# Run: crontab -e
+0 2 * * * /usr/local/bin/pwsh -Command "Import-Module DailyBackup; New-DailyBackup -Path '$HOME/Documents' -Destination '$HOME/Backups' -Keep 30"
+```
+
+#### Cross-Platform PowerShell Script
+
+```powershell
+# Create a portable backup script (works on Windows, macOS, Linux)
+$HomeDir = if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) { $env:USERPROFILE } else { $env:HOME }
+$BackupPaths = @(
+    "$HomeDir/Documents",
+    "$HomeDir/Pictures"
+)
+
+try {
+    New-DailyBackup -Path $BackupPaths -Destination "$HomeDir/Backups" -Keep 30 -Verbose
+    Write-Host "[$(Get-Date)] Backup completed successfully!" -ForegroundColor Green
+}
+catch {
+    Write-Error "[$(Get-Date)] Backup failed: $_"
+    # Log to system event log or send notification
+}
+```
+
 ### Handling Hash Conflicts and Integrity Issues
 
-Real-world scenarios for dealing with corrupted backups, changed source files, and integrity verification.
+Dealing with corrupted backups, changed source files, and integrity verification.
 
 ```powershell
 # 1. Check backup integrity before restoration
@@ -368,6 +436,41 @@ $recentValid = foreach ($backup in $allBackups | Sort-Object Date -Descending) {
     }
 }
 Write-Host "Most recent valid backup: $recentValid" -ForegroundColor Green
+```
+
+## Performance and Best Practices
+
+### Optimizing Backup Performance
+
+```powershell
+# Skip hash calculation for large files (disables integrity verification)
+New-DailyBackup -Path "C:\LargeFiles" -Destination "D:\Backups" -NoHash
+
+# Use Individual mode for many small files
+New-DailyBackup -Path @("file1.txt", "file2.txt") -FileBackupMode Individual
+
+# Use Combined mode for fewer archive files
+New-DailyBackup -Path @("C:\Docs", "C:\Data") -FileBackupMode Combined
+```
+
+### Storage Considerations
+
+- **Local drives**: Fastest performance, limited by disk I/O
+- **Network drives**: Slower but accessible from multiple machines
+- **Cloud storage**: Consider sync conflicts with `-NoCleanup` for manual cleanup
+- **Use compression**: ZIP format provides good compression for most file types
+
+### Recommended Retention Policies
+
+```powershell
+# Daily backups for active projects
+New-DailyBackup -Path "C:\ActiveProjects" -Keep 7
+
+# Weekly retention for archived data
+New-DailyBackup -Path "C:\Archives" -Keep 30
+
+# Long-term retention for critical data
+New-DailyBackup -Path "C:\Critical" -Keep 365
 ```
 
 ## Additional Documentation
