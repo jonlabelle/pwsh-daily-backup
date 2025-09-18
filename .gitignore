@@ -37,3 +37,8 @@ coverage.xml
 # Ignore stub destination backup
 # Test artifacts
 Tests/stubs/files-backed-up/
+Tests/TestData_*/
+Tests/TestData/
+
+# Ignore any directories created with literal variable names (variable expansion issues)
+$*/

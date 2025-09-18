@@ -69,7 +69,7 @@ function Remove-DailyBackupInternal
     $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
     if ($qualifiedBackupDirs.Length -eq 0)
     {
-        Write-Verbose ('Remove-DailyBackupInternal> No qualified backup directories to delete were detected in: {0}' -f $Path) -Verbose:$VerboseEnabled
+        Write-Verbose "Remove-DailyBackupInternal> No qualified backup directories to delete were detected in: $Path" -Verbose:$VerboseEnabled
         return
     }
 
@@ -88,9 +88,9 @@ function Remove-DailyBackupInternal
             $backupPath = $sortedBackupPaths[$i]
             if ($PSCmdlet.ShouldProcess($backupPath, 'Remove backup directory'))
             {
-                Write-Verbose ('Remove-DailyBackupInternal> Removing old backup directory: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose "Remove-DailyBackupInternal> Removing old backup directory: $backupPath" -Verbose:$VerboseEnabled
                 Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled
-                Write-Verbose ('Remove-DailyBackupInternal> Successfully removed: {0}' -f $backupPath) -Verbose:$VerboseEnabled
+                Write-Verbose "Remove-DailyBackupInternal> Successfully removed: $backupPath" -Verbose:$VerboseEnabled
             }
         }
     }

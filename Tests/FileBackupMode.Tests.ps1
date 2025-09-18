@@ -226,8 +226,5 @@ Describe 'FileBackupMode Functionality' {
 }
 
 AfterAll {
-    if ($TestEnv -and $TestEnv.TempRoot)
-    {
-        Remove-Item -Path $TestEnv.TempRoot -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    Remove-TestEnvironment -TestRoot $TestEnv.TestRoot
 }

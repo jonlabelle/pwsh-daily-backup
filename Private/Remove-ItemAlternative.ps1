@@ -81,7 +81,7 @@ function Remove-ItemAlternative
                 }
                 catch
                 {
-                    Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete $($item.FullName), error: $($_.Exception.Message)"
+                    Write-Warning "Remove-ItemAlternative> Couldn't delete $($item.FullName), error: $($_.Exception.Message)"
                 }
             }
         }
@@ -98,7 +98,7 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
             }
         }
 
@@ -114,12 +114,12 @@ function Remove-ItemAlternative
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
             }
         }
     }
     else
     {
-        Write-Warning "New-DailyBackup:Remove-ItemAlternative> Path '$LiteralPath' doesn't exist. Skipping."
+        Write-Warning "Remove-ItemAlternative> Path '$LiteralPath' doesn't exist. Skipping."
     }
 }

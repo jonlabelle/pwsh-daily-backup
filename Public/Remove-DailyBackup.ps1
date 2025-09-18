@@ -110,7 +110,7 @@ function Remove-DailyBackup
     begin
     {
         $verboseEnabled = $VerbosePreference -eq 'Continue'
-        Write-Verbose 'Remove-DailyBackup:Begin> Starting backup removal operation' -Verbose:$verboseEnabled
+        Write-Verbose 'Remove-DailyBackup> Starting backup removal operation' -Verbose:$verboseEnabled
     }
 
     process
@@ -118,11 +118,11 @@ function Remove-DailyBackup
         # Validate input path first
         if ([string]::IsNullOrWhiteSpace($Path))
         {
-            Write-Error "Remove-DailyBackup:Process> Path parameter cannot be null or empty"
+            Write-Error 'Remove-DailyBackup:Process> Path parameter cannot be null or empty'
             return
         }
 
-        Write-Verbose "Remove-DailyBackup:Process> Input path: '$Path'" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Input path: '$Path'" -Verbose:$verboseEnabled
 
         # Resolve the path to ensure it exists
         try
@@ -136,7 +136,7 @@ function Remove-DailyBackup
             return
         }
 
-        Write-Verbose "Remove-DailyBackup:Process> Processing backup root: $backupRoot" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Processing backup root: $backupRoot" -Verbose:$verboseEnabled
 
         # Get qualified backup directories (matching yyyy-MM-dd pattern)
         $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $backupRoot -Directory -ErrorAction SilentlyContinue |
@@ -144,11 +144,11 @@ function Remove-DailyBackup
 
         if ($qualifiedBackupDirs.Length -eq 0)
         {
-            Write-Verbose "Remove-DailyBackup:Process> No qualified backup directories found in: $backupRoot" -Verbose:$verboseEnabled
+            Write-Verbose "Remove-DailyBackup> No qualified backup directories found in: $backupRoot" -Verbose:$verboseEnabled
             return
         }
 
-        Write-Verbose "Remove-DailyBackup:Process> Found $($qualifiedBackupDirs.Length) qualified backup directories" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Found $($qualifiedBackupDirs.Length) qualified backup directories" -Verbose:$verboseEnabled
 
         if ($PSCmdlet.ParameterSetName -eq 'SpecificDate')
         {
@@ -156,18 +156,18 @@ function Remove-DailyBackup
             $targetDir = $qualifiedBackupDirs | Where-Object { $_.Name -eq $Date }
             if (-not $targetDir)
             {
-                Write-Warning "Remove-DailyBackup:Process> No backup found for date: $Date"
+                Write-Warning "Remove-DailyBackup> No backup found for date: $Date"
                 return
             }
 
             $confirmMessage = "Remove backup directory for date $Date"
             if ($Force -or $PSCmdlet.ShouldProcess($targetDir.FullName, $confirmMessage))
             {
-                Write-Verbose "Remove-DailyBackup:Process> Removing backup directory: $($targetDir.FullName)" -Verbose:$verboseEnabled
+                Write-Verbose "Remove-DailyBackup> Removing backup directory: $($targetDir.FullName)" -Verbose:$verboseEnabled
                 try
                 {
                     Remove-ItemAlternative -LiteralPath $targetDir.FullName -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
-                    Write-Verbose "Remove-DailyBackup:Process> Successfully removed: $($targetDir.FullName)" -Verbose:$verboseEnabled
+                    Write-Verbose "Remove-DailyBackup> Successfully removed: $($targetDir.FullName)" -Verbose:$verboseEnabled
                 }
                 catch
                 {
@@ -194,7 +194,7 @@ function Remove-DailyBackup
                 }
                 catch
                 {
-                    Write-Warning "Remove-DailyBackup:Process> Skipping directory with invalid date format: $($backupDir.Name)"
+                    Write-Warning "Remove-DailyBackup> Skipping directory with invalid date format: $($backupDir.Name)"
                 }
             }
 
@@ -229,6 +229,6 @@ function Remove-DailyBackup
 
     end
     {
-        Write-Verbose 'Remove-DailyBackup:End> Backup removal operation completed' -Verbose:$verboseEnabled
+        Write-Verbose 'Remove-DailyBackup> Backup removal operation completed' -Verbose:$verboseEnabled
     }
 }

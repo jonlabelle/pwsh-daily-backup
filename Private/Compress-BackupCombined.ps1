@@ -80,7 +80,7 @@ function Compress-BackupCombined
             # Create metadata for combined archive - add each source path to manifest
             if (-not $NoHash)
             {
-                Write-Verbose "Compress-BackupCombined> Adding metadata to manifest for combined archive" -Verbose:$VerboseEnabled
+                Write-Verbose 'Compress-BackupCombined> Adding metadata to manifest for combined archive' -Verbose:$VerboseEnabled
                 foreach ($sourcePath in $Paths)
                 {
                     $pathType = Get-PathType -Path $sourcePath
@@ -89,14 +89,14 @@ function Compress-BackupCombined
             }
             else
             {
-                Write-Verbose "Compress-BackupCombined> Skipping metadata creation (NoHash specified)" -Verbose:$VerboseEnabled
+                Write-Verbose 'Compress-BackupCombined> Skipping metadata creation (NoHash specified)' -Verbose:$VerboseEnabled
             }
 
             Write-Verbose "Compress-BackupCombined> Successfully created combined archive: $archivePath" -Verbose:$VerboseEnabled
         }
         catch
         {
-            Write-Error "Compress-BackupCombined> Failed to create combined archive '$archivePath': $($_.Exception.Message)"
+            Write-Warning "Compress-BackupCombined> Failed to create combined archive '$archivePath': $($_.Exception.Message)"
             throw
         }
     }

@@ -72,32 +72,32 @@ function Add-BackupToManifest
         # Calculate hashes unless disabled
         if (-not $NoHash)
         {
-            Write-Verbose "New-DailyBackup:Add-BackupToManifest> Calculating source hash for: $SourcePath"
+            Write-Verbose "Add-BackupToManifest> Calculating source hash for: $SourcePath"
             $sourceHash = Get-PathHash -Path $SourcePath -Algorithm 'SHA256'
 
             if ($sourceHash)
             {
                 $backupEntry.SourceHash = $sourceHash
                 $backupEntry.HashAlgorithm = 'SHA256'
-                Write-Verbose "New-DailyBackup:Add-BackupToManifest> Source hash: $sourceHash"
+                Write-Verbose "Add-BackupToManifest> Source hash: $sourceHash"
 
                 # Calculate archive hash after it's created
                 $archiveFullPath = "$BackupPath.zip"
                 if (Test-Path $archiveFullPath)
                 {
-                    Write-Verbose "New-DailyBackup:Add-BackupToManifest> Calculating archive hash for: $archiveFullPath"
+                    Write-Verbose "Add-BackupToManifest> Calculating archive hash for: $archiveFullPath"
                     $archiveHash = Get-FileHash -Path $archiveFullPath -Algorithm SHA256
                     $backupEntry.ArchiveHash = $archiveHash.Hash
-                    Write-Verbose "New-DailyBackup:Add-BackupToManifest> Archive hash: $($archiveHash.Hash)"
+                    Write-Verbose "Add-BackupToManifest> Archive hash: $($archiveHash.Hash)"
                 }
                 else
                 {
-                    Write-Warning "New-DailyBackup:Add-BackupToManifest> Archive not found for hash calculation: $archiveFullPath"
+                    Write-Warning "Add-BackupToManifest> Archive not found for hash calculation: $archiveFullPath"
                 }
             }
             else
             {
-                Write-Warning "New-DailyBackup:Add-BackupToManifest> Failed to calculate source hash for: $SourcePath"
+                Write-Warning "Add-BackupToManifest> Failed to calculate source hash for: $SourcePath"
             }
         }
 
@@ -125,7 +125,7 @@ function Add-BackupToManifest
             }
             catch
             {
-                Write-Warning "New-DailyBackup:Add-BackupToManifest> Failed to read existing manifest, creating new one: $_"
+                Write-Warning "Add-BackupToManifest> Failed to read existing manifest, creating new one: $_"
                 $null
             }
         }
@@ -151,10 +151,10 @@ function Add-BackupToManifest
 
         # Save updated manifest
         $manifest | ConvertTo-Json -Depth 4 | Out-File -FilePath $manifestPath -Encoding UTF8
-        Write-Verbose "New-DailyBackup:Add-BackupToManifest> Added backup to manifest: $manifestPath"
+        Write-Verbose "Add-BackupToManifest> Added backup to manifest: $manifestPath"
     }
     catch
     {
-        Write-Warning "New-DailyBackup:Add-BackupToManifest> Failed to update manifest for $SourcePath : $_"
+        Write-Warning "Add-BackupToManifest> Failed to update manifest for $SourcePath : $_"
     }
 }

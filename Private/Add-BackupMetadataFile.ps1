@@ -68,10 +68,10 @@ function Add-BackupMetadataFile
 
         $metadataPath = "$BackupPath.metadata.json"
         $metadata | ConvertTo-Json -Depth 3 | Out-File -FilePath $metadataPath -Encoding UTF8
-        Write-Verbose "New-DailyBackup:Add-BackupMetadataFile> Metadata saved to: $metadataPath"
+        Write-Verbose "Add-BackupMetadataFile> Metadata saved to: $metadataPath"
     }
     catch
     {
-        Write-Warning "New-DailyBackup:Add-BackupMetadataFile> Failed to create metadata for $SourcePath : $_"
+        Write-Warning "Add-BackupMetadataFile> Failed to create metadata for $SourcePath : $_"
     }
 }

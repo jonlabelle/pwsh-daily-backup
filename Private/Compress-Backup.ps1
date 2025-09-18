@@ -64,7 +64,7 @@ function Compress-Backup
 
     if ($PSCmdlet.ShouldProcess("$backupPath.zip", 'Compress-Archive'))
     {
-        Write-Verbose ('New-DailyBackup:Compress-Backup> Compressing {0} backup ''{1}''' -f $pathType.ToLower(), "$backupPath.zip")
+        Write-Verbose "Compress-Backup> Compressing $($pathType.ToLower()) backup: $backupPath.zip"
 
         try
         {
@@ -79,11 +79,11 @@ function Compress-Backup
         }
         catch
         {
-            Write-Warning ('New-DailyBackup:Compress-Backup> Failed to compress {0} ''{1}'': {2}' -f $pathType.ToLower(), $Path, $_.Exception.Message)
+            Write-Warning "Compress-Backup> Failed to compress $($pathType.ToLower()) '$Path': $($_.Exception.Message)"
         }
     }
     else
     {
-        Write-Verbose ('New-DailyBackup:Compress-Backup> Dry-run only, {0} backup ''{1}'' will not be created' -f $pathType.ToLower(), "$backupPath.zip")
+        Write-Verbose "Compress-Backup> Dry-run only, $($pathType.ToLower()) backup '$backupPath.zip' will not be created"
     }
 }

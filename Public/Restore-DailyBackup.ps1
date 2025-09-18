@@ -140,7 +140,7 @@ function Restore-DailyBackup
             throw "Backup root directory not found: $BackupRoot"
         }
 
-        Write-Verbose "Restore-DailyBackup:Begin> Starting restore operation from $BackupRoot"
+        Write-Verbose "Restore-DailyBackup> Starting restore operation from $BackupRoot"
     }
 
     process
@@ -259,7 +259,7 @@ function Restore-DailyBackup
         Write-Host "   Failed: $($totalCount - $successCount)" -ForegroundColor Red
         Write-Host "   Total: $totalCount" -ForegroundColor Blue
 
-        Write-Verbose 'Restore-DailyBackup:End> Restore operation completed'
+        Write-Verbose 'Restore-DailyBackup> Restore operation completed'
         return $results
     }
 }

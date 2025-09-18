@@ -81,12 +81,12 @@ function New-BackupPath
         $randomFileName = (Get-RandomFileName)
         $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
 
-        Write-Warning ("New-BackupPath> A backup with the same filename '{0}' already exists in destination path '{1}', '{2}' was automatically appended to the backup filename for uniqueness" -f "$backupName.zip", $DestinationPath, $randomFileName)
+        Write-Warning "New-BackupPath> A backup with the same filename '$backupName.zip' already exists in destination path '$DestinationPath', '$randomFileName' was automatically appended to the backup filename for uniqueness"
     }
 
     if ($backupPath.Length -ge 255)
     {
-        Write-Error ('New-DailyBackup:New-BackupPath> The backup file path ''{0}'' is greater than or equal the maximum allowed filename length (255)' -f $backupPath) -ErrorAction Stop
+        Write-Error "New-BackupPath> The backup file path '$backupPath' is greater than or equal the maximum allowed filename length (255)" -ErrorAction Stop
     }
 
     return $backupPath

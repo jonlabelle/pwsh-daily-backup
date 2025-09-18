@@ -173,7 +173,7 @@ function Restore-BackupFile
                 }
                 catch
                 {
-                    Write-Warning "Failed to restore file timestamps: $_"
+                    Write-Warning "Restore-BackupFile> Failed to restore file timestamps: $_"
                 }
             }
 
