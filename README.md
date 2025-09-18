@@ -243,7 +243,7 @@ Both PowerShell 5.1+ (Windows PowerShell) and PowerShell Core 6.0+ support these
 
 ### Example 1: Basic Daily Backup
 
-Create a backup in `D:\Backups\2025-09-15` with ZIP files containing your documents and a consolidated metadata manifest.
+Create a backup in `D:\Backups\2025-09-15` with ZIP files containing your documents and a backup metadata manifest.
 
 ```powershell
 New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups"
@@ -259,7 +259,7 @@ New-DailyBackup -Path "C:\Reports\quarterly-report.pdf" -Destination "D:\Backups
 
 ### Example 3: Multiple Sources with Cleanup
 
-Back up multiple directories and files, keeping only the latest 7 daily backups with detailed progress output and consolidated metadata.
+Back up multiple directories and files, keeping only the latest 7 daily backups with detailed progress output and backup metadata.
 
 ```powershell
 New-DailyBackup `

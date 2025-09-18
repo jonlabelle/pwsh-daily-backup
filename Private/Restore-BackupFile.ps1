@@ -69,7 +69,7 @@ function Restore-BackupFile
 
     $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
 
-    # Use consolidated metadata retrieval
+    # Get backup metadata
     $metadata = Get-BackupMetadataInfo -BackupFilePath $BackupFilePath
     if ($metadata)
     {

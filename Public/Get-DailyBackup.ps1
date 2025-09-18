@@ -78,7 +78,7 @@ function Get-DailyBackup
 
         $zipFiles = @(Get-ChildItem -Path $datePath -Filter '*.zip')
 
-        # Check for consolidated manifest
+        # Check for backup manifest
         $manifestPath = Join-Path $datePath 'backup-manifest.json'
         $manifestData = $null
 
@@ -87,7 +87,7 @@ function Get-DailyBackup
             try
             {
                 $manifestData = Get-Content $manifestPath -Raw | ConvertFrom-Json
-                Write-Verbose "Get-DailyBackup> Using consolidated manifest for $dateFolder"
+                Write-Verbose "Get-DailyBackup> Using backup manifest for $dateFolder"
             }
             catch
             {
@@ -106,7 +106,7 @@ function Get-DailyBackup
                 Metadata = $null
             }
 
-            # Try to get metadata from consolidated manifest
+            # Try to get metadata from backup manifest
             if ($manifestData -and $manifestData.Backups)
             {
                 $metadata = $manifestData.Backups | Where-Object { $_.ArchiveName -eq $zipFile.Name }

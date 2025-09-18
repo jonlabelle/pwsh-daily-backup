@@ -70,7 +70,7 @@ function Compress-Backup
         {
             Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Stop
 
-            # Add backup to consolidated daily manifest
+            # Add backup to daily manifest
             if (-not $WhatIfPreference)
             {
                 $datePath = Split-Path $backupPath

@@ -46,7 +46,7 @@ Describe 'Metadata and Path Type Detection' {
     }
 
     Context 'Metadata Structure Validation' {
-        It 'Creates consolidated backup manifest with valid metadata' {
+        It 'Creates backup manifest with valid metadata' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir

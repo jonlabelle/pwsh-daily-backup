@@ -16,7 +16,7 @@ Describe 'New-DailyBackup Core Functionality' {
             $result.ZipCount | Should -BeGreaterThan 0
         }
 
-        It 'Creates consolidated metadata manifest for each backup date' {
+        It 'Creates metadata manifest for each backup date' {
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir

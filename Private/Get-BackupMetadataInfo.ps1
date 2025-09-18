@@ -2,10 +2,10 @@ function Get-BackupMetadataInfo
 {
     <#
     .SYNOPSIS
-        Retrieves backup metadata from consolidated manifest format.
+        Retrieves backup metadata from the daily backup manifest.
 
     .DESCRIPTION
-        Reads metadata from the consolidated backup-manifest.json format.
+        Reads metadata from the backup-manifest.json format for a specific backup file.
 
     .PARAMETER BackupFilePath
         The path to the backup archive (.zip file).
@@ -14,7 +14,7 @@ function Get-BackupMetadataInfo
         PSObject containing backup metadata, or $null if not found.
 
     .NOTES
-        This function reads from the consolidated backup-manifest.json format.
+        This function reads from the backup-manifest.json format.
 
     .EXAMPLE
         PS > Get-BackupMetadataInfo -BackupFilePath 'C:\Backups\2025-09-15\Documents__report.pdf.zip'
@@ -32,7 +32,7 @@ function Get-BackupMetadataInfo
         $backupDir = Split-Path $BackupFilePath
         $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
 
-        # Read from consolidated manifest
+        # Read from backup manifest
         $manifestPath = Join-Path $backupDir 'backup-manifest.json'
         if (Test-Path $manifestPath)
         {
@@ -43,7 +43,7 @@ function Get-BackupMetadataInfo
 
                 if ($backup)
                 {
-                    Write-Verbose "Get-BackupMetadataInfo> Found metadata in consolidated manifest for $backupName"
+                    Write-Verbose "Get-BackupMetadataInfo> Found metadata in backup manifest for $backupName"
                     return $backup
                 }
             }

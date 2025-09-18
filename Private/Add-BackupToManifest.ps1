@@ -2,12 +2,12 @@ function Add-BackupToManifest
 {
     <#
     .SYNOPSIS
-        Adds backup information to a consolidated daily manifest file.
+        Adds backup information to a daily backup manifest file.
 
     .DESCRIPTION
         Creates or updates a daily backup manifest (backup-manifest.json) containing
-        metadata for all backups created on a specific date. This consolidated approach
-        reduces file clutter while maintaining full restoration capabilities.
+        metadata for all backups created on a specific date. This approach maintains
+        full restoration capabilities for all backed up files and directories.
 
     .PARAMETER SourcePath
         The original path that was backed up.
@@ -33,8 +33,8 @@ function Add-BackupToManifest
         None. Creates or updates backup-manifest.json in the date directory.
 
     .NOTES
-        This function replaces individual .metadata.json files with a single
-        consolidated manifest per backup date, dramatically reducing file clutter.
+        This function creates a single backup-manifest.json file per backup date,
+        containing metadata for all backups created on that date.
 
     .EXAMPLE
         PS > Add-BackupToManifest -SourcePath 'C:\Documents\report.pdf' -BackupPath 'C:\Backups\2025-09-15\Documents__report.pdf' -PathType 'File' -DatePath 'C:\Backups\2025-09-15'

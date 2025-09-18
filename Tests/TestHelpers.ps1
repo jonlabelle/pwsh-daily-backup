@@ -129,7 +129,7 @@ function Test-BackupStructure
     return $result
 }
 
-# Test consolidated backup manifest content
+# Test backup manifest content
 function Test-BackupManifest
 {
     param(
