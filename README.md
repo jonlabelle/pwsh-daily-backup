@@ -50,17 +50,6 @@
 - **Flexible restore options** - Restore to original locations or custom destinations with filtering
 - **Cross-platform** - Works on Windows, macOS, and Linux
 
-## Path Handling
-
-The examples in this README demonstrate both Windows-style paths (`C:\Documents`, `D:\Backups`) and Unix-style paths (`~/Documents`, `/home/user/files`) to show the module's cross-platform compatibility. PowerShell provides excellent path handling across all supported platforms:
-
-- **Windows paths**: Use drive letters and backslashes (`C:\Users\Name\Documents`)
-- **Unix paths**: Use forward slashes (`/home/user/documents`, `~/Documents`)
-- **Tilde expansion**: The `~` character expands to the user's home directory on all platforms
-- **Cross-platform compatibility**: PowerShell automatically handles path separators and conventions
-
-Both PowerShell 5.1+ (Windows PowerShell) and PowerShell Core 6.0+ support these path formats, making scripts portable across operating systems. For detailed information about PowerShell's path handling capabilities, see [Microsoft's documentation on PowerShell path management](https://learn.microsoft.com/en-us/powershell/scripting/samples/working-with-files-and-folders).
-
 ## Quick Start
 
 ### Installation
@@ -71,13 +60,11 @@ Install-Module -Name DailyBackup -Scope CurrentUser
 
 ### Quick Command Reference
 
-| Command               | Purpose                 | Example                                                                       |
-| --------------------- | ----------------------- | ----------------------------------------------------------------------------- |
-| `New-DailyBackup`     | Create backups          | `New-DailyBackup -Path "C:\Documents" -Destination "D:\Backups" -Keep 7`      |
-| `Restore-DailyBackup` | Restore from backup     | `Restore-DailyBackup -BackupRoot "D:\Backups" -DestinationPath "C:\Restored"` |
-| `Get-DailyBackup`     | List available backups  | `Get-DailyBackup -BackupRoot "D:\Backups"`                                    |
-| `Test-DailyBackup`    | Verify backup integrity | `Test-DailyBackup -BackupRoot "D:\Backups" -VerifySource`                     |
-| `Remove-DailyBackup`  | Clean up old backups    | `Remove-DailyBackup -Path "D:\Backups" -Keep 30`                              |
+- **[`New-DailyBackup`](#new-dailybackup)** - Create backups with automatic retention
+- **[`Restore-DailyBackup`](#restore-dailybackup)** - Restore files from backup archives
+- **[`Get-DailyBackup`](#get-dailybackup)** - List available backups by date
+- **[`Test-DailyBackup`](#test-dailybackup)** - Verify backup integrity with hash checking
+- **[`Remove-DailyBackup`](#remove-dailybackup)** - Clean up old backups by retention policy
 
 ### Basic Usage
 
@@ -239,6 +226,20 @@ Remove-DailyBackup [-Path] <String> [-Keep <Int32>] [-Date <String>] [-Force] [-
 - **`-Force`**: Bypass confirmation prompts
 
 ## Examples
+
+<details>
+<summary><strong>Path Handling in the Examples</strong> (click to expand)</summary>
+
+The examples in this README demonstrate both Windows-style paths (`C:\Documents`, `D:\Backups`) and Unix-style paths (`~/Documents`, `/home/user/files`) to show the module's cross-platform compatibility. PowerShell provides excellent path handling across all supported platforms:
+
+- **Windows paths**: Use drive letters and backslashes (`C:\Users\Name\Documents`)
+- **Unix paths**: Use forward slashes (`/home/user/documents`, `~/Documents`)
+- **Tilde expansion**: The `~` character expands to the user's home directory on all platforms
+- **Cross-platform compatibility**: PowerShell automatically handles path separators and conventions
+
+Both PowerShell 5.1+ (Windows PowerShell) and PowerShell Core 6.0+ support these path formats, making scripts portable across operating systems. For detailed information about PowerShell's path handling capabilities, see [Microsoft's documentation on PowerShell path management](https://learn.microsoft.com/en-us/powershell/scripting/samples/working-with-files-and-folders).
+
+</details>
 
 ### Example 1: Basic Daily Backup
 
