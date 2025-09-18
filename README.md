@@ -34,7 +34,7 @@
   - [Example 10: Remove Old Backups](#example-10-remove-old-backups)
   - [Example 11: Backup Without Automatic Cleanup](#example-11-backup-without-automatic-cleanup)
 - [Advanced Usage](#advanced-usage)
-  - [Automation with Task Scheduler](#automation-with-task-scheduler)
+  - [Automation and Scheduling](#automation-and-scheduling)
   - [Handling Hash Conflicts and Integrity Issues](#handling-hash-conflicts-and-integrity-issues)
 - [Contributing](#contributing)
 - [License](#license)
@@ -49,6 +49,17 @@
 - **Metadata preservation** - Stores detailed information about backed up items for tracking and restoration
 - **Flexible restore options** - Restore to original locations or custom destinations with filtering
 - **Cross-platform** - Works on Windows, macOS, and Linux
+
+## Path Handling
+
+The examples in this README demonstrate both Windows-style paths (`C:\Documents`, `D:\Backups`) and Unix-style paths (`~/Documents`, `/home/user/files`) to show the module's cross-platform compatibility. PowerShell provides excellent path handling across all supported platforms:
+
+- **Windows paths**: Use drive letters and backslashes (`C:\Users\Name\Documents`)
+- **Unix paths**: Use forward slashes (`/home/user/documents`, `~/Documents`)
+- **Tilde expansion**: The `~` character expands to the user's home directory on all platforms
+- **Cross-platform compatibility**: PowerShell automatically handles path separators and conventions
+
+Both PowerShell 5.1+ (Windows PowerShell) and PowerShell Core 6.0+ support these path formats, making scripts portable across operating systems. For detailed information about PowerShell's path handling capabilities, see [Microsoft's documentation on PowerShell path management](https://learn.microsoft.com/en-us/powershell/scripting/samples/working-with-files-and-folders).
 
 ## Quick Start
 
@@ -72,10 +83,10 @@ Install-Module -Name DailyBackup -Scope CurrentUser
 
 ```powershell
 # Simple directory backup
-New-DailyBackup -Path "C:\MyDocuments" -Destination "D:\Backups"
+New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backups"
 
 # Individual file backup with metadata
-New-DailyBackup -Path "C:\important-report.pdf" -Destination "D:\Backups"
+New-DailyBackup -Path "C:\Reports\quarterly-report.pdf" -Destination "D:\Backups"
 
 # Multiple files and directories with cleanup (keep last 7 days)
 New-DailyBackup -Path @("C:\Documents", "C:\Pictures", "C:\config.txt") -Destination "D:\Backups" -Keep 7
@@ -157,13 +168,13 @@ The `-FileBackupMode` parameter controls how multiple files are packaged into ba
 
 ```powershell
 # Individual mode - each file gets its own archive
-New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Individual
+New-DailyBackup -Path "C:\Data\*.txt" -Destination "D:\Backups" -FileBackupMode Individual
 
 # Combined mode - all files in one archive
-New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Combined
+New-DailyBackup -Path "C:\Reports\*.csv" -Destination "D:\Backups" -FileBackupMode Combined
 
 # Auto mode - intelligent selection based on file count and types
-New-DailyBackup -Path "*.txt" -Destination D:\Backups -FileBackupMode Auto
+New-DailyBackup -Path "~/config/*.conf" -Destination "~/Backups" -FileBackupMode Auto
 ```
 
 ### `Restore-DailyBackup`
@@ -239,10 +250,10 @@ New-DailyBackup -Path "C:\Users\$env:USERNAME\Documents" -Destination "D:\Backup
 
 ### Example 2: Individual File Backup
 
-Create a backup of a single file with enhanced naming: `D:\Backups\2025-09-15\Users__[username]__important-report.pdf.zip`.
+Create a backup of a single file with enhanced naming: `D:\Backups\2025-09-15\Reports__quarterly-report.pdf.zip`.
 
 ```powershell
-New-DailyBackup -Path "C:\Users\$env:USERNAME\important-report.pdf" -Destination "D:\Backups"
+New-DailyBackup -Path "C:\Reports\quarterly-report.pdf" -Destination "D:\Backups"
 ```
 
 ### Example 3: Multiple Sources with Cleanup
@@ -262,7 +273,7 @@ New-DailyBackup `
 Show exactly what would be backed up without actually creating any files.
 
 ```powershell
-New-DailyBackup -Path "C:\Important" -Destination "D:\Backup" -WhatIf -Verbose
+New-DailyBackup -Path "C:\ImportantData" -Destination "D:\Backups" -WhatIf -Verbose
 ```
 
 ### Example 5: Basic Restore
@@ -338,7 +349,7 @@ Remove-DailyBackup -Path "D:\Backups" -Keep 7
 Remove-DailyBackup -Path "D:\Backups" -Date "2025-09-01" -Force
 
 # Preview what would be removed
-Remove-DailyBackup -Path "D:\Backups" -Keep 14 -WhatIf
+Remove-DailyBackup -Path "E:\LongTermBackups" -Keep 14 -WhatIf
 ```
 
 ### Example 11: Backup Without Automatic Cleanup
@@ -355,7 +366,7 @@ Remove-DailyBackup -Path "D:\Backups" -Keep 30
 
 ## Advanced Usage
 
-### Automation with Task Scheduler
+### Automation and Scheduling
 
 #### Windows Task Scheduler
 
@@ -447,10 +458,10 @@ Write-Host "Most recent valid backup: $recentValid" -ForegroundColor Green
 New-DailyBackup -Path "C:\LargeFiles" -Destination "D:\Backups" -NoHash
 
 # Use Individual mode for many small files
-New-DailyBackup -Path @("file1.txt", "file2.txt") -FileBackupMode Individual
+New-DailyBackup -Path @("C:\file1.txt", "C:\file2.txt") -FileBackupMode Individual
 
 # Use Combined mode for fewer archive files
-New-DailyBackup -Path @("C:\Docs", "C:\Data") -FileBackupMode Combined
+New-DailyBackup -Path @("~/Documents", "~/Pictures") -FileBackupMode Combined
 ```
 
 ### Storage Considerations
@@ -467,10 +478,10 @@ New-DailyBackup -Path @("C:\Docs", "C:\Data") -FileBackupMode Combined
 New-DailyBackup -Path "C:\ActiveProjects" -Keep 7
 
 # Weekly retention for archived data
-New-DailyBackup -Path "C:\Archives" -Keep 30
+New-DailyBackup -Path "D:\Archives" -Keep 30
 
 # Long-term retention for critical data
-New-DailyBackup -Path "C:\Critical" -Keep 365
+New-DailyBackup -Path "E:\Critical" -Keep 365
 ```
 
 ## Additional Documentation
