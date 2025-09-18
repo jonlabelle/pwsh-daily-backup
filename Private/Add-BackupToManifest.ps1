@@ -21,6 +21,14 @@ function Add-BackupToManifest
     .PARAMETER DatePath
         The date-organized backup directory path (e.g., /backups/2025-09-15).
 
+    .PARAMETER NoHash
+        Skip hash calculation to improve performance in simple backup scenarios.
+
+    .PARAMETER HashAlgorithm
+        The hash algorithm to use for calculating hashes.
+        Available options: SHA1, SHA256, SHA384, SHA512, MD5.
+        Defaults to SHA256.
+
     .OUTPUTS
         None. Creates or updates backup-manifest.json in the date directory.
 
@@ -36,9 +44,11 @@ function Add-BackupToManifest
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string] $SourcePath,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string] $BackupPath,
 
         [Parameter(Mandatory = $true)]
@@ -46,20 +56,39 @@ function Add-BackupToManifest
         [string] $PathType,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string] $DatePath,
 
         [Parameter(Mandatory = $false)]
-        [switch] $NoHash
+        [switch] $NoHash,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('SHA1', 'SHA256', 'SHA384', 'SHA512', 'MD5')]
+        [string] $HashAlgorithm = 'SHA256'
     )
 
     try
     {
-        $manifestPath = Join-Path $DatePath 'backup-manifest.json'
+        # Validate and resolve paths
+        if (-not (Test-Path -Path $DatePath -PathType Container))
+        {
+            Write-Warning "Add-BackupToManifest> Date path does not exist: $DatePath"
+            return
+        }
+
+        # Validate source path exists
+        if (-not (Test-Path -Path $SourcePath))
+        {
+            Write-Warning "Add-BackupToManifest> Source path does not exist: $SourcePath"
+            return
+        }
+
+        $manifestPath = Join-Path -Path $DatePath -ChildPath 'backup-manifest.json'
         $archiveName = [System.IO.Path]::GetFileName($BackupPath) + '.zip'
 
         # Get module version dynamically
         $moduleInfo = Get-Module -Name DailyBackup
-        $moduleVersion = if ($moduleInfo) { $moduleInfo.Version.ToString() } else { '1.8.0' }
+        $moduleVersion = if ($moduleInfo) { $moduleInfo.Version.ToString() } else { '1.0.0' }
 
         # Create backup entry
         $backupEntry = @{
@@ -73,12 +102,12 @@ function Add-BackupToManifest
         if (-not $NoHash)
         {
             Write-Verbose "Add-BackupToManifest> Calculating source hash for: $SourcePath"
-            $sourceHash = Get-PathHash -Path $SourcePath -Algorithm 'SHA256'
+            $sourceHash = Get-PathHash -Path $SourcePath -Algorithm $HashAlgorithm
 
             if ($sourceHash)
             {
                 $backupEntry.SourceHash = $sourceHash
-                $backupEntry.HashAlgorithm = 'SHA256'
+                $backupEntry.HashAlgorithm = $HashAlgorithm
                 Write-Verbose "Add-BackupToManifest> Source hash: $sourceHash"
 
                 # Calculate archive hash after it's created
@@ -86,7 +115,7 @@ function Add-BackupToManifest
                 if (Test-Path $archiveFullPath)
                 {
                     Write-Verbose "Add-BackupToManifest> Calculating archive hash for: $archiveFullPath"
-                    $archiveHash = Get-FileHash -Path $archiveFullPath -Algorithm SHA256
+                    $archiveHash = Get-FileHash -Path $archiveFullPath -Algorithm $HashAlgorithm
                     $backupEntry.ArchiveHash = $archiveHash.Hash
                     Write-Verbose "Add-BackupToManifest> Archive hash: $($archiveHash.Hash)"
                 }
@@ -117,24 +146,41 @@ function Add-BackupToManifest
         }
 
         # Load existing manifest or create new one
-        $manifest = if (Test-Path $manifestPath)
+        $manifest = $null
+        if (Test-Path $manifestPath)
         {
             try
             {
-                Get-Content $manifestPath -Raw | ConvertFrom-Json
+                $content = Get-Content $manifestPath -Raw -ErrorAction Stop
+                if ($content -and $content.Trim())
+                {
+                    $manifest = $content | ConvertFrom-Json -ErrorAction Stop
+
+                    # Validate manifest structure
+                    if (-not $manifest.PSObject.Properties['Backups'])
+                    {
+                        Write-Verbose 'Add-BackupToManifest> Adding missing Backups array to existing manifest'
+                        $manifest | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
+                    }
+                    elseif ($null -eq $manifest.Backups)
+                    {
+                        $manifest.Backups = @()
+                    }
+                }
+                else
+                {
+                    Write-Verbose 'Add-BackupToManifest> Manifest file is empty, creating new manifest'
+                    $manifest = $null
+                }
             }
             catch
             {
                 Write-Warning "Add-BackupToManifest> Failed to read existing manifest, creating new one: $_"
-                $null
+                $manifest = $null
             }
         }
-        else
-        {
-            $null
-        }
 
-        # Create new manifest structure if needed
+        # Create new manifest structure if needed or validate existing one
         if (-not $manifest)
         {
             $backupDate = Split-Path $DatePath -Leaf
@@ -144,6 +190,11 @@ function Add-BackupToManifest
                 ModuleVersion = $moduleVersion
                 Backups = @()
             }
+        }
+        elseif (-not $manifest.PSObject.Properties['Backups'] -or $null -eq $manifest.Backups)
+        {
+            # Ensure Backups array exists
+            $manifest | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
         }
 
         # Add new backup entry
