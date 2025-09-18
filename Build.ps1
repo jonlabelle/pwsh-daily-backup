@@ -141,8 +141,7 @@ function Invoke-UnitTest
         return
     }
 
-    # Run Pester tests if available
-    $pesterTest = Join-Path $testPath "$ModuleName.Tests.ps1"
+    # Run focused test suites via RunAllTests.ps1
     $testRunner = Join-Path $testPath 'RunAllTests.ps1'
 
     if (Test-Path $testRunner)
@@ -150,7 +149,7 @@ function Invoke-UnitTest
         Write-BuildMessage 'Running focused test suites via RunAllTests.ps1' -Type Info
 
         # Use PowerShell to run the test runner script
-        $testResults = & pwsh -File $testRunner
+        & pwsh -File $testRunner
         $exitCode = $LASTEXITCODE
 
         if ($exitCode -gt 0)
@@ -161,30 +160,9 @@ function Invoke-UnitTest
 
         Write-BuildMessage 'Focused test suites completed successfully' -Type Success
     }
-    elseif (Test-Path $pesterTest)
-    {
-        Write-BuildMessage 'Running legacy test file (consider migrating to focused tests)' -Type Warning
-
-        # Use Pester v5 configuration
-        $pesterConfig = New-PesterConfiguration
-        $pesterConfig.Run.Path = $pesterTest
-        $pesterConfig.Output.Verbosity = 'Detailed'
-        $pesterConfig.CodeCoverage.Enabled = $true
-        $pesterConfig.CodeCoverage.Path = @($ModuleScript)
-
-        $results = Invoke-Pester -Configuration $pesterConfig
-
-        if ($results.FailedCount -gt 0)
-        {
-            Write-BuildMessage "Unit tests failed: $($results.FailedCount) failed, $($results.PassedCount) passed" -Type Error
-            throw 'Unit tests failed'
-        }
-
-        Write-BuildMessage "Unit tests passed: $($results.PassedCount)/$($results.TotalCount)" -Type Success
-    }
     else
     {
-        Write-BuildMessage 'No test files found' -Type Warning
+        Write-BuildMessage 'No test runner found (RunAllTests.ps1)' -Type Warning
     }
 
     Write-BuildMessage 'Unit tests completed' -Type Success

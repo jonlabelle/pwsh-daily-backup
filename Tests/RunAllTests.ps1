@@ -40,7 +40,7 @@ param(
 )
 
 # Discover test files
-$testFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.Tests.ps1' | Where-Object { $_.Name -ne 'DailyBackup.Tests.ps1' }
+$testFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.Tests.ps1'
 
 if ($TestName)
 {

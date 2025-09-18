@@ -5,8 +5,7 @@ function Get-BackupMetadataInfo
         Retrieves backup metadata from consolidated manifest format.
 
     .DESCRIPTION
-        Reads metadata from the new consolidated backup-manifest.json format.
-        This function only works with the new format - no legacy support.
+        Reads metadata from the consolidated backup-manifest.json format.
 
     .PARAMETER BackupFilePath
         The path to the backup archive (.zip file).
@@ -15,7 +14,7 @@ function Get-BackupMetadataInfo
         PSObject containing backup metadata, or $null if not found.
 
     .NOTES
-        This function only reads from the new consolidated manifest format.
+        This function reads from the consolidated backup-manifest.json format.
 
     .EXAMPLE
         PS > Get-BackupMetadataInfo -BackupFilePath 'C:\Backups\2025-09-15\Documents__report.pdf.zip'

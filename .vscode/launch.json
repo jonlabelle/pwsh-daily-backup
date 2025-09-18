@@ -9,10 +9,9 @@
             "name": "PowerShell: Run Pester unit tests",
             "type": "PowerShell",
             "request": "launch",
-            "script": "Invoke-Pester",
+            "script": "./Tests/RunAllTests.ps1",
             // prettier-ignore
             "args": [
-                "./Tests/DailyBackup.Tests.ps1",
                 "-Verbose"
             ],
             "cwd": "${workspaceFolder}"

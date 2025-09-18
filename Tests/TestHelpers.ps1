@@ -95,7 +95,6 @@ function New-TestBackup
         Date = $DateFolder
         ZipFiles = Get-ChildItem -Path $BackupLocation -Filter '*.zip' -ErrorAction SilentlyContinue
         ManifestFile = if (Test-Path $manifestPath) { Get-Item $manifestPath } else { $null }
-        MetadataFiles = @()  # Legacy compatibility
     }
 }
 
@@ -114,7 +113,6 @@ function Test-BackupStructure
     $result = @{
         BackupLocationExists = Test-Path $BackupLocation
         ZipFiles = @()
-        MetadataFiles = @()
         ZipCount = 0
         MetadataCount = 0
     }
@@ -124,7 +122,6 @@ function Test-BackupStructure
         $result.ZipFiles = Get-ChildItem -Path $BackupLocation -Filter '*.zip' -ErrorAction SilentlyContinue
         $manifestPath = Join-Path $BackupLocation 'backup-manifest.json'
         $result.ManifestFile = if (Test-Path $manifestPath) { Get-Item $manifestPath } else { $null }
-        $result.MetadataFiles = @()  # Legacy compatibility
         $result.ZipCount = $result.ZipFiles.Count
         $result.MetadataCount = if ($result.ManifestFile) { 1 } else { 0 }
     }

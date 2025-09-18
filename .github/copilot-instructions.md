@@ -1,187 +1,155 @@
-# DailyBackup PowerShell Module - AI Coding Guidelines
+# DailyBackup PowerShell Module - AI Development Guidelines
 
-## Cross-Platform Compatibility Requirements
+You are an expert PowerShell developer working on a cross-platform backup solution. These guidelines ensure code quality, maintainability, and adherence to PowerShell best practices.
 
-**CRITICAL:** All code must be compatible with:
+## Core Principles
+
+### Documentation Philosophy
+
+- **Never document implementation decisions in code or comments** - use Git history, changelog, and formal documentation
+- **Focus on what the code does, not why** - the "why" belongs in commit messages and design documents
+- **Keep inline comments minimal** - prefer self-documenting code through clear naming and structure
+
+### Cross-Platform Compatibility Requirements
+
+**CRITICAL:** All code must work across:
 
 - PowerShell Desktop 5.1 (Windows only)
 - PowerShell Core 6.2+ (Windows, macOS, Linux)
 
-## Architecture Overview
+**Key compatibility considerations:**
 
-This is a **modular PowerShell module** with separated Public and Private functions organized in dedicated folders. The module follows PowerShell best practices with three public functions and several internal helpers:
+- Array handling differs between versions - use explicit null checks instead of `@()` wrapping
+- Path separators vary by platform - use `Join-Path` and avoid hardcoded slashes
+- Unicode support varies - prefer ASCII-compatible output messages
+- Cloud storage compatibility requires alternative approaches to standard cmdlets
 
-- **Public** (in `/Public/` folder): `New-DailyBackup`, `Restore-DailyBackup`, `Get-DailyBackup`, `Test-DailyBackup`
-- **Private** (in `/Private/` folder): All helper functions following proper Verb-Noun naming conventions
+## Architecture Principles
 
-### Module Structure
+### Modular Design
 
-```
-DailyBackup.psm1           # Main module with import logic
-DailyBackup.psd1           # Module manifest
-Public/                    # Public (exported) functions
-├── Get-DailyBackup.ps1
-├── New-DailyBackup.ps1
-└── Restore-DailyBackup.ps1
-Private/                   # Private (internal) functions
-├── Add-BackupMetadataFile.ps1
-├── Compress-Backup.ps1
-├── Get-PathType.ps1
-├── Get-RandomFileName.ps1
-├── New-BackupPath.ps1
-├── Remove-DailyBackup.ps1
-├── Remove-ItemAlternative.ps1
-├── Resolve-UnverifiedPath.ps1
-└── Restore-BackupFile.ps1
-```
+- **Separation of concerns:** Public functions (user-facing) vs Private functions (internal helpers)
+- **Single responsibility:** Each function should do one thing well
+- **Consistent naming:** Follow PowerShell Verb-Noun conventions for all functions
+- **Automatic discovery:** Use dot-sourcing patterns for function imports
+- **Clean interfaces:** Export only what users need from the module
 
-### Function Import Pattern
+### Data Organization
 
-The main module (`DailyBackup.psm1`) uses dot-sourcing to import all functions:
+- **Date-based storage:** Use ISO 8601 date format (yyyy-MM-dd) for backup organization
+- **Metadata-driven operations:** Store enough metadata to enable full restoration capabilities
+- **Path normalization:** Transform platform-specific paths to safe, cross-platform backup names
+- **Version compatibility:** Maintain backward compatibility in metadata formats
+
+### Error Handling Strategy
+
+- **Graceful degradation:** Use `Write-Warning` for non-fatal issues, continue processing
+- **Comprehensive validation:** Validate inputs early with appropriate parameter attributes
+- **Support dry-run operations:** Implement `SupportsShouldProcess` for destructive operations
+- **Contextual error messages:** Include operation context in error messages for debugging
+
+## Development Standards
+
+### Code Quality Requirements
+
+- **PowerShell best practices:** Follow approved verbs, parameter naming, and cmdlet design patterns
+- **Parameter validation:** Use appropriate validation attributes (`ValidateRange`, `ValidateSet`, `ValidatePattern`)
+- **Progress indication:** Provide progress bars for long-running operations
+- **Verbose logging:** Include contextual prefixes in verbose messages for operation tracking
+- **Output consistency:** Use ASCII-compatible formatting for broad platform compatibility
+
+### Testing Philosophy
+
+- **Comprehensive coverage:** Write both unit tests (isolated functions) and integration tests (real scenarios)
+- **Cross-platform validation:** Ensure tests pass on all supported PowerShell versions and platforms
+- **Test isolation:** Use proper setup/teardown to avoid test interdependencies
+- **Focused test files:** Organize tests by feature area for maintainability
+
+### Build and CI Standards
+
+- **Unified build system:** Use the build script for all development tasks (test, analyze, package)
+- **Multi-platform CI:** Validate on Windows, macOS, and Linux in automated builds
+- **Static analysis:** PSScriptAnalyzer must pass with zero errors (warnings acceptable)
+- **Conventional commits:** Use structured commit messages for clear change history
+
+## Implementation Patterns
+
+### Common Code Patterns
 
 ```powershell
-# Get public and private function definition files
-$PublicFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Public\*.ps1" -ErrorAction SilentlyContinue)
-$PrivateFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Private\*.ps1" -ErrorAction SilentlyContinue)
+# Parameter validation examples
+[ValidateRange(-1, [int]::MaxValue)]   # -1 means "unlimited"
+[ValidatePattern('^\d{4}-\d{2}-\d{2}$')]  # ISO date format
+[ValidateSet('Individual', 'Combined', 'Auto')]  # Enumerated options
 
-# Dot source the functions
-foreach ($function in @($PublicFunctions + $PrivateFunctions))
-{
-    try
-    {
-        . $function.FullName
-    }
-    catch
-    {
-        Write-Error -Message "Failed to import function $($function.FullName): $_"
-    }
+# Cross-platform path handling
+$normalizedPath = Join-Path -Path $pwd -ChildPath $relativePath
+$backupSafeName = $originalPath -replace '[\\/:]', '__'
+
+# Progress reporting
+Write-Progress -Activity 'Operation Name' -Status "Step $current of $total" -PercentComplete $percent
+
+# Error handling
+if (-not $result) {
+    Write-Warning "Non-fatal issue occurred, continuing..."
+    continue
 }
 
-# Export only the public functions
-Export-ModuleMember -Function $PublicFunctions.BaseName
+# ShouldProcess pattern
+if ($PSCmdlet.ShouldProcess($target, $operation)) {
+    # Perform destructive operation
+}
 ```
 
-## Key Design Patterns
+### PowerShell Version Compatibility
 
-### Modular Function Organization
+- **Array handling:** Use explicit null checks rather than `@()` wrapping
+- **Return values:** Use `Write-Output -NoEnumerate` for consistent array behavior
+- **Path operations:** Prefer `Join-Path` over string concatenation
+- **Regex patterns:** Use simple patterns that work across versions
 
-- **Public functions** in `/Public/` folder - exported and user-facing
-- **Private functions** in `/Private/` folder - internal helpers with proper Verb-Noun naming
-- **Automatic importing** via dot-sourcing pattern in main module
-- **Clean separation** of concerns and improved maintainability
+## Critical Implementation Guidelines
 
-### PowerShell Naming Conventions
+### Backup and Restore Operations
 
-All private functions follow standard PowerShell Verb-Noun naming:
+- **Filename collision handling:** Generate unique suffixes when backup names conflict
+- **Metadata preservation:** Store comprehensive metadata for reliable restoration
+- **Progress feedback:** Show progress for multi-file operations and long-running tasks
+- **Integrity verification:** Support hash-based validation for backup verification
 
-- `Get-PathType` (was `Get-PathType`)
-- `Get-RandomFileName` (was `GetRandomFileName`)
-- `New-BackupPath` (was `GenerateBackupPath`)
-- `Compress-Backup` (was `CompressBackup`)
-- `Add-BackupMetadataFile` (was `Add-BackupMetadataFile`)
-- `Resolve-UnverifiedPath` (was `ResolveUnverifiedPath`)
-- `Remove-ItemAlternative` (was `RemoveItemAlternative`)
-- `Remove-DailyBackup` (was `RemoveDailyBackup`)
-- `Restore-BackupFile` (was internal, now properly named)
+### Module Architecture
 
-### Date-Organized Storage Strategy
+- **Export control:** Only export public-facing functions from the module manifest
+- **Function organization:** Separate public (user-facing) and private (internal) functions
+- **Parameter consistency:** Use consistent parameter names and validation across related functions
+- **Help documentation:** Provide comprehensive help for all public functions
 
-- Backups are stored in **yyyy-MM-dd** folders (e.g., `2025-09-15/`)
-- Uses `$script:DefaultFolderDateFormat = 'yyyy-MM-dd'` and `$script:DefaultFolderDateRegex = '^\d{4}-\d{2}-\d{2}$'`
-- Path transformation: `C:\Users\Jon\Documents` → `Users__Jon__Documents.zip`
+### Security and Reliability
 
-### Metadata-Driven Restoration
+- **Input validation:** Validate all user inputs at function boundaries
+- **Secure operations:** Handle file permissions and access restrictions gracefully
+- **Transaction safety:** Support `WhatIf` for all destructive operations
+- **Cleanup responsibility:** Properly clean up temporary resources and handle interruptions
 
-- Each backup gets a `.metadata.json` file with original path, timestamps, and attributes
-- Enables `Restore-DailyBackup -UseOriginalPaths` to restore to exact source locations
-- Metadata format includes `BackupVersion = '2.0'`, `SourcePath`, `PathType` ('File'/'Directory')
+## Best Practices for AI Collaboration
 
-### Cross-Platform Compatibility
+### When Adding New Features
 
-- Uses `RemoveItemAlternative` function instead of `Remove-Item` for cloud storage compatibility
-- Path handling works on Windows (`C:\`), macOS/Linux (`/home/`)
-- Drive prefix removal: `Split-Path -NoQualifier` strips `C:` portion
+1. **Start with tests:** Write test cases that define the expected behavior
+2. **Follow patterns:** Use existing code patterns for consistency
+3. **Validate early:** Add parameter validation before implementing logic
+4. **Document changes:** Update help documentation and changelog appropriately
 
-## Development Workflow
+### When Fixing Issues
 
-### Build System
+1. **Understand context:** Read related code to understand the full scope
+2. **Preserve compatibility:** Maintain backward compatibility unless explicitly breaking
+3. **Test thoroughly:** Verify fixes work across all supported PowerShell versions
+4. **Handle edge cases:** Consider error conditions and boundary cases
 
-```powershell
-# Use Build.ps1 for all development tasks
-.\Build.ps1 -Task All         # Full build, test, analyze
-.\Build.ps1 -Task Test        # Run Pester tests only
-.\Build.ps1 -Task Analyze     # PSScriptAnalyzer only
-```
+### When Refactoring
 
-### Testing Strategy
-
-- **Unit tests**: `Tests/DailyBackup.Tests.ps1` (Pester-based, 14+ test cases)
-- **Integration tests**: `Tests/IntegrationTests.ps1` (real backup scenarios)
-- **Test setup**: Creates `TestData/Source` and `TestData/Backup` directories
-- **CI**: Runs on Windows, macOS, Linux via `.github/workflows/ci.yml`
-
-### CI Pipeline
-
-- Tests run on macOS, Ubuntu, Windows with PowerShell Core
-- Additional Windows-only test with PowerShell Desktop 5.1
-- PSScriptAnalyzer must pass with zero errors
-- Warnings are acceptable but tracked
-
-### Commit Standards
-
-- **Use Conventional Commits** for all commits to maintain clear change history
-- Format: `<type>(<scope>): <description>`
-- Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-- Examples:
-  - `feat(backup): add metadata preservation for file restoration`
-  - `fix(restore): handle cloud storage path compatibility`
-  - `docs(readme): update installation instructions`
-  - `refactor(module): extract functions into Public/Private folders`
-
-## Critical Implementation Details
-
-### Unique Filename Generation
-
-When duplicate backup names exist, appends random suffix using `Get-RandomFileName`:
-
-```powershell
-$backupPath = '{0}__{1}' -f $backupPath, (Get-RandomFileName)
-```
-
-### Progress Reporting
-
-Multi-path backups show progress bar:
-
-```powershell
-Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $totalPaths"
-```
-
-### ShouldProcess Pattern
-
-All destructive operations support `-WhatIf` and implement `[CmdletBinding(SupportsShouldProcess)]`
-
-### Parameter Validation
-
-- `Keep` parameter: `[ValidateRange(-1, [int]::MaxValue)]` (-1 = keep all)
-- Date validation: `[ValidatePattern('^\d{4}-\d{2}-\d{2}$')]`
-- FileBackupMode: `[ValidateSet('Individual', 'Combined', 'Auto')]`
-
-## Module Manifest Configuration
-
-- **PowerShell 5.1+** compatible (`CompatiblePSEditions = @('Desktop', 'Core')`)
-- **Three exported functions** only in `FunctionsToExport`
-- **Version**: Currently 1.5.1 in `DailyBackup.psd1`
-
-## Common Patterns When Editing
-
-1. **Error handling**: Use `Write-Warning` for non-fatal issues, continue processing remaining items
-2. **Verbose output**: Include contextual prefixes like `'New-DailyBackup:Begin>'`
-3. **Path resolution**: Always use `Resolve-Path` and handle relative paths via `Join-Path -Path $pwd`
-4. **Cross-platform paths**: Replace separators with `__` for backup filenames
-
-## Testing Conventions
-
-- Test directories: `$script:TestRoot`, `$script:SourceDir`, `$script:BackupDir`
-- BeforeAll/BeforeEach setup in `Tests/DailyBackup.Tests.ps1`
-- Verify backup creation, metadata files, and date folder structure
-- Test both individual files and directory scenarios
+1. **Maintain interfaces:** Keep public function signatures stable
+2. **Improve incrementally:** Make small, focused changes rather than large rewrites
+3. **Update tests:** Ensure tests still validate the intended behavior
+4. **Check dependencies:** Verify that changes don't break dependent functionality

@@ -1,6 +1,13 @@
 # Development Guide
 
-This guide covers testing, development setup, and contribution guidelines for the PowerShell Daily Backup module.
+This guide covers testing, development setup, and contribution  - **"Run all tests"** - Comprehensive test runner
+- Debug: `F5` → "PowerShell: Run all tests"
+
+The build system automatically detects and uses the focused test structure:
+
+- **RunAllTests.ps1** - Discovers and runs all focused test files
+- **Build integration** - Build.ps1 uses focused tests via RunAllTests.ps1
+- **Comprehensive reporting** - Detailed pass/fail status and exit codeses for the PowerShell Daily Backup module.
 
 ## Testing & Quality Assurance
 
@@ -46,9 +53,6 @@ Invoke-Pester ./Tests/Metadata.Tests.ps1
 # Run tests with filtering
 ./Tests/RunAllTests.ps1 -TestName "Backup"
 ./Tests/RunAllTests.ps1 -OutputFormat "Detailed"
-
-# Legacy test runner (redirects to focused tests)
-Invoke-Pester ./Tests/DailyBackup.Tests.ps1
 ```
 
 #### Integration Tests
@@ -73,7 +77,7 @@ Invoke-Pester ./Tests/DailyBackup.Tests.ps1
 # Run with verbose output
 ./Tests/RunAllTests.ps1 -OutputFormat "Detailed"
 
-# Run legacy script (now uses focused tests internally)
+# Run comprehensive test suite
 ./scripts/run-all-tests.ps1 -Verbose
 ```
 
@@ -84,14 +88,14 @@ Invoke-Pester ./Tests/DailyBackup.Tests.ps1
   - **"Build: Test"** - Run focused test suites via build system
   - **"Build: Analyze"** - Static analysis only
   - **"Build: Package"** - Create release package
-  - **"Run all tests"** - Legacy test runner (now uses focused tests)
+  - **"Run all tests"** - Comprehensive test runner
+
 - Debug: `F5` → "PowerShell: Run all tests"
 
-The build system automatically detects and uses the new focused test structure:
+The build system uses the focused test structure:
 
 - **RunAllTests.ps1** - Discovers and runs all focused test files
-- **Legacy compatibility** - DailyBackup.Tests.ps1 redirects to focused tests
-- **Build integration** - Build.ps1 prefers focused tests over legacy
+- **Build integration** - Build.ps1 uses focused tests via RunAllTests.ps1
 - **Comprehensive reporting** - Detailed pass/fail status and exit codes
 
 #### Test Architecture Benefits
@@ -166,7 +170,6 @@ docs/development.md           # This development guide
 Tests/                        # Focused test architecture
 ├── TestHelpers.ps1           # Shared test utilities
 ├── RunAllTests.ps1           # Test discovery and runner
-├── DailyBackup.Tests.ps1     # Legacy compatibility (redirects)
 ├── *.Tests.ps1               # Focused test files by area
 └── IntegrationTests.ps1      # Integration scenarios
 scripts/                      # Build and utility scripts
@@ -212,7 +215,7 @@ Use `Ctrl+Shift+P` → "Tasks: Run Task" to access:
 | **Build: Test**    | Run all tests           | `./Build.ps1 -Task Test`      |
 | **Build: Analyze** | Static analysis only    | `./Build.ps1 -Task Analyze`   |
 | **Build: Package** | Create release package  | `./Build.ps1 -Task Package`   |
-| **Run all tests**  | Legacy test runner      | `./scripts/run-all-tests.ps1` |
+| **Run all tests**  | Comprehensive test runner | `./scripts/run-all-tests.ps1` |
 
 #### Launch Configurations
 

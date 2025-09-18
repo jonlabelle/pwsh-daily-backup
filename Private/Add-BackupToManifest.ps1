@@ -59,7 +59,7 @@ function Add-BackupToManifest
 
         # Get module version dynamically
         $moduleInfo = Get-Module -Name DailyBackup
-        $moduleVersion = if ($moduleInfo) { $moduleInfo.Version.ToString() } else { '1.5.3' }
+        $moduleVersion = if ($moduleInfo) { $moduleInfo.Version.ToString() } else { '1.8.0' }
 
         # Create backup entry
         $backupEntry = @{
