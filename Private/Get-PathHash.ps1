@@ -13,7 +13,9 @@ function Get-PathHash
         The file or directory path to hash.
 
     .PARAMETER Algorithm
-        The hash algorithm to use. Defaults to SHA256.
+        The hash algorithm to use.
+        Available options: SHA1, SHA256, SHA384, SHA512, MD5.
+        Defaults to SHA256.
 
     .OUTPUTS
         String containing the computed hash value.
@@ -68,7 +70,7 @@ function Get-PathHash
             $files = Get-ChildItem -Path $Path -File -Recurse | Sort-Object FullName
             if (-not $files)
             {
-                Write-Verbose "Get-PathHash> Empty directory, returning hash of empty string"
+                Write-Verbose 'Get-PathHash> Empty directory, returning hash of empty string'
                 $emptyHash = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
                 $hashBytes = $emptyHash.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(''))
                 $emptyHash.Dispose()
