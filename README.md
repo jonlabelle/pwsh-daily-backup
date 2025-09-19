@@ -33,6 +33,7 @@
   - [Example 9: Cross-Platform Home Backup](#example-9-cross-platform-home-backup)
   - [Example 10: Remove Old Backups](#example-10-remove-old-backups)
   - [Example 11: Backup Without Automatic Cleanup](#example-11-backup-without-automatic-cleanup)
+  - [Example 12: Force Replace Existing Backup](#example-12-force-replace-existing-backup)
 - [Advanced Usage](#advanced-usage)
   - [Automation and Scheduling](#automation-and-scheduling)
   - [Handling Hash Conflicts and Integrity Issues](#handling-hash-conflicts-and-integrity-issues)
@@ -124,7 +125,7 @@ Update-Module -Name DailyBackup
 Creates automated daily backups with progress tracking and cleanup.
 
 ```powershell
-New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-FileBackupMode <String>] [-NoHash] [-NoCleanup] [-WhatIf] [-Verbose]
+New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-FileBackupMode <String>] [-NoHash] [-NoCleanup] [-Force] [-WhatIf] [-Verbose]
 ```
 
 **Parameters:**
@@ -135,6 +136,7 @@ New-DailyBackup [-Path] <String[]> [-Destination <String>] [-Keep <Int32>] [-Fil
 - **`-FileBackupMode`**: How to handle files - Individual, Combined, or Auto (default: Auto)
 - **`-NoHash`**: Skip hash calculation for improved performance (disables integrity verification)
 - **`-NoCleanup`**: Skip automatic cleanup of old backups, ignoring Keep setting
+- **`-Force`**: Replace existing backup directory for the same date without prompting
 
 #### FileBackupMode Options
 
@@ -365,6 +367,18 @@ New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -NoCleanup
 Remove-DailyBackup -Path "D:\Backups" -Keep 30
 ```
 
+### Example 12: Force Replace Existing Backup
+
+Replace an existing backup for today's date without prompting, useful for automation and re-running backups.
+
+```powershell
+# Replace existing backup without prompting
+New-DailyBackup -Path "C:\ImportantFiles" -Destination "D:\Backups" -Force
+
+# Combine with other parameters for automated scenarios
+New-DailyBackup -Path "C:\CriticalData" -Destination "D:\Backups" -Keep 30 -Force -Verbose
+```
+
 ## Advanced Usage
 
 ### Automation and Scheduling
@@ -373,7 +387,7 @@ Remove-DailyBackup -Path "D:\Backups" -Keep 30
 
 ```powershell
 # Create scheduled task (Windows)
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30`""
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30 -Force`""
 $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 ```
@@ -383,7 +397,7 @@ Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger
 ```bash
 # Add to crontab for daily backup at 2:00 AM
 # Run: crontab -e
-0 2 * * * /usr/local/bin/pwsh -Command "Import-Module DailyBackup; New-DailyBackup -Path '$HOME/Documents' -Destination '$HOME/Backups' -Keep 30"
+0 2 * * * /usr/local/bin/pwsh -Command "Import-Module DailyBackup; New-DailyBackup -Path '$HOME/Documents' -Destination '$HOME/Backups' -Keep 30 -Force"
 ```
 
 #### Cross-Platform PowerShell Script
@@ -397,7 +411,7 @@ $BackupPaths = @(
 )
 
 try {
-    New-DailyBackup -Path $BackupPaths -Destination "$HomeDir/Backups" -Keep 30 -Verbose
+    New-DailyBackup -Path $BackupPaths -Destination "$HomeDir/Backups" -Keep 30 -Force -Verbose
     Write-Host "[$(Get-Date)] Backup completed successfully!" -ForegroundColor Green
 }
 catch {

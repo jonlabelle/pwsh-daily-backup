@@ -49,6 +49,12 @@ function New-DailyBackup
         retention policy. Use this when you want to manually manage backup cleanup
         or when running backups that should not affect existing backup retention.
 
+    .PARAMETER Force
+        Replace existing backup directory for the same date without prompting.
+        When specified, any existing backup directory with today's date will be
+        automatically removed before creating the new backup. Without this parameter,
+        the function will fail if a backup directory for today already exists.
+
     .INPUTS
         [String[]]
         File or directory paths can be piped to this function. Supports pipeline input
@@ -121,6 +127,11 @@ function New-DailyBackup
 
         Creates backup without removing old backup directories, regardless of Keep setting
 
+    .EXAMPLE
+        PS > New-DailyBackup -Path 'C:\ImportantFiles' -Destination 'D:\Backups' -Force
+
+        Creates backup and replaces any existing backup for today's date without prompting
+
     .LINK
         Test-DailyBackup
         https://github.com/jonlabelle/pwsh-daily-backup
@@ -165,7 +176,12 @@ function New-DailyBackup
         [Parameter(
             HelpMessage = 'Skip automatic cleanup of old backup directories.'
         )]
-        [switch] $NoCleanup
+        [switch] $NoCleanup,
+
+        [Parameter(
+            HelpMessage = 'Replace existing backup directory for the same date without prompting.'
+        )]
+        [switch] $Force
     )
     begin
     {
@@ -191,8 +207,27 @@ function New-DailyBackup
 
         if ((Test-Path -Path $datedDestinationDir -PathType Container))
         {
-            Write-Verbose "New-DailyBackup> Removing existing backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
-            Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
+            if ($Force)
+            {
+                Write-Verbose "New-DailyBackup> Force specified - removing existing backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
+                if ($PSCmdlet.ShouldProcess($datedDestinationDir, 'Remove existing backup directory'))
+                {
+                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
+                }
+            }
+            else
+            {
+                $confirmMessage = "Backup directory for $folderName already exists. Remove existing backup directory?"
+                if ($PSCmdlet.ShouldProcess($datedDestinationDir, $confirmMessage))
+                {
+                    Write-Verbose "New-DailyBackup> User confirmed - removing existing backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
+                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
+                }
+                elseif (-not $WhatIfPreference)
+                {
+                    throw "Backup directory for $folderName already exists at '$datedDestinationDir'. Use -Force to overwrite or choose a different destination."
+                }
+            }
         }
 
         Write-Verbose "New-DailyBackup> Creating backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled

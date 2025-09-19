@@ -17,7 +17,28 @@
 
 The DailyBackup PowerShell module provides a simple yet powerful solution for creating automated daily backups of your important files and directories. The module creates compressed ### 7. Monitoring
 
-- **Logging**: Enable verbose logging for automated backups
+- **Logging**: Enable verbose logg### Example 16: Backup Without Cleanup
+
+```powershell
+# Create backup without removing old ones (manual cleanup)
+New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -NoCleanup
+
+# Create backup with Keep setting but skip cleanup this time
+New-DailyBackup -Path "C:\Projects" -Destination "D:\Backups" -Keep 7 -NoCleanup
+```
+
+### Example 17: Force Replace Existing Backup
+
+```powershell
+# Replace existing backup for today without prompting
+New-DailyBackup -Path "C:\CriticalData" -Destination "D:\Backups" -Force
+
+# Automation-friendly backup with force and cleanup
+New-DailyBackup -Path "C:\ImportantFiles" -Destination "D:\Backups" -Keep 30 -Force -Verbose
+
+# Force backup in scheduled script (no user interaction needed)
+New-DailyBackup -Path @("C:\Documents", "C:\Projects") -Destination "D:\AutoBackups" -Force -Keep 14
+```utomated backups
 - **Notifications**: Set up alerts for backup failures
 - **Validation**: Regularly verify backup integrity using `Test-DailyBackup`rchives organized by date, making it easy to track and manage your backup history.
 
@@ -144,6 +165,10 @@ New-DailyBackup
     -Path <String[]>
     [-Destination <String>]
     [-Keep <Int32>]
+    [-FileBackupMode <String>]
+    [-NoHash]
+    [-NoCleanup]
+    [-Force]
     [-WhatIf]
     [-Verbose]
     [<CommonParameters>]
@@ -274,6 +299,23 @@ New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -NoCleanup
 
 # Create backup with Keep setting but skip cleanup
 New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -Keep 7 -NoCleanup
+```
+
+### -Force
+
+**Type**: `SwitchParameter`
+**Default**: `$false`
+
+Replace existing backup directory for the same date without prompting. When specified, any existing backup directory with today's date will be automatically removed before creating the new backup. Without this parameter, the function will prompt for confirmation when a backup directory for today already exists.
+
+**Examples:**
+
+```powershell
+# Replace existing backup without prompting
+New-DailyBackup -Path "C:\ImportantFiles" -Destination "D:\Backups" -Force
+
+# Combine with automation-friendly parameters
+New-DailyBackup -Path "C:\Data" -Destination "D:\Backups" -Keep 30 -Force -Verbose
 ```
 
 ### -FileBackupMode
@@ -491,7 +533,7 @@ Create a scheduled task to run daily backups:
 
 ```powershell
 # Create a scheduled task for daily backups
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30`""
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-Command `"Import-Module DailyBackup; New-DailyBackup -Path 'C:\Important' -Destination 'D:\Backups' -Keep 30 -Force`""
 $Trigger = New-ScheduledTaskTrigger -Daily -At "2:00 AM"
 Register-ScheduledTask -TaskName "DailyBackup" -Action $Action -Trigger $Trigger -Description "Automated daily backup using DailyBackup module"
 ```

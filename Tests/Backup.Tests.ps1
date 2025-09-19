@@ -222,6 +222,43 @@ Describe 'New-DailyBackup Core Functionality' {
             { New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir -FileBackupMode 'Auto' -WhatIf } | Should -Not -Throw
         }
     }
+
+    Context 'Force Parameter' {
+        BeforeEach {
+            # Create a fresh test environment for Force tests
+            $TestEnv.ForceTestDir = Join-Path $TestEnv.TestRoot 'ForceTest'
+            $TestEnv.ForceSourceDir = Join-Path $TestEnv.ForceTestDir 'Source'
+            $TestEnv.ForceBackupDir = Join-Path $TestEnv.ForceTestDir 'Backup'
+
+            New-Item -Path $TestEnv.ForceSourceDir -ItemType Directory -Force | Out-Null
+            'Test content for Force parameter' | Out-File -FilePath (Join-Path $TestEnv.ForceSourceDir 'force-test.txt')
+        }
+
+        It 'Replaces existing backup directory when Force is specified' {
+            # Create initial backup
+            New-DailyBackup -Path $TestEnv.ForceSourceDir -Destination $TestEnv.ForceBackupDir
+
+            # Verify backup exists
+            $todayFolder = Get-Date -Format 'yyyy-MM-dd'
+            $todayBackupDir = Join-Path $TestEnv.ForceBackupDir $todayFolder
+            $todayBackupDir | Should -Exist
+
+            # Second backup with Force should succeed without prompting
+            { New-DailyBackup -Path $TestEnv.ForceSourceDir -Destination $TestEnv.ForceBackupDir -Force } | Should -Not -Throw
+
+            # Verify backup directory still exists
+            $todayBackupDir | Should -Exist
+        }
+
+        It 'Works with WhatIf when backup directory already exists' {
+            # Create initial backup
+            New-DailyBackup -Path $TestEnv.ForceSourceDir -Destination $TestEnv.ForceBackupDir
+
+            # WhatIf should work even when directory exists
+            { New-DailyBackup -Path $TestEnv.ForceSourceDir -Destination $TestEnv.ForceBackupDir -WhatIf } | Should -Not -Throw
+            { New-DailyBackup -Path $TestEnv.ForceSourceDir -Destination $TestEnv.ForceBackupDir -Force -WhatIf } | Should -Not -Throw
+        }
+    }
 }
 
 AfterAll {
