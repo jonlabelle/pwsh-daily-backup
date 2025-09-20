@@ -50,7 +50,7 @@ function Restore-DailyBackup
         paths processed, and any errors encountered for each backup file.
 
     .NOTES
-        - Requires backup files created by New-DailyBackup with version 2.0+ metadata
+        - Requires backup files created by New-DailyBackup
         - Supports ShouldProcess for WhatIf and Confirm scenarios
         - Automatically handles file timestamp and attribute restoration when possible
         - Creates destination directories as needed
