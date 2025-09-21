@@ -1,5 +1,37 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for hash calculation, storage, and verification functionality.
+
+.DESCRIPTION
+    This test suite validates SHA-256 hash calculation and verification features for backup integrity.
+    Tests cover hash generation during backup creation, storage in metadata, and verification via Test-DailyBackup.
+
+    Test Areas Covered:
+    - SHA-256 hash calculation for files and directories
+    - Hash storage in backup metadata (SourceHash, ArchiveHash, HashAlgorithm)
+    - Consistent hash generation for identical content
+    - Different hashes for different content
+    - NoHash parameter to skip hash calculation
+    - Test-DailyBackup integrity verification using stored hashes
+    - Source file change detection via hash comparison
+    - Corrupted archive detection
+    - Integration with Get-DailyBackup for hash display
+
+.NOTES
+    Hash calculation provides integrity verification and change detection capabilities.
+    Directory hashes are composite hashes of all contained files.
+
+.EXAMPLE
+    # Run all hash functionality tests
+    Invoke-Pester -Path "Hash.Tests.ps1"
+
+.EXAMPLE
+    # Run only Test-DailyBackup verification tests
+    Invoke-Pester -Path "Hash.Tests.ps1" -TagFilter "Verification"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
@@ -46,6 +78,8 @@ Describe 'Hash Functionality' {
         }
 
         It 'Returns consistent hash for same content' {
+            # Test: Files with identical content should produce identical hashes
+            # This verifies hash calculation consistency and enables deduplication detection
             $testFile1 = Join-Path $TestEnv.SourceDir 'consistent1.txt'
             $testFile2 = Join-Path $TestEnv.SourceDir 'consistent2.txt'
             'Consistent content' | Out-File -FilePath $testFile1 -Encoding UTF8
@@ -62,6 +96,8 @@ Describe 'Hash Functionality' {
         }
 
         It 'Returns different hash for different content' {
+            # Test: Files with different content should produce different hashes
+            # This verifies that hash calculation accurately reflects content differences
             $testFile1 = Join-Path $TestEnv.SourceDir 'different1.txt'
             $testFile2 = Join-Path $TestEnv.SourceDir 'different2.txt'
             'Content 1' | Out-File -FilePath $testFile1 -Encoding UTF8
@@ -78,6 +114,8 @@ Describe 'Hash Functionality' {
         }
 
         It 'Handles empty directory' {
+            # Test: Empty directories should be handled gracefully in hash calculation
+            # Directories get composite hashes based on their contents (or lack thereof)
             $emptyDir = Join-Path $TestEnv.SourceDir 'empty-dir'
             New-Item -Path $emptyDir -ItemType Directory -Force | Out-Null
 

@@ -1,5 +1,37 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for Remove-DailyBackup functionality and backup cleanup operations.
+
+.DESCRIPTION
+    This test suite validates the Remove-DailyBackup function, which manages backup retention
+    through cleanup policies and specific date removal operations.
+
+    Test Areas Covered:
+    - Retention-based cleanup with Keep parameter (oldest backups removed first)
+    - Specific date removal with Date parameter
+    - Default retention behavior (Keep=7)
+    - Input validation for Date format and Keep range
+    - Error handling for non-existent paths and dates
+    - ShouldProcess support (WhatIf, Confirm)
+    - Parameter alias support (BackupRoot, BackupsToKeep)
+    - Pipeline input support
+    - Non-date directory exclusion during cleanup
+
+.NOTES
+    Remove-DailyBackup supports both retention policies and targeted removals.
+    Date and Keep parameters are mutually exclusive for clarity.
+
+.EXAMPLE
+    # Run all Remove-DailyBackup tests
+    Invoke-Pester -Path "Remove.Tests.ps1"
+
+.EXAMPLE
+    # Run only retention cleanup tests
+    Invoke-Pester -Path "Remove.Tests.ps1" -TagFilter "Retention"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule

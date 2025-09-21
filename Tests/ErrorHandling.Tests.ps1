@@ -1,5 +1,34 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for error handling, edge cases, and input validation across all DailyBackup functions.
+
+.DESCRIPTION
+    This test suite validates robust error handling and edge case scenarios for the DailyBackup module,
+    ensuring graceful degradation and proper user feedback under various failure conditions.
+
+    Test Areas Covered:
+    - Invalid input parameter validation and error messages
+    - Non-existent path handling (source paths, backup roots, restore destinations)
+    - File system edge cases (empty directories, long names, permissions)
+    - Parameter validation ranges and format checking
+    - WhatIf support for all major operations
+    - Graceful error recovery without crashes
+
+.NOTES
+    This test file focuses on negative test cases and boundary conditions.
+    Tests use SilentlyContinue where appropriate to test error handling without noise.
+
+.EXAMPLE
+    # Run all error handling tests
+    Invoke-Pester -Path "ErrorHandling.Tests.ps1"
+
+.EXAMPLE
+    # Run only input validation tests
+    Invoke-Pester -Path "ErrorHandling.Tests.ps1" -TagFilter "InputValidation"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
@@ -12,11 +41,15 @@ BeforeAll {
 Describe 'Error Handling and Edge Cases' {
     Context 'Invalid Input Handling' {
         It 'Handles non-existent source paths gracefully' {
+            # Test: Non-existent source paths should be handled gracefully with warnings, not crashes
+            # Example: New-DailyBackup -Path "C:\DoesNotExist" -Destination "C:\Backups"
             $nonExistentPath = Join-Path $TestEnv.TestRoot 'NonExistent'
             { New-DailyBackup -Path $nonExistentPath -Destination $TestEnv.BackupDir -WarningAction SilentlyContinue } | Should -Not -Throw
         }
 
         It 'Validates Keep parameter range' {
+            # Test: Keep parameter must be >= -1 (ValidateRange attribute validation)
+            # Example: New-DailyBackup -Path "C:\Source" -Keep -5  # Should throw
             try
             {
                 New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir -Keep -2

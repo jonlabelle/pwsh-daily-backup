@@ -1,5 +1,36 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for backup metadata generation, path type detection, and manifest structure.
+
+.DESCRIPTION
+    This test suite validates metadata creation and structure for backups, including path type
+    detection, manifest JSON structure, and preservation of source path information.
+
+    Test Areas Covered:
+    - Path type detection (File vs Directory)
+    - Backup manifest JSON structure and required fields
+    - Metadata validation (BackupVersion, ModuleVersion, BackupDate)
+    - Hash information inclusion in metadata
+    - Original source path preservation
+    - Timestamp information accuracy
+    - Special character and Unicode path handling
+    - Deep directory structure processing
+
+.NOTES
+    Metadata is critical for restore operations and backup verification.
+    Manifest files are created in JSON format for cross-platform compatibility.
+
+.EXAMPLE
+    # Run all metadata tests
+    Invoke-Pester -Path "Metadata.Tests.ps1"
+
+.EXAMPLE
+    # Run only path type detection tests
+    Invoke-Pester -Path "Metadata.Tests.ps1" -TagFilter "PathType"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule

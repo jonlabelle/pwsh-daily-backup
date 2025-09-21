@@ -1,5 +1,36 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for Get-DailyBackup and Restore-DailyBackup functionality.
+
+.DESCRIPTION
+    This test suite validates backup information retrieval and restore operations,
+    including backup discovery, metadata reading, and file extraction with path reconstruction.
+
+    Test Areas Covered:
+    - Get-DailyBackup: backup information retrieval and filtering
+    - Restore-DailyBackup: file extraction to specified destinations
+    - UseOriginalPaths: restore to original source locations
+    - Date and BackupName filtering for targeted operations
+    - Content preservation during restore operations
+    - Metadata information maintenance
+    - End-to-end backup and restore workflow validation
+    - Error handling for missing paths and invalid parameters
+
+.NOTES
+    Restore operations depend on backup metadata for path reconstruction.
+    Get-DailyBackup provides backup discovery before restore operations.
+
+.EXAMPLE
+    # Run all restore and info tests
+    Invoke-Pester -Path "Restore.Tests.ps1"
+
+.EXAMPLE
+    # Run only Get-DailyBackup tests
+    Invoke-Pester -Path "Restore.Tests.ps1" -TagFilter "Information"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
@@ -17,12 +48,16 @@ Describe 'Get-DailyBackup Functionality' {
 
     Context 'Backup Information Retrieval' {
         It 'Returns available backup information' {
+            # Test: Get-DailyBackup should return backup metadata for discovery
+            # Example: Get-DailyBackup -BackupRoot "C:\Backups"
             $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             $backupInfo | Should -Not -BeNullOrEmpty
             $backupInfo.Count | Should -BeGreaterThan 0
         }
 
         It 'Returns backup information with required properties' {
+            # Test: Backup info should include Date, Path, Backups array, TotalSize, BackupCount
+            # These properties are essential for restore operation planning
             $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir
             $backup = $backupInfo[0]
 
@@ -34,6 +69,8 @@ Describe 'Get-DailyBackup Functionality' {
         }
 
         It 'Filters backups by specific date' {
+            # Test: Date parameter should filter to specific backup dates
+            # Example: Get-DailyBackup -BackupRoot "C:\Backups" -Date "2025-09-21"
             $today = Get-Date -Format 'yyyy-MM-dd'
             $backupInfo = Get-DailyBackup -BackupRoot $TestEnv.BackupDir -Date $today
 
@@ -44,6 +81,8 @@ Describe 'Get-DailyBackup Functionality' {
         }
 
         It 'Handles non-existent backup directory gracefully' {
+            # Test: Non-existent backup root should return empty array, not crash
+            # Example: Get-DailyBackup -BackupRoot "C:\NonExistent"
             $nonExistentPath = Join-Path $TestEnv.TestRoot 'NonExistent'
             $result = Get-DailyBackup -BackupRoot $nonExistentPath -WarningAction SilentlyContinue
             $result | Should -Be @()

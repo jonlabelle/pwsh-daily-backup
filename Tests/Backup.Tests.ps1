@@ -1,5 +1,38 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for New-DailyBackup core functionality and backup operations.
+
+.DESCRIPTION
+    This test suite validates the primary backup functionality of the DailyBackup module,
+    including file and directory backup operations, metadata generation, cleanup operations,
+    and various parameter combinations.
+
+    Test Areas Covered:
+    - Basic backup operations with file and directory sources
+    - Date-organized folder structure creation
+    - Metadata manifest generation and validation
+    - Multiple source path handling
+    - File naming and special character handling
+    - Backup cleanup operations and retention policies
+    - FileBackupMode parameter validation
+    - Force parameter behavior
+    - WhatIf and dry-run support
+
+.NOTES
+    This test file uses the TestHelpers.ps1 functions for environment setup and validation.
+    Each test creates an isolated environment to ensure test independence.
+
+.EXAMPLE
+    # Run all backup tests
+    Invoke-Pester -Path "Backup.Tests.ps1"
+
+.EXAMPLE
+    # Run only basic operations tests
+    Invoke-Pester -Path "Backup.Tests.ps1" -TagFilter "BasicOperations"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
@@ -12,6 +45,9 @@ BeforeAll {
 Describe 'New-DailyBackup Core Functionality' {
     Context 'Basic Backup Operations' {
         It 'Creates backup with date-organized folder structure' {
+            # Test: Verify that backups are organized into date-based folders (YYYY-MM-DD format)
+            # This ensures consistent organization and prevents conflicts between daily backup runs
+            # Example: C:\Backups\2025-09-21\Users__jon__Documents.zip
             try
             {
                 New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
@@ -29,6 +65,9 @@ Describe 'New-DailyBackup Core Functionality' {
         }
 
         It 'Creates metadata manifest for each backup date' {
+            # Test: Verify that backup-manifest.json is created with complete metadata
+            # Manifest contains backup version, module version, date, and backup entries for restore operations
+            # Example: backup-manifest.json with BackupVersion, ModuleVersion, BackupDate, Backups[]
             New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
             $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
@@ -42,6 +81,8 @@ Describe 'New-DailyBackup Core Functionality' {
         }
 
         It 'Handles multiple source paths correctly' {
+            # Test: Verify that multiple source files/directories can be backed up in a single operation
+            # Each source should get its own archive entry and metadata record
             $file1 = Join-Path $TestEnv.SourceDir 'test1.txt'
             $file2 = Join-Path $TestEnv.SourceDir 'test2.txt'
 
@@ -57,6 +98,8 @@ Describe 'New-DailyBackup Core Functionality' {
         }
 
         It 'Differentiates between file and directory backups' {
+            # Test: Verify that mixed file and directory sources are handled correctly
+            # PathType metadata should accurately reflect whether the source was a file or directory
             $testFile = Join-Path $TestEnv.SourceDir 'test1.txt'
             $testDir = Join-Path $TestEnv.SourceDir 'SubFolder'
 

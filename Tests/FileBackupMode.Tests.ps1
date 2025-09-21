@@ -1,5 +1,34 @@
 #Requires -Module Pester
 
+<#
+.SYNOPSIS
+    Tests for FileBackupMode parameter functionality in New-DailyBackup.
+
+.DESCRIPTION
+    This test suite validates the FileBackupMode parameter behavior, which controls how multiple
+    source files are packaged into backup archives. Tests cover Individual, Combined, and Auto modes.
+
+    Test Areas Covered:
+    - Individual mode: separate archives for each source file/directory
+    - Combined mode: single archive containing all source files/directories
+    - Auto mode: intelligent selection between Individual and Combined based on source count
+    - Metadata integration with different backup modes
+    - Error handling for empty or invalid source lists
+    - WhatIf support for all backup modes
+
+.NOTES
+    FileBackupMode affects archive structure but maintains consistent metadata format.
+    Auto mode uses Individual for ≤3 files, Combined for >3 files, always Individual for mixed types.
+
+.EXAMPLE
+    # Run all FileBackupMode tests
+    Invoke-Pester -Path "FileBackupMode.Tests.ps1"
+
+.EXAMPLE
+    # Run only Combined mode tests
+    Invoke-Pester -Path "FileBackupMode.Tests.ps1" -TagFilter "Combined"
+#>
+
 BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
@@ -63,6 +92,8 @@ Describe 'FileBackupMode Functionality' {
 
     Context 'Combined Mode' {
         It 'Should create single archive for multiple files when FileBackupMode is Combined' {
+            # Test: Combined mode should package all source files into a single archive
+            # This is useful for related files that should be restored together
             $testFiles = $script:TestFiles[0..2]  # Use first 3 files
 
             New-DailyBackup -Path $testFiles -Destination $TestEnv.BackupDir -FileBackupMode Combined
@@ -75,6 +106,8 @@ Describe 'FileBackupMode Functionality' {
         }
 
         It 'Should create single archive for mixed files and directories in Combined mode' {
+            # Test: Combined mode works with mixed source types (files and directories)
+            # All sources are packaged into one archive regardless of type
             $mixedPaths = @($script:TestFiles[0..1], $script:TestDir)
 
             New-DailyBackup -Path $mixedPaths -Destination $TestEnv.BackupDir -FileBackupMode Combined
@@ -87,6 +120,8 @@ Describe 'FileBackupMode Functionality' {
         }
 
         It 'Should include all source paths in the combined archive' {
+            # Test: Verify that the combined archive actually contains all specified source files
+            # This ensures no sources are lost during the combination process
             $testFiles = $script:TestFiles[0..1]  # Use first 2 files
 
             New-DailyBackup -Path $testFiles -Destination $TestEnv.BackupDir -FileBackupMode Combined
