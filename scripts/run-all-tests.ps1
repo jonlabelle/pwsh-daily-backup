@@ -29,8 +29,12 @@ $totalErrors = 0
 
 # Test 1: PSScriptAnalyzer
 Write-Host '--- 1. Static Analysis (PSScriptAnalyzer) ---' -ForegroundColor Yellow
+$oldProgressPreference = $global:ProgressPreference
 try
 {
+    # Disable progress bars for cleaner output
+    $global:ProgressPreference = 'SilentlyContinue'
+
     $analysisResults = Invoke-ScriptAnalyzer -Settings (Join-Path $projectRoot 'PSScriptAnalyzerSettings.psd1') -Path $projectRoot -Recurse
     $errors = $analysisResults | Where-Object { $_.Severity -eq 'Error' }
     $warnings = $analysisResults | Where-Object { $_.Severity -eq 'Warning' }
@@ -51,11 +55,19 @@ catch
     Write-Host "[FAILED] Static analysis failed: $_" -ForegroundColor Red
     $totalErrors++
 }
+finally
+{
+    $global:ProgressPreference = $oldProgressPreference
+}
 
 # Test 2: Pester Unit Tests
 Write-Host "`n--- 2. Unit Tests (Pester) ---" -ForegroundColor Yellow
+$oldProgressPreference = $global:ProgressPreference
 try
 {
+    # Disable progress bars for cleaner output
+    $global:ProgressPreference = 'SilentlyContinue'
+
     $pesterTestPath = Join-Path -Path $projectRoot -ChildPath 'test' -AdditionalChildPath "$moduleName.Tests.ps1"
     if (Test-Path $pesterTestPath)
     {
@@ -80,11 +92,19 @@ catch
     Write-Host "[FAILED] Unit tests failed: $_" -ForegroundColor Red
     $totalErrors++
 }
+finally
+{
+    $global:ProgressPreference = $oldProgressPreference
+}
 
 # Test 3: Integration Tests
 Write-Host "`n--- 3. Integration Tests ---" -ForegroundColor Yellow
+$oldProgressPreference = $global:ProgressPreference
 try
 {
+    # Disable progress bars for cleaner output
+    $global:ProgressPreference = 'SilentlyContinue'
+
     $integrationTestPath = Join-Path -Path $projectRoot -ChildPath 'test' -AdditionalChildPath 'IntegrationTests.ps1'
     if (Test-Path $integrationTestPath)
     {
@@ -100,6 +120,10 @@ catch
 {
     Write-Host "[FAILED] Integration tests failed: $_" -ForegroundColor Red
     $totalErrors++
+}
+finally
+{
+    $global:ProgressPreference = $oldProgressPreference
 }
 
 # Summary

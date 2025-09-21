@@ -4,11 +4,18 @@
     "version": "2.0.0",
 
     "tasks": [
+        // PowerShell Core (pwsh) tasks
         {
-            "label": "Build: All",
+            "label": "Build: All (pwsh)",
             "type": "shell",
             "command": "pwsh",
-            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "All", "-Verbose"],
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "All",
+                "-Verbose"
+            ],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -19,10 +26,16 @@
             "problemMatcher": []
         },
         {
-            "label": "Build: Test",
+            "label": "Build: Test (pwsh)",
             "type": "shell",
             "command": "pwsh",
-            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Test", "-Verbose"],
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Test",
+                "-Verbose"
+            ],
             "group": "test",
             "presentation": {
                 "echo": true,
@@ -33,10 +46,16 @@
             "problemMatcher": []
         },
         {
-            "label": "Build: Analyze",
+            "label": "Build: Analyze (pwsh)",
             "type": "shell",
             "command": "pwsh",
-            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Analyze", "-Verbose"],
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Analyze",
+                "-Verbose"
+            ],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -47,10 +66,16 @@
             "problemMatcher": []
         },
         {
-            "label": "Build: Package",
+            "label": "Build: Package (pwsh)",
             "type": "shell",
             "command": "pwsh",
-            "args": ["-File", "${workspaceFolder}/Build.ps1", "-Task", "Package", "-Verbose"],
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Package",
+                "-Verbose"
+            ],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -61,10 +86,114 @@
             "problemMatcher": []
         },
         {
-            "label": "Test: Run All Tests",
+            "label": "Test: Run All Tests (pwsh)",
             "type": "shell",
             "command": "pwsh",
-            "args": ["-File", "${workspaceFolder}/scripts/run-all-tests.ps1", "-Verbose"],
+            "args": [
+                "-File",
+                "${workspaceFolder}/scripts/run-all-tests.ps1",
+                "-Verbose"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+
+        // PowerShell Desktop (powershell) tasks
+        {
+            "label": "Build: All (powershell)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "All",
+                "-Verbose"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Test (powershell)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Test",
+                "-Verbose"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Analyze (powershell)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Analyze",
+                "-Verbose"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Package (powershell)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-File",
+                "${workspaceFolder}/Build.ps1",
+                "-Task",
+                "Package",
+                "-Verbose"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: Run All Tests (powershell)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-File",
+                "${workspaceFolder}/scripts/run-all-tests.ps1",
+                "-Verbose"
+            ],
             "group": "test",
             "presentation": {
                 "echo": true,

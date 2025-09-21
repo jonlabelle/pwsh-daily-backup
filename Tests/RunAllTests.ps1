@@ -88,7 +88,18 @@ if ($Tag)
 }
 
 # Run tests
-$results = Invoke-Pester -Configuration $pesterConfig
+$oldProgressPreference = $global:ProgressPreference
+try
+{
+    # Disable progress bars for cleaner output
+    $global:ProgressPreference = 'SilentlyContinue'
+
+    $results = Invoke-Pester -Configuration $pesterConfig
+}
+finally
+{
+    $global:ProgressPreference = $oldProgressPreference
+}
 
 # Summary
 Write-Host "`n=== Test Summary ===" -ForegroundColor Cyan

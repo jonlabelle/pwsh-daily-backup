@@ -5,8 +5,9 @@
     "version": "0.2.0",
 
     "configurations": [
+        // PowerShell Core (pwsh) configurations
         {
-            "name": "PowerShell: Run Pester unit tests",
+            "name": "PowerShell Core (pwsh): Run Pester unit tests",
             "type": "PowerShell",
             "request": "launch",
             "script": "./Tests/RunAllTests.ps1",
@@ -17,7 +18,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run integration tests",
+            "name": "PowerShell Core (pwsh): Run integration tests",
             "type": "PowerShell",
             "request": "launch",
             "script": "./Tests/IntegrationTests.ps1",
@@ -29,7 +30,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run integration tests (dry-run)",
+            "name": "PowerShell Core (pwsh): Run integration tests (dry-run)",
             "type": "PowerShell",
             "request": "launch",
             "script": "./Tests/IntegrationTests.ps1",
@@ -41,7 +42,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run all tests",
+            "name": "PowerShell Core (pwsh): Run all tests",
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/scripts/run-all-tests.ps1",
@@ -52,7 +53,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run PSScriptAnalyzer",
+            "name": "PowerShell Core (pwsh): Run PSScriptAnalyzer",
             "type": "PowerShell",
             "request": "launch",
             "script": "Invoke-ScriptAnalyzer",
@@ -65,20 +66,91 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "PowerShell: Run current file",
+            "name": "PowerShell Core (pwsh): Run current file",
             "type": "PowerShell",
             "request": "launch",
             "script": "${file}",
             "cwd": "${workspaceFolder}"
         },
         {
-            // Run this launch config and then set breakpoints in your module.
-            // Then you can `Import-Module -Force ./DailyBackup.psd1`
-            // and run a function that will hit the breakpoint.
-            "name": "PowerShell: Interactive session",
+            "name": "PowerShell Core (pwsh): Interactive session",
             "type": "PowerShell",
             "request": "launch",
-            "cwd": ""
+            "cwd": "${workspaceFolder}"
+        },
+
+        // PowerShell Desktop (powershell) configurations
+        {
+            "name": "PowerShell Desktop (powershell): Run Pester unit tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./Tests/RunAllTests.ps1",
+            // prettier-ignore
+            "args": [
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Run integration tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./Tests/IntegrationTests.ps1",
+            // prettier-ignore
+            "args": [
+                "-Verbose",
+                "-CleanupAfterTests"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Run integration tests (dry-run)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "./Tests/IntegrationTests.ps1",
+            // prettier-ignore
+            "args": [
+                "-WhatIf",
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Run all tests",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/scripts/run-all-tests.ps1",
+            // prettier-ignore
+            "args": [
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Run PSScriptAnalyzer",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "Invoke-ScriptAnalyzer",
+            // prettier-ignore
+            "args": [
+                "-Settings", "PSScriptAnalyzerSettings.psd1",
+                "-Path", ".",
+                "-Recurse"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Run current file",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${file}",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Desktop (powershell): Interactive session",
+            "type": "PowerShell",
+            "request": "launch",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
