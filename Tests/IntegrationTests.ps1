@@ -11,7 +11,7 @@
     The name of the module to test. Default is 'DailyBackup'.
 
 .PARAMETER CleanupAfterTests
-    Whether to clean up test artifacts after running tests. Default is $true.
+    Whether to clean up test artifacts after running tests. Default is $true when not specified.
 
 .PARAMETER RunPerformanceTests
     Whether to run performance tests with larger datasets. Default is $false.
@@ -29,11 +29,18 @@ param(
     [string] $ModuleName = 'DailyBackup',
 
     [Parameter()]
-    [switch] $CleanupAfterTests = $true,
+    [switch] $CleanupAfterTests,
 
     [Parameter()]
     [switch] $RunPerformanceTests
 )
+
+# Set up cleanup default behavior
+# When CleanupAfterTests switch is not specified, default to $true
+if (-not $PSBoundParameters.ContainsKey('CleanupAfterTests'))
+{
+    $CleanupAfterTests = $true
+}
 
 # Set up error handling
 $ErrorActionPreference = 'Stop'
@@ -57,6 +64,25 @@ else
 $projectRootDir = Split-Path $PSScriptRoot -Parent
 $modulePath = Join-Path -Path $projectRootDir -ChildPath $ModuleName
 $testDataDir = Join-Path -Path $PSScriptRoot -ChildPath 'TestData'
+
+# Register cleanup handler for unexpected termination
+$script:IntegrationTestDataDir = $testDataDir
+trap
+{
+    if ($script:IntegrationTestDataDir -and (Test-Path $script:IntegrationTestDataDir))
+    {
+        Write-Host "Cleaning up integration test data on error: $script:IntegrationTestDataDir" -ForegroundColor Yellow
+        try
+        {
+            Remove-Item $script:IntegrationTestDataDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        catch
+        {
+            Write-Warning "Failed to clean up on error: $($_.Exception.Message)"
+        }
+    }
+    throw $_
+}
 
 Write-Host '=== DailyBackup Module Integration Tests ===' -ForegroundColor Cyan
 Write-Host "Module Path: $modulePath" -ForegroundColor Gray
@@ -152,7 +178,7 @@ catch
 Write-Host "`n--- Test 1: Basic Backup Operation ---" -ForegroundColor Yellow
 try
 {
-    $result = New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
+    New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
 
     if (-not $dryRun)
     {
@@ -309,22 +335,59 @@ catch
 Write-Host "`n=== Test Summary ===" -ForegroundColor Cyan
 Write-Host 'All integration tests completed.' -ForegroundColor Green
 
-if (-not $dryRun -and $CleanupAfterTests)
+# Ensure cleanup always happens
+try
 {
-    Write-Host 'Cleaning up test data...' -ForegroundColor Gray
+    if (Test-Path $testDataDir)
+    {
+        if (-not $dryRun -and $CleanupAfterTests)
+        {
+            Write-Host 'Cleaning up test data...' -ForegroundColor Gray
+            Remove-Item $testDataDir -Recurse -Force -ErrorAction Stop
+            Write-Host '[OK] Test data cleaned up' -ForegroundColor Green
+        }
+        elseif (-not $CleanupAfterTests)
+        {
+            Write-Host "Test data preserved at: $testDataDir" -ForegroundColor Gray
+        }
+        else
+        {
+            Write-Host "Test data preserved (dry-run mode): $testDataDir" -ForegroundColor Gray
+        }
+    }
+}
+catch
+{
+    Write-Warning "Failed to clean up test data: $($_.Exception.Message)"
+    # Try alternative cleanup
     try
     {
-        Remove-Item $testDataDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host '[OK] Test data cleaned up' -ForegroundColor Green
+        Start-Sleep -Milliseconds 500
+        if (Test-Path $testDataDir)
+        {
+            Remove-Item $testDataDir -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host '[OK] Test data cleaned up on retry' -ForegroundColor Green
+        }
     }
     catch
     {
-        Write-Warning "Failed to clean up test data: $_"
+        Write-Error "Critical: Unable to clean up integration test data at '$testDataDir': $($_.Exception.Message)"
     }
 }
-else
+finally
 {
-    Write-Host "Test data preserved at: $testDataDir" -ForegroundColor Gray
+    # Final cleanup attempt
+    if ($script:IntegrationTestDataDir -and (Test-Path $script:IntegrationTestDataDir) -and $CleanupAfterTests -and -not $dryRun)
+    {
+        try
+        {
+            Remove-Item $script:IntegrationTestDataDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        catch
+        {
+            Write-Verbose "Final integration test cleanup attempt failed silently: $($_.Exception.Message)"
+        }
+    }
 }
 
 Write-Host "`nIntegration tests completed successfully!" -ForegroundColor Green

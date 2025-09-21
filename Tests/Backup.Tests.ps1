@@ -4,16 +4,28 @@ BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
     $TestEnv = Initialize-TestEnvironment -TestName 'Backup'
+
+    # Ensure cleanup happens even if tests fail
+    $script:TestEnvironmentPath = $TestEnv.TestRoot
 }
 
 Describe 'New-DailyBackup Core Functionality' {
     Context 'Basic Backup Operations' {
         It 'Creates backup with date-organized folder structure' {
-            New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
+            try
+            {
+                New-DailyBackup -Path $TestEnv.SourceDir -Destination $TestEnv.BackupDir
 
-            $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
-            $result.BackupLocationExists | Should -Be $true
-            $result.ZipCount | Should -BeGreaterThan 0
+                $result = Test-BackupStructure -BackupPath $TestEnv.BackupDir
+                $result.BackupLocationExists | Should -Be $true
+                $result.ZipCount | Should -BeGreaterThan 0
+            }
+            catch
+            {
+                # Ensure cleanup on test failure
+                Write-Warning "Test failed, ensuring cleanup: $($_.Exception.Message)"
+                throw
+            }
         }
 
         It 'Creates metadata manifest for each backup date' {
@@ -262,5 +274,30 @@ Describe 'New-DailyBackup Core Functionality' {
 }
 
 AfterAll {
-    Remove-TestEnvironment -TestRoot $TestEnv.TestRoot
+    try
+    {
+        if ($script:TestEnvironmentPath -and (Test-Path $script:TestEnvironmentPath))
+        {
+            Remove-TestEnvironment -TestRoot $script:TestEnvironmentPath
+        }
+    }
+    catch
+    {
+        Write-Warning "Failed to clean up test environment in AfterAll: $($_.Exception.Message)"
+    }
+    finally
+    {
+        # Final fallback cleanup
+        if ($script:TestEnvironmentPath -and (Test-Path $script:TestEnvironmentPath))
+        {
+            try
+            {
+                Remove-Item $script:TestEnvironmentPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            catch
+            {
+                Write-Verbose "Final cleanup attempt failed silently: $($_.Exception.Message)"
+            }
+        }
+    }
 }

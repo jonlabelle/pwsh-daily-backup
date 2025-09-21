@@ -1,13 +1,14 @@
 # Development Guide
 
-This guide covers testing, development setup, and contribution  - **"Run all tests"** - Comprehensive test runner
+This guide covers testing, development setup, and contribution - **"Run all tests"** - Comprehensive test runner
+
 - Debug: `F5` → "PowerShell: Run all tests"
 
 The build system automatically detects and uses the focused test structure:
 
 - **RunAllTests.ps1** - Discovers and runs all focused test files
 - **Build integration** - Build.ps1 uses focused tests via RunAllTests.ps1
-- **Comprehensive reporting** - Detailed pass/fail status and exit codeses for the PowerShell Daily Backup module.
+- **Comprehensive reporting** - Detailed pass/fail status and exit codes for the PowerShell Daily Backup module.
 
 ## Testing & Quality Assurance
 
@@ -209,12 +210,12 @@ This project includes VS Code configuration for an optimal development experienc
 
 Use `Ctrl+Shift+P` → "Tasks: Run Task" to access:
 
-| Task               | Description             | Command                       |
-| ------------------ | ----------------------- | ----------------------------- |
-| **Build: All**     | Complete build pipeline | `./Build.ps1 -Task All`       |
-| **Build: Test**    | Run all tests           | `./Build.ps1 -Task Test`      |
-| **Build: Analyze** | Static analysis only    | `./Build.ps1 -Task Analyze`   |
-| **Build: Package** | Create release package  | `./Build.ps1 -Task Package`   |
+| Task               | Description               | Command                       |
+| ------------------ | ------------------------- | ----------------------------- |
+| **Build: All**     | Complete build pipeline   | `./Build.ps1 -Task All`       |
+| **Build: Test**    | Run all tests             | `./Build.ps1 -Task Test`      |
+| **Build: Analyze** | Static analysis only      | `./Build.ps1 -Task Analyze`   |
+| **Build: Package** | Create release package    | `./Build.ps1 -Task Package`   |
 | **Run all tests**  | Comprehensive test runner | `./scripts/run-all-tests.ps1` |
 
 #### Launch Configurations

@@ -10,6 +10,23 @@
 #>
 
 # Import the module for testing
+<#
+.SYNOPSIS
+    Initializes and imports the DailyBackup module for testing.
+
+.DESCRIPTION
+    Removes any existing module instances and imports a fresh copy
+    of the module for testing purposes.
+
+.PARAMETER ModuleName
+    The name of the module to import. Defaults to 'DailyBackup'.
+
+.EXAMPLE
+    Initialize-TestModule
+
+.EXAMPLE
+    Initialize-TestModule -ModuleName 'MyModule'
+#>
 function Initialize-TestModule
 {
     param(
@@ -27,6 +44,26 @@ function Initialize-TestModule
 }
 
 # Setup test directories and files
+<#
+.SYNOPSIS
+    Initializes a test environment with directories and sample files.
+
+.DESCRIPTION
+    Creates a comprehensive test environment including source directories,
+    backup directories, and sample test files. Automatically registers
+    cleanup handlers to ensure proper cleanup even if tests fail.
+
+.PARAMETER TestName
+    A unique name for this test environment, used to create isolated directories.
+
+.OUTPUTS
+    Hashtable containing TestRoot, SourceDir, and BackupDir paths.
+
+.EXAMPLE
+    $TestEnv = Initialize-TestEnvironment -TestName 'BackupTests'
+    $TestEnv.SourceDir  # Path to source directory
+    $TestEnv.BackupDir  # Path to backup directory
+#>
 function Initialize-TestEnvironment
 {
     param(
@@ -37,41 +74,179 @@ function Initialize-TestEnvironment
     $script:SourceDir = Join-Path $script:TestRoot 'Source'
     $script:BackupDir = Join-Path $script:TestRoot 'Backup'
 
-    # Create test directories
+    # Clean up any existing test environment first
     if (Test-Path $script:TestRoot)
     {
-        Remove-Item $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-TestEnvironment -TestRoot $script:TestRoot
     }
-    New-Item -Path $script:TestRoot -ItemType Directory -Force | Out-Null
-    New-Item -Path $script:SourceDir -ItemType Directory -Force | Out-Null
-    New-Item -Path $script:BackupDir -ItemType Directory -Force | Out-Null
 
-    # Create test files
-    'Test content 1' | Out-File -FilePath (Join-Path $script:SourceDir 'test1.txt') -Encoding UTF8
-    'Test content 2' | Out-File -FilePath (Join-Path $script:SourceDir 'test2.txt') -Encoding UTF8
+    # Create test directories
+    try
+    {
+        New-Item -Path $script:TestRoot -ItemType Directory -Force | Out-Null
+        New-Item -Path $script:SourceDir -ItemType Directory -Force | Out-Null
+        New-Item -Path $script:BackupDir -ItemType Directory -Force | Out-Null
 
-    # Create a subdirectory with files
-    $SubDir = Join-Path $script:SourceDir 'SubFolder'
-    New-Item -Path $SubDir -ItemType Directory -Force | Out-Null
-    'Sub content' | Out-File -FilePath (Join-Path $SubDir 'subfile.txt') -Encoding UTF8
+        # Register cleanup handler for this test environment
+        Register-TestCleanupHandler -TestRoot $script:TestRoot
 
-    return @{
-        TestRoot = $script:TestRoot
-        SourceDir = $script:SourceDir
-        BackupDir = $script:BackupDir
+        # Create test files
+        'Test content 1' | Out-File -FilePath (Join-Path $script:SourceDir 'test1.txt') -Encoding UTF8
+        'Test content 2' | Out-File -FilePath (Join-Path $script:SourceDir 'test2.txt') -Encoding UTF8
+
+        # Create a subdirectory with files
+        $SubDir = Join-Path $script:SourceDir 'SubFolder'
+        New-Item -Path $SubDir -ItemType Directory -Force | Out-Null
+        'Sub content' | Out-File -FilePath (Join-Path $SubDir 'subfile.txt') -Encoding UTF8
+
+        Write-Verbose "Test environment initialized: $script:TestRoot"
+
+        return @{
+            TestRoot = $script:TestRoot
+            SourceDir = $script:SourceDir
+            BackupDir = $script:BackupDir
+        }
+    }
+    catch
+    {
+        # Clean up on failure
+        if (Test-Path $script:TestRoot)
+        {
+            Remove-TestEnvironment -TestRoot $script:TestRoot
+        }
+        throw "Failed to initialize test environment: $($_.Exception.Message)"
     }
 }
 
 # Cleanup test environment
+<#
+.SYNOPSIS
+    Removes a test environment directory and all its contents.
+
+.DESCRIPTION
+    Safely removes a test environment directory with enhanced error handling,
+    retry logic, and unlocking of read-only files.
+
+.PARAMETER TestRoot
+    The root path of the test environment to remove.
+
+.EXAMPLE
+    Remove-TestEnvironment -TestRoot "C:\TestData_Backup"
+#>
 function Remove-TestEnvironment
 {
     param(
         [string]$TestRoot
     )
 
-    if (Test-Path $TestRoot)
+    if ($TestRoot -and (Test-Path $TestRoot))
     {
-        Remove-Item $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
+        try
+        {
+            # Force unlock any locked files
+            Get-ChildItem -Path $TestRoot -Recurse -Force -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.PSIsContainer } |
+            ForEach-Object { $_.IsReadOnly = $false }
+
+            Remove-Item $TestRoot -Recurse -Force -ErrorAction Stop
+            Write-Verbose "Successfully removed test environment: $TestRoot"
+        }
+        catch
+        {
+            Write-Warning "Failed to remove test environment '$TestRoot': $($_.Exception.Message)"
+            # Try alternative cleanup method
+            try
+            {
+                Start-Sleep -Milliseconds 100
+                Remove-Item $TestRoot -Recurse -Force -ErrorAction Stop
+                Write-Verbose "Successfully removed test environment on retry: $TestRoot"
+            }
+            catch
+            {
+                Write-Error "Critical: Unable to clean up test environment '$TestRoot': $($_.Exception.Message)"
+            }
+        }
+    }
+}
+
+# Register cleanup handler for unexpected termination
+<#
+.SYNOPSIS
+    Registers cleanup handlers for unexpected script termination.
+
+.DESCRIPTION
+    Sets up event handlers and trap blocks to ensure test environments
+    are cleaned up even if the script is interrupted or crashes.
+
+.PARAMETER TestRoot
+    The root path of the test environment to clean up on termination.
+
+.EXAMPLE
+    Register-TestCleanupHandler -TestRoot "C:\TestData_Backup"
+#>
+function Register-TestCleanupHandler
+{
+    param(
+        [string]$TestRoot
+    )
+
+    if ($TestRoot)
+    {
+        $script:TestCleanupPath = $TestRoot
+
+        # Register cleanup for Ctrl+C and other termination events
+        $null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
+            if ($script:TestCleanupPath -and (Test-Path $script:TestCleanupPath))
+            {
+                Write-Host "Cleaning up test environment on exit: $script:TestCleanupPath" -ForegroundColor Yellow
+                Remove-Item $script:TestCleanupPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        # Also handle process termination via trap
+        trap
+        {
+            if ($script:TestCleanupPath -and (Test-Path $script:TestCleanupPath))
+            {
+                Write-Host "Cleaning up test environment on error: $script:TestCleanupPath" -ForegroundColor Yellow
+                Remove-Item $script:TestCleanupPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            throw $_
+        }
+    }
+}
+
+# Force cleanup of all test environments
+<#
+.SYNOPSIS
+    Cleans up all orphaned test environment directories.
+
+.DESCRIPTION
+    Searches for and removes all test environment directories matching the
+    'TestData_*' pattern. Useful for cleaning up after failed test runs.
+
+.PARAMETER TestsDirectory
+    The directory to search for test environments. Defaults to the current script directory.
+
+.EXAMPLE
+    Clear-AllTestEnvironment
+
+.EXAMPLE
+    Clear-AllTestEnvironment -TestsDirectory "C:\MyTests"
+#>
+function Clear-AllTestEnvironment
+{
+    param(
+        [string]$TestsDirectory = $PSScriptRoot
+    )
+
+    $testDataPaths = Get-ChildItem -Path $TestsDirectory -Directory |
+    Where-Object { $_.Name -like 'TestData_*' }
+
+    foreach ($path in $testDataPaths)
+    {
+        Write-Verbose "Cleaning up orphaned test environment: $($path.FullName)"
+        Remove-TestEnvironment -TestRoot $path.FullName
     }
 }
 

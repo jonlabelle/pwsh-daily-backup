@@ -4,6 +4,9 @@ BeforeAll {
     . "$PSScriptRoot/TestHelpers.ps1"
     Initialize-TestModule
     $TestEnv = Initialize-TestEnvironment -TestName 'FileBackupMode'
+
+    # Ensure cleanup happens even if tests fail
+    $script:TestEnvironmentPath = $TestEnv.TestRoot
 }
 
 Describe 'FileBackupMode Functionality' {
@@ -226,5 +229,30 @@ Describe 'FileBackupMode Functionality' {
 }
 
 AfterAll {
-    Remove-TestEnvironment -TestRoot $TestEnv.TestRoot
+    try
+    {
+        if ($script:TestEnvironmentPath -and (Test-Path $script:TestEnvironmentPath))
+        {
+            Remove-TestEnvironment -TestRoot $script:TestEnvironmentPath
+        }
+    }
+    catch
+    {
+        Write-Warning "Failed to clean up test environment in AfterAll: $($_.Exception.Message)"
+    }
+    finally
+    {
+        # Final fallback cleanup
+        if ($script:TestEnvironmentPath -and (Test-Path $script:TestEnvironmentPath))
+        {
+            try
+            {
+                Remove-Item $script:TestEnvironmentPath -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            catch
+            {
+                Write-Verbose "Final cleanup attempt failed silently: $($_.Exception.Message)"
+            }
+        }
+    }
 }

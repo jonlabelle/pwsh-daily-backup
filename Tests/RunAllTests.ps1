@@ -53,6 +53,18 @@ if ($testFiles.Count -eq 0)
     return
 }
 
+# Clean up any orphaned test environments before starting
+try
+{
+    . "$PSScriptRoot/TestHelpers.ps1"
+    Clear-AllTestEnvironment -TestsDirectory $PSScriptRoot
+    Write-Verbose 'Cleaned up any orphaned test environments'
+}
+catch
+{
+    Write-Warning "Failed to clean up orphaned test environments: $($_.Exception.Message)"
+}
+
 Write-Host "Found $($testFiles.Count) test file(s):" -ForegroundColor Green
 $testFiles | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Gray }
 Write-Host ''
@@ -94,4 +106,14 @@ if ($results.FailedCount -gt 0)
 }
 
 # Exit with appropriate code
+try
+{
+    # Final cleanup attempt for any remaining test environments
+    Clear-AllTestEnvironment -TestsDirectory $PSScriptRoot
+}
+catch
+{
+    Write-Warning "Failed final cleanup attempt: $($_.Exception.Message)"
+}
+
 exit $results.FailedCount
