@@ -101,6 +101,19 @@ if ($PSCmdlet.ShouldProcess($target, $operation)) {
 }
 ```
 
+**Path Resolution:**
+
+For arbitrary strings/variables (and to normalize to an absolute path without requiring the path to exist), including the `~` symbol:
+
+```powershell
+$OutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+
+# If you're inside an advanced function, you can also use:
+$OutputPath = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+
+# Note: Does NOT require the target to exist.
+```
+
 ### PowerShell Version Compatibility
 
 - **Array handling:** Use explicit null checks rather than `@()` wrapping
