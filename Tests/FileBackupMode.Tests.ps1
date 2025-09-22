@@ -216,7 +216,8 @@ Describe 'FileBackupMode Functionality' {
 
     Context 'Error Handling' {
         It 'Should handle non-existent paths gracefully' {
-            $invalidPaths = @('C:\NonExistentFile.txt', $script:TestFiles[0])
+            $nonExistentPath = Join-Path $TestEnv.TestRoot 'NonExistentFile.txt'
+            $invalidPaths = @($nonExistentPath, $script:TestFiles[0])
 
             { New-DailyBackup -Path $invalidPaths -Destination $TestEnv.BackupDir -FileBackupMode Combined -ErrorAction SilentlyContinue } | Should -Not -Throw
 
