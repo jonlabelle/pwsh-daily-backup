@@ -130,6 +130,19 @@ function Restore-DailyBackup
     {
         $verboseEnabled = ($VerbosePreference -eq 'Continue')
 
+        # Resolve paths to absolute paths
+        $BackupRoot = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BackupRoot)
+
+        # If $DestinationPath is not null of whitespace only, convert it with GetUnresolvedProviderPathFromPSPath
+        $DestinationPath = if ($DestinationPath -and -not [string]::IsNullOrWhiteSpace($DestinationPath))
+        {
+            $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($DestinationPath)
+        }
+        else
+        {
+            $null
+        }
+
         if (-not $UseOriginalPaths -and -not $DestinationPath)
         {
             throw 'Either DestinationPath must be specified or UseOriginalPaths must be enabled'

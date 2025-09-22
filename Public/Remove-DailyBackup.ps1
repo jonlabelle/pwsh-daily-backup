@@ -122,6 +122,9 @@ function Remove-DailyBackup
             return
         }
 
+        # Normalize and resolve the input path
+        $Path = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+
         Write-Verbose "Remove-DailyBackup> Input path: '$Path'" -Verbose:$verboseEnabled
 
         # Resolve the path to ensure it exists

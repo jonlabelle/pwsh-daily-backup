@@ -51,6 +51,9 @@ function Get-DailyBackup
         [string] $Date
     )
 
+    # Normalize and resolve the backup root path
+    $BackupRoot = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BackupRoot)
+
     if (-not (Test-Path -Path $BackupRoot -PathType Container))
     {
         Write-Warning "Backup root directory not found: $BackupRoot"

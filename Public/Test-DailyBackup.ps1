@@ -69,9 +69,18 @@ function Test-DailyBackup
 
     try
     {
+        if ([string]::IsNullOrWhiteSpace($BackupRoot))
+        {
+            Write-Error 'Test-DailyBackup> Backup root parameter cannot be null or empty'
+            return
+        }
+
+        # Normalize and resolve the backup root path
+        $BackupRoot = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BackupRoot)
+
         if (-not (Test-Path $BackupRoot))
         {
-            throw "Backup root directory does not exist: $BackupRoot"
+            Write-Error "Test-DailyBackup> Backup root directory does not exist: $BackupRoot"
         }
 
         Write-Verbose "Test-DailyBackup> Starting integrity verification for: $BackupRoot"

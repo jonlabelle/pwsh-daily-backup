@@ -201,6 +201,14 @@ function New-DailyBackup
             Write-Verbose 'New-DailyBackup> Dry-run is enabled' -Verbose:$verboseEnabled
         }
 
+        # Ensure the $Destination value is not null or whitespace only
+        if ([string]::IsNullOrWhiteSpace($Destination))
+        {
+            throw 'Destination path cannot be null or empty. Please specify a valid directory path.'
+        }
+
+        # Normalize and resolve the destination path
+        $Destination = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
         $Destination = Resolve-UnverifiedPath -Path $Destination
         $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
         $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
@@ -242,18 +250,8 @@ function New-DailyBackup
         $allValidPaths = @()
         foreach ($item in $Path)
         {
-            # Expand tilde paths before checking if they're rooted
-            if ($item.StartsWith('~'))
-            {
-                $item = $item -replace '^~', $HOME
-                Write-Verbose "New-DailyBackup> Expanded tilde path to: $item" -Verbose:$verboseEnabled
-            }
-
-            if (-not [System.IO.Path]::IsPathRooted($item))
-            {
-                Write-Verbose "New-DailyBackup> '$item' is not a full path, prepending current directory: $pwd" -Verbose:$verboseEnabled
-                $item = (Join-Path -Path $pwd -ChildPath $item)
-            }
+            # Normalize and resolve the path
+            $item = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($item)
 
             try
             {
