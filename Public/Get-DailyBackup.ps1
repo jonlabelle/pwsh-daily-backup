@@ -18,7 +18,7 @@ function Get-DailyBackup
         If not specified, returns information for all available backup dates.
 
     .OUTPUTS
-        [PSCustomObject[]]
+        [System.Object[]]
         Returns an array of backup information objects containing:
         - Date: Backup date (yyyy-MM-dd)
         - Path: Full path to the backup directory
@@ -41,6 +41,7 @@ function Get-DailyBackup
         Shows detailed information for backups from September 15, 2025
     #>
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

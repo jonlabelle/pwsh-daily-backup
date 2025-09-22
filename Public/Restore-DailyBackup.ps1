@@ -86,6 +86,7 @@ function Restore-DailyBackup
         Get-DailyBackup
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(
             Mandatory = $true,
