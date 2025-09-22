@@ -109,8 +109,7 @@ function Remove-DailyBackup
 
     begin
     {
-        $verboseEnabled = $VerbosePreference -eq 'Continue'
-        Write-Verbose 'Remove-DailyBackup> Starting backup removal operation' -Verbose:$verboseEnabled
+        Write-Verbose 'Remove-DailyBackup> Starting backup removal operation'
     }
 
     process
@@ -125,7 +124,7 @@ function Remove-DailyBackup
         # Normalize and resolve the input path
         $Path = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
 
-        Write-Verbose "Remove-DailyBackup> Input path: '$Path'" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Input path: '$Path'"
 
         # Resolve the path to ensure it exists
         try
@@ -139,7 +138,7 @@ function Remove-DailyBackup
             return
         }
 
-        Write-Verbose "Remove-DailyBackup> Processing backup root: $backupRoot" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Processing backup root: $backupRoot"
 
         # Get qualified backup directories (matching yyyy-MM-dd pattern)
         $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $backupRoot -Directory -ErrorAction SilentlyContinue |
@@ -147,11 +146,11 @@ function Remove-DailyBackup
 
         if ($qualifiedBackupDirs.Length -eq 0)
         {
-            Write-Verbose "Remove-DailyBackup> No qualified backup directories found in: $backupRoot" -Verbose:$verboseEnabled
+            Write-Verbose "Remove-DailyBackup> No qualified backup directories found in: $backupRoot"
             return
         }
 
-        Write-Verbose "Remove-DailyBackup> Found $($qualifiedBackupDirs.Length) qualified backup directories" -Verbose:$verboseEnabled
+        Write-Verbose "Remove-DailyBackup> Found $($qualifiedBackupDirs.Length) qualified backup directories"
 
         if ($PSCmdlet.ParameterSetName -eq 'SpecificDate')
         {
@@ -166,11 +165,11 @@ function Remove-DailyBackup
             $confirmMessage = "Remove backup directory for date $Date"
             if ($Force -or $PSCmdlet.ShouldProcess($targetDir.FullName, $confirmMessage))
             {
-                Write-Verbose "Remove-DailyBackup> Removing backup directory: $($targetDir.FullName)" -Verbose:$verboseEnabled
+                Write-Verbose "Remove-DailyBackup> Removing backup directory: $($targetDir.FullName)"
                 try
                 {
-                    Remove-ItemAlternative -LiteralPath $targetDir.FullName -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
-                    Write-Verbose "Remove-DailyBackup> Successfully removed: $($targetDir.FullName)" -Verbose:$verboseEnabled
+                    Remove-ItemAlternative -LiteralPath $targetDir.FullName -WhatIf:$WhatIfPreference
+                    Write-Verbose "Remove-DailyBackup> Successfully removed: $($targetDir.FullName)"
                 }
                 catch
                 {
@@ -183,7 +182,7 @@ function Remove-DailyBackup
             # Retention-based cleanup
             if ($qualifiedBackupDirs.Length -le $Keep)
             {
-                Write-Verbose "Remove-DailyBackup:Process> Current backup count ($($qualifiedBackupDirs.Length)) does not exceed retention limit ($Keep)" -Verbose:$verboseEnabled
+                Write-Verbose "Remove-DailyBackup:Process> Current backup count ($($qualifiedBackupDirs.Length)) does not exceed retention limit ($Keep)"
                 return
             }
 
@@ -205,7 +204,7 @@ function Remove-DailyBackup
             $sortedBackupPaths = ($backups.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
             $backupsToRemove = $sortedBackupPaths.Count - $Keep
 
-            Write-Verbose "Remove-DailyBackup:Process> Will remove $backupsToRemove old backup directories (keeping $Keep)" -Verbose:$verboseEnabled
+            Write-Verbose "Remove-DailyBackup:Process> Will remove $backupsToRemove old backup directories (keeping $Keep)"
 
             for ($i = 0; $i -lt $backupsToRemove; $i++)
             {
@@ -215,11 +214,11 @@ function Remove-DailyBackup
                 $confirmMessage = "Remove old backup directory for date $backupDate"
                 if ($Force -or $PSCmdlet.ShouldProcess($backupPath, $confirmMessage))
                 {
-                    Write-Verbose "Remove-DailyBackup:Process> Removing old backup directory: $backupPath" -Verbose:$verboseEnabled
+                    Write-Verbose "Remove-DailyBackup:Process> Removing old backup directory: $backupPath"
                     try
                     {
-                        Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
-                        Write-Verbose "Remove-DailyBackup:Process> Successfully removed: $backupPath" -Verbose:$verboseEnabled
+                        Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference
+                        Write-Verbose "Remove-DailyBackup:Process> Successfully removed: $backupPath"
                     }
                     catch
                     {
@@ -232,6 +231,6 @@ function Remove-DailyBackup
 
     end
     {
-        Write-Verbose 'Remove-DailyBackup> Backup removal operation completed' -Verbose:$verboseEnabled
+        Write-Verbose 'Remove-DailyBackup> Backup removal operation completed'
     }
 }

@@ -16,15 +16,9 @@ function Compress-BackupCombined
     .PARAMETER DestinationPath
         The destination directory where the combined archive will be created.
 
-    .PARAMETER VerboseEnabled
-        Controls whether verbose output is displayed during the backup operation.
-
     .PARAMETER NoHash
         Skip hash calculation to improve performance in simple backup scenarios.
         When specified, backup integrity verification will not be available.
-
-    .PARAMETER WhatIf
-        Shows what would happen if the function runs without actually performing any actions.
 
     .OUTPUTS
         None. This function creates backup files but does not return objects.
@@ -41,9 +35,9 @@ function Compress-BackupCombined
         Creates a combined archive containing both files
 
     .EXAMPLE
-        PS > Compress-BackupCombined -Paths @("C:\Docs", "C:\Projects\file.txt") -DestinationPath "D:\Backups\2025-09-17" -VerboseEnabled $true
+        PS > Compress-BackupCombined -Paths @("C:\Docs", "C:\Projects\file.txt") -DestinationPath "D:\Backups\2025-09-17"
 
-        Creates a combined archive with verbose output showing detailed progress
+        Creates a combined archive containing both the directory and the file
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -56,9 +50,6 @@ function Compress-BackupCombined
         [string] $DestinationPath,
 
         [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false,
-
-        [Parameter(Mandatory = $false)]
         [switch] $NoHash
     )
 
@@ -66,21 +57,21 @@ function Compress-BackupCombined
     $combinedArchiveName = "CombinedFiles_$timestamp"
     $archivePath = Join-Path -Path $DestinationPath -ChildPath "$combinedArchiveName.zip"
 
-    Write-Verbose "Compress-BackupCombined> Creating combined archive: $archivePath" -Verbose:$VerboseEnabled
-    Write-Verbose "Compress-BackupCombined> Including $($Paths.Count) source paths" -Verbose:$VerboseEnabled
+    Write-Verbose "Compress-BackupCombined> Creating combined archive: $archivePath"
+    Write-Verbose "Compress-BackupCombined> Including $($Paths.Count) source paths"
 
     if ($PSCmdlet.ShouldProcess($archivePath, 'Create combined backup archive'))
     {
         try
         {
             # Create the ZIP archive with all paths
-            Write-Verbose "Compress-BackupCombined> Compressing paths to: $archivePath" -Verbose:$VerboseEnabled
+            Write-Verbose "Compress-BackupCombined> Compressing paths to: $archivePath"
             Compress-Archive -Path $Paths -DestinationPath $archivePath -CompressionLevel Optimal -ErrorAction Stop
 
             # Create metadata for combined archive - add each source path to manifest
             if (-not $NoHash)
             {
-                Write-Verbose 'Compress-BackupCombined> Adding metadata to manifest for combined archive' -Verbose:$VerboseEnabled
+                Write-Verbose 'Compress-BackupCombined> Adding metadata to manifest for combined archive'
                 foreach ($sourcePath in $Paths)
                 {
                     $pathType = Get-PathType -Path $sourcePath
@@ -89,10 +80,10 @@ function Compress-BackupCombined
             }
             else
             {
-                Write-Verbose 'Compress-BackupCombined> Skipping metadata creation (NoHash specified)' -Verbose:$VerboseEnabled
+                Write-Verbose 'Compress-BackupCombined> Skipping metadata creation (NoHash specified)'
             }
 
-            Write-Verbose "Compress-BackupCombined> Successfully created combined archive: $archivePath" -Verbose:$VerboseEnabled
+            Write-Verbose "Compress-BackupCombined> Successfully created combined archive: $archivePath"
         }
         catch
         {

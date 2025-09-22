@@ -22,9 +22,6 @@ function Restore-BackupFile
     .PARAMETER PreservePaths
         Controls whether directory structure within the ZIP is preserved during extraction.
 
-    .PARAMETER VerboseEnabled
-        Controls verbose output during the restore operation.
-
     .OUTPUTS
         [PSCustomObject]
         Returns information about the restore operation including success status,
@@ -51,10 +48,7 @@ function Restore-BackupFile
         [switch] $UseOriginalPath,
 
         [Parameter()]
-        [switch] $PreservePaths,
-
-        [Parameter()]
-        [bool] $VerboseEnabled = $false
+        [switch] $PreservePaths
     )
 
     if (-not $UseOriginalPath -and -not $DestinationPath)

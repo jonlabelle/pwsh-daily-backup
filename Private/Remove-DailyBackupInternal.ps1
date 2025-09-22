@@ -19,10 +19,6 @@ function Remove-DailyBackupInternal
         The minimum number of backup directories to retain. Older backups beyond this
         number will be deleted. Must be a positive integer.
 
-    .PARAMETER VerboseEnabled
-        Controls whether verbose output is displayed during the cleanup operation.
-        When $true, detailed information about the deletion process is shown.
-
     .INPUTS
         None. This function does not accept pipeline input.
 
@@ -37,7 +33,7 @@ function Remove-DailyBackupInternal
         - Skips cleanup if total backups don't exceed the retention limit
 
     .EXAMPLE
-        PS > Remove-DailyBackupInternal -Path 'C:\Backups' -BackupsToKeep 7 -VerboseEnabled $true
+        PS > Remove-DailyBackupInternal -Path 'C:\Backups' -BackupsToKeep 7
 
         Keeps the 7 most recent daily backup folders, removes older ones
 
@@ -60,16 +56,13 @@ function Remove-DailyBackupInternal
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [int] $BackupsToKeep,
-
-        [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false
+        [int] $BackupsToKeep
     )
 
     $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
     if ($qualifiedBackupDirs.Length -eq 0)
     {
-        Write-Verbose "Remove-DailyBackupInternal> No qualified backup directories to delete were detected in: $Path" -Verbose:$VerboseEnabled
+        Write-Verbose "Remove-DailyBackupInternal> No qualified backup directories to delete were detected in: $Path"
         return
     }
 
@@ -88,14 +81,14 @@ function Remove-DailyBackupInternal
             $backupPath = $sortedBackupPaths[$i]
             if ($PSCmdlet.ShouldProcess($backupPath, 'Remove backup directory'))
             {
-                Write-Verbose "Remove-DailyBackupInternal> Removing old backup directory: $backupPath" -Verbose:$VerboseEnabled
-                Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled
-                Write-Verbose "Remove-DailyBackupInternal> Successfully removed: $backupPath" -Verbose:$VerboseEnabled
+                Write-Verbose "Remove-DailyBackupInternal> Removing old backup directory: $backupPath"
+                Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference
+                Write-Verbose "Remove-DailyBackupInternal> Successfully removed: $backupPath"
             }
         }
     }
     else
     {
-        Write-Verbose 'Remove-DailyBackupInternal> No surplus daily backups to delete' -Verbose:$VerboseEnabled
+        Write-Verbose 'Remove-DailyBackupInternal> No surplus daily backups to delete'
     }
 }

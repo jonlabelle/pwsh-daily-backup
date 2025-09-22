@@ -46,7 +46,6 @@ if (-not $PSBoundParameters.ContainsKey('CleanupAfterTests'))
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = if ($VerbosePreference -eq 'SilentlyContinue') { 'SilentlyContinue' } else { 'Continue' }
 
-$verboseEnabled = ($VerbosePreference -eq 'Continue')
 $dryRun = $false
 
 if ($PSCmdlet.ShouldProcess($ModuleName, 'Run Integration Tests'))
@@ -93,8 +92,8 @@ Write-Host ''
 # Clean up and import module
 try
 {
-    Get-Module $ModuleName | Remove-Module -Verbose:$verboseEnabled -Force -ErrorAction SilentlyContinue
-    Import-Module -Name $modulePath -Force -Verbose:$verboseEnabled
+    Get-Module $ModuleName | Remove-Module -Force -ErrorAction SilentlyContinue
+    Import-Module -Name $modulePath -Force
     Write-Host '[OK] Module imported successfully' -ForegroundColor Green
 }
 catch
@@ -178,7 +177,7 @@ catch
 Write-Host "`n--- Test 1: Basic Backup Operation ---" -ForegroundColor Yellow
 try
 {
-    New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
+    New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -WhatIf:$dryRun
 
     if (-not $dryRun)
     {
@@ -208,7 +207,7 @@ try
     $path1 = Join-Path $sourceDir.FullName 'test1.txt'
     $path2 = Join-Path $sourceDir.FullName 'Subfolder'
 
-    New-DailyBackup -Path @($path1, $path2) -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
+    New-DailyBackup -Path @($path1, $path2) -Destination $backupDir.FullName -WhatIf:$dryRun
     Write-Host '[OK] Multiple paths processed successfully' -ForegroundColor Green
 }
 catch
@@ -236,7 +235,7 @@ try
         }
 
         # Run backup with cleanup
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun
 
         # Check results
         $remainingDirs = Get-ChildItem -Path $backupDir.FullName -Directory | Where-Object { $_.Name -match '\d{4}-\d{2}-\d{2}' }
@@ -244,7 +243,7 @@ try
     }
     else
     {
-        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun -Verbose:$verboseEnabled
+        New-DailyBackup -Path $sourceDir.FullName -Destination $backupDir.FullName -Keep 2 -WhatIf:$dryRun
         Write-Host '[OK] Cleanup test completed (dry-run)' -ForegroundColor Green
     }
 }
@@ -259,7 +258,7 @@ try
 {
     # Test with non-existent source path
     $nonExistentPath = Join-Path $testDataDir 'NonExistent'
-    New-DailyBackup -Path $nonExistentPath -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled -WarningAction SilentlyContinue
+    New-DailyBackup -Path $nonExistentPath -Destination $backupDir.FullName -WhatIf:$dryRun -WarningAction SilentlyContinue
     Write-Host '[OK] Non-existent path handled gracefully' -ForegroundColor Green
 
     # Test with invalid parameter values
@@ -299,7 +298,7 @@ if ($RunPerformanceTests)
         }
 
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        New-DailyBackup -Path $largeDirTest.FullName -Destination $backupDir.FullName -WhatIf:$dryRun -Verbose:$verboseEnabled
+        New-DailyBackup -Path $largeDirTest.FullName -Destination $backupDir.FullName -WhatIf:$dryRun
         $stopwatch.Stop()
 
         Write-Host "[OK] Performance test completed in $($stopwatch.ElapsedMilliseconds)ms" -ForegroundColor Green
@@ -318,7 +317,7 @@ try
     Push-Location $projectRootDir
     try
     {
-        New-DailyBackup -Path '.\Tests\stubs\files-to-backup' -Destination (Join-Path $testDataDir 'RelativeTest') -WhatIf:$dryRun -Verbose:$verboseEnabled -ErrorAction SilentlyContinue
+        New-DailyBackup -Path '.\Tests\stubs\files-to-backup' -Destination (Join-Path $testDataDir 'RelativeTest') -WhatIf:$dryRun -ErrorAction SilentlyContinue
         Write-Host '[OK] Relative path handling working' -ForegroundColor Green
     }
     finally

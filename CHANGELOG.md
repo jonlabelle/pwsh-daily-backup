@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Consistent path resolution across all commands
   - Improved error handling for invalid or non-existent paths
 
+### Technical Improvements
+
+- Remove special verbose and what-if/dry-run handling in favor of native PowerShell support
+
 ## [1.9.0]
 
 ### Added

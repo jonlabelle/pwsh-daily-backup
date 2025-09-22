@@ -18,9 +18,9 @@ function Compress-Backup
         The destination directory where the compressed backup file will be created.
         The actual filename is generated automatically based on the source path.
 
-    .PARAMETER VerboseEnabled
-        Controls whether verbose output is displayed during the compression operation.
-        When $true, detailed progress information is shown.
+    .PARAMETER NoHash
+        Skip hash calculation to improve performance in simple backup scenarios.
+        When specified, backup integrity verification will not be available.
 
     .OUTPUTS
         None. This function creates a .zip file but does not return any objects.
@@ -32,9 +32,9 @@ function Compress-Backup
         - Continues on individual file errors rather than stopping completely
 
     .EXAMPLE
-        PS > Compress-Backup -Path 'C:\Documents' -DestinationPath 'C:\Backups\2025-08-24' -VerboseEnabled $true
+        PS > Compress-Backup -Path 'C:\Documents' -DestinationPath 'C:\Backups\2025-08-24'
 
-        Creates a backup archive of the Documents folder with verbose output
+        Creates a backup archive of the Documents folder
 
     .EXAMPLE
         PS > Compress-Backup -Path 'C:\MyFile.txt' -DestinationPath 'C:\Backups\2025-08-24' -WhatIf
@@ -53,9 +53,6 @@ function Compress-Backup
         [string] $DestinationPath,
 
         [Parameter(Mandatory = $false)]
-        [bool] $VerboseEnabled = $false,
-
-        [Parameter(Mandatory = $false)]
         [switch] $NoHash
     )
 
@@ -68,7 +65,7 @@ function Compress-Backup
 
         try
         {
-            Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -Verbose:$VerboseEnabled -ErrorAction Stop
+            Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -ErrorAction Stop
 
             # Add backup to daily manifest
             if (-not $WhatIfPreference)

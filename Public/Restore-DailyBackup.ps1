@@ -128,8 +128,6 @@ function Restore-DailyBackup
 
     begin
     {
-        $verboseEnabled = ($VerbosePreference -eq 'Continue')
-
         # Resolve paths to absolute paths
         $BackupRoot = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BackupRoot)
 
@@ -219,7 +217,6 @@ function Restore-DailyBackup
                     BackupFilePath = $backup.Path
                     UseOriginalPath = $UseOriginalPaths
                     PreservePaths = $PreservePaths
-                    VerboseEnabled = $verboseEnabled
                 }
 
                 if ($DestinationPath)

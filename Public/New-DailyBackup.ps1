@@ -185,21 +185,7 @@ function New-DailyBackup
     )
     begin
     {
-        $verboseEnabled = $false
-        if ($VerbosePreference -eq 'Continue')
-        {
-            $verboseEnabled = $true
-            Write-Verbose 'New-DailyBackup> Verbose mode is enabled' -Verbose:$verboseEnabled
-        }
-
-        if ($PSCmdlet.ShouldProcess('New-DailyBackup', 'Begin'))
-        {
-            Write-Verbose 'New-DailyBackup> Dry-run is not enabled' -Verbose:$verboseEnabled
-        }
-        else
-        {
-            Write-Verbose 'New-DailyBackup> Dry-run is enabled' -Verbose:$verboseEnabled
-        }
+        Write-Verbose 'New-DailyBackup> Starting backup operation'
 
         # Ensure the $Destination value is not null or whitespace only
         if ([string]::IsNullOrWhiteSpace($Destination))
@@ -217,10 +203,10 @@ function New-DailyBackup
         {
             if ($Force)
             {
-                Write-Verbose "New-DailyBackup> Force specified - removing existing backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
+                Write-Verbose "New-DailyBackup> Force specified - removing existing backup destination directory: $datedDestinationDir"
                 if ($PSCmdlet.ShouldProcess($datedDestinationDir, 'Remove existing backup directory'))
                 {
-                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
+                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference
                 }
             }
             else
@@ -228,8 +214,8 @@ function New-DailyBackup
                 $confirmMessage = "Backup directory for $folderName already exists. Remove existing backup directory?"
                 if ($PSCmdlet.ShouldProcess($datedDestinationDir, $confirmMessage))
                 {
-                    Write-Verbose "New-DailyBackup> User confirmed - removing existing backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
-                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled
+                    Write-Verbose "New-DailyBackup> User confirmed - removing existing backup destination directory: $datedDestinationDir"
+                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference
                 }
                 elseif (-not $WhatIfPreference)
                 {
@@ -238,12 +224,11 @@ function New-DailyBackup
             }
         }
 
-        Write-Verbose "New-DailyBackup> Creating backup destination directory: $datedDestinationDir" -Verbose:$verboseEnabled
-        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$WhatIfPreference -Verbose:$verboseEnabled -ErrorAction 'SilentlyContinue' | Out-Null
+        Write-Verbose "New-DailyBackup> Creating backup destination directory: $datedDestinationDir"
+        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$WhatIfPreference -ErrorAction 'SilentlyContinue' | Out-Null
     }
     process
     {
-        $totalPaths = $Path.Count
         $currentPath = 0
 
         # Resolve all paths first
@@ -259,11 +244,11 @@ function New-DailyBackup
                 $pathToResolve = $item
                 if ($PSVersionTable.Platform -eq 'Win32NT' -and $item.Length -ge 260)
                 {
-                    Write-Verbose "New-DailyBackup> Long path detected ($($item.Length) characters), using extended path syntax" -Verbose:$verboseEnabled
+                    Write-Verbose "New-DailyBackup> Long path detected ($($item.Length) characters), using extended path syntax"
                     $pathToResolve = "\\?\$item"
                 }
 
-                $resolvedPath = (Resolve-Path $pathToResolve -ErrorAction SilentlyContinue -Verbose:$verboseEnabled).ProviderPath
+                $resolvedPath = (Resolve-Path $pathToResolve -ErrorAction SilentlyContinue).ProviderPath
                 if ($null -eq $resolvedPath)
                 {
                     Write-Warning "New-DailyBackup> Failed to resolve path for: $item"
@@ -320,16 +305,16 @@ function New-DailyBackup
             $FileBackupMode
         }
 
-        Write-Verbose "New-DailyBackup> Using backup mode: $effectiveMode for $($allValidPaths.Count) paths" -Verbose:$verboseEnabled
+        Write-Verbose "New-DailyBackup> Using backup mode: $effectiveMode for $($allValidPaths.Count) paths"
 
         if ($effectiveMode -eq 'Combined')
         {
             # Combined mode: Create single archive with all paths
-            Write-Verbose 'New-DailyBackup> Creating combined archive for all paths' -Verbose:$verboseEnabled
+            Write-Verbose 'New-DailyBackup> Creating combined archive for all paths'
 
             try
             {
-                Compress-BackupCombined -Paths $allValidPaths -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                Compress-BackupCombined -Paths $allValidPaths -DestinationPath $datedDestinationDir -NoHash:$NoHash -WhatIf:$WhatIfPreference
             }
             catch
             {
@@ -339,17 +324,17 @@ function New-DailyBackup
         else
         {
             # Individual mode: Process each path separately
-            Write-Verbose 'New-DailyBackup> Creating individual archives for each path' -Verbose:$verboseEnabled
+            Write-Verbose 'New-DailyBackup> Creating individual archives for each path'
 
             foreach ($resolvedPath in $allValidPaths)
             {
                 $currentPath++
                 Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $($allValidPaths.Count)" -PercentComplete (($currentPath / $allValidPaths.Count) * 100)
 
-                Write-Verbose "New-DailyBackup> Processing individual item: $resolvedPath" -Verbose:$verboseEnabled
+                Write-Verbose "New-DailyBackup> Processing individual item: $resolvedPath"
                 try
                 {
-                    Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -VerboseEnabled $verboseEnabled -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                    Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -NoHash:$NoHash -WhatIf:$WhatIfPreference
                 }
                 catch
                 {
@@ -362,17 +347,17 @@ function New-DailyBackup
     }
     end
     {
-        Write-Verbose 'New-DailyBackup> Running post backup operations' -Verbose:$verboseEnabled
+        Write-Verbose 'New-DailyBackup> Running post backup operations'
 
         if (-not $NoCleanup -and $Keep -ge 0)
         {
-            Remove-DailyBackupInternal -Path $Destination -BackupsToKeep $Keep -VerboseEnabled $verboseEnabled -WhatIf:$WhatIfPreference
+            Remove-DailyBackupInternal -Path $Destination -BackupsToKeep $Keep -WhatIf:$WhatIfPreference
         }
         elseif ($NoCleanup)
         {
-            Write-Verbose 'New-DailyBackup> Skipping cleanup due to -NoCleanup parameter' -Verbose:$verboseEnabled
+            Write-Verbose 'New-DailyBackup> Skipping cleanup due to -NoCleanup parameter'
         }
 
-        Write-Verbose 'New-DailyBackup> Finished' -Verbose:$verboseEnabled
+        Write-Verbose 'New-DailyBackup> Finished'
     }
 }
