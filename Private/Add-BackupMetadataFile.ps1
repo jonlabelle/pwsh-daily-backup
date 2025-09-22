@@ -49,7 +49,7 @@ function Add-BackupMetadataFile
             SourcePath = $SourcePath
             BackupCreated = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffZ'
             PathType = $PathType
-            BackupVersion = '2.0'
+            BackupVersion = '1.0'
         }
 
         if (Test-Path -Path $SourcePath)

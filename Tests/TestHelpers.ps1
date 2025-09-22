@@ -366,7 +366,7 @@ function Test-MetadataContent
             HasSourcePath = -not [string]::IsNullOrEmpty($content.SourcePath)
             HasBackupCreated = -not [string]::IsNullOrEmpty($content.BackupCreated)
             HasPathType = $content.PathType -match '^(File|Directory)$'
-            HasBackupVersion = $content.BackupVersion -eq '2.0'
+            HasBackupVersion = $content.BackupVersion -eq '1.0'
         }
     }
     catch
