@@ -12,7 +12,7 @@ on:
           - "major"
           - "minor"
           - "patch"
-        default: "patch"
+        default: "none"
       version:
         description: "Specific version"
         required: false
@@ -39,13 +39,19 @@ jobs:
           Write-Host "Bump type: '$bumpType'" -ForegroundColor Cyan
           Write-Host "Input version: '$inputVersion'" -ForegroundColor Cyan
 
-          # Validate inputs: cannot specify both bump and version together
-          if ($bumpType -ne "none" -and $bumpType -ne "" -and -not [string]::IsNullOrEmpty($inputVersion)) {
-            Write-Error "Cannot specify both 'version' and 'bump' parameters. Use either version bumping (bump) OR manual version input (version), not both." -ErrorAction Stop
-          }
+          # Priority: version input overrides bump selection
+          if (-not [string]::IsNullOrEmpty($inputVersion)) {
+            # Mode 2: Manual version input (version takes precedence)
+            if ($inputVersion -notmatch '^\d+\.\d+\.\d+$') {
+              Write-Error "Version must be in format x.y.z (e.g., 1.3.1)" -ErrorAction Stop
+            }
 
-          # Mode 1: Automatic version bumping (default behavior)
-          if ($bumpType -ne "none" -and $bumpType -ne "") {
+            Write-Host "Using manual version mode: $inputVersion (ignoring bump selection)" -ForegroundColor Green
+            echo "version=$inputVersion" >> $env:GITHUB_OUTPUT
+            echo "mode=manual" >> $env:GITHUB_OUTPUT
+
+          } elseif ($bumpType -ne "none" -and $bumpType -ne "") {
+            # Mode 1: Automatic version bumping
             Write-Host "Using version bump mode: $bumpType" -ForegroundColor Green
 
             # Read current version from manifest
@@ -82,18 +88,8 @@ jobs:
             echo "mode=bump" >> $env:GITHUB_OUTPUT
 
           } else {
-            # Mode 2: Manual version input (when bump is 'none')
-            if ([string]::IsNullOrEmpty($inputVersion)) {
-              Write-Error "When bump is 'none', a manual version must be provided" -ErrorAction Stop
-            }
-
-            if ($inputVersion -notmatch '^\d+\.\d+\.\d+$') {
-              Write-Error "Version must be in format x.y.z (e.g., 1.3.1)" -ErrorAction Stop
-            }
-
-            Write-Host "Using manual version mode: $inputVersion" -ForegroundColor Green
-            echo "version=$inputVersion" >> $env:GITHUB_OUTPUT
-            echo "mode=manual" >> $env:GITHUB_OUTPUT
+            # No valid input provided
+            Write-Error "Either specify a bump type (major/minor/patch) or provide a manual version" -ErrorAction Stop
           }
 
   release:
