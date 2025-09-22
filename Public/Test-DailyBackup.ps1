@@ -51,6 +51,7 @@ function Test-DailyBackup
         Get-DailyBackup
     #>
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

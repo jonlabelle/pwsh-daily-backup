@@ -45,7 +45,7 @@ function Restore-DailyBackup
         None. This function does not accept pipeline input.
 
     .OUTPUTS
-        [PSCustomObject[]]
+        [System.Object[]]
         Returns an array of restore operation results, including success status,
         paths processed, and any errors encountered for each backup file.
 
@@ -214,32 +214,60 @@ function Restore-DailyBackup
 
             try
             {
-                $restoreParams = @{
-                    BackupFilePath = $backup.Path
-                    UseOriginalPath = $UseOriginalPaths
-                    PreservePaths = $PreservePaths
-                }
-
-                if ($DestinationPath)
+                # Determine target for ShouldProcess
+                $target = if ($UseOriginalPaths -and $backup.Metadata -and $backup.Metadata.SourcePath)
                 {
-                    $restoreParams.DestinationPath = $DestinationPath
-                }
-
-                if ($Force)
-                {
-                    $restoreParams.Force = $true
-                }
-
-                $result = Restore-BackupFile @restoreParams
-                $results += $result
-
-                if ($result.Success)
-                {
-                    Write-Host "[SUCCESS] $($result.Message)" -ForegroundColor Green
+                    $backup.Metadata.SourcePath
                 }
                 else
                 {
-                    Write-Warning "[FAILED] $($result.Message)"
+                    $DestinationPath
+                }
+
+                $operation = "Restore backup '$($backup.Name)'"
+
+                if ($PSCmdlet.ShouldProcess($target, $operation))
+                {
+                    $restoreParams = @{
+                        BackupFilePath = $backup.Path
+                        UseOriginalPath = $UseOriginalPaths
+                        PreservePaths = $PreservePaths
+                    }
+
+                    if ($DestinationPath)
+                    {
+                        $restoreParams.DestinationPath = $DestinationPath
+                    }
+
+                    if ($Force)
+                    {
+                        $restoreParams.Force = $true
+                    }
+
+                    $result = Restore-BackupFile @restoreParams
+                    $results += $result
+
+                    if ($result.Success)
+                    {
+                        Write-Host "[SUCCESS] $($result.Message)" -ForegroundColor Green
+                    }
+                    else
+                    {
+                        Write-Warning "[FAILED] $($result.Message)"
+                    }
+                }
+                else
+                {
+                    # Create a "what-if" result for skipped operations
+                    $whatIfResult = [PSCustomObject]@{
+                        Success = $true
+                        SourcePath = $backup.Path
+                        DestinationPath = $target
+                        Metadata = $backup.Metadata
+                        Message = "Would restore $($backup.Name) to $target"
+                    }
+                    $results += $whatIfResult
+                    Write-Host "[WHAT-IF] $($whatIfResult.Message)" -ForegroundColor Yellow
                 }
             }
             catch
