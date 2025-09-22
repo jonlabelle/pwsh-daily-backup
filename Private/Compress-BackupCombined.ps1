@@ -53,29 +53,29 @@ function Compress-BackupCombined
         [switch] $NoHash
     )
 
-    $timestamp = Get-Date -Format 'HHmmss'
-    $combinedArchiveName = "CombinedFiles_$timestamp"
-    $archivePath = Join-Path -Path $DestinationPath -ChildPath "$combinedArchiveName.zip"
+    $currentTimestamp = Get-Date -Format 'HHmmss'
+    $generatedCombinedArchiveName = "CombinedFiles_$currentTimestamp"
+    $fullCombinedArchivePath = Join-Path -Path $DestinationPath -ChildPath "$generatedCombinedArchiveName.zip"
 
-    Write-Verbose "Compress-BackupCombined> Creating combined archive: $archivePath"
+    Write-Verbose "Compress-BackupCombined> Creating combined archive: $fullCombinedArchivePath"
     Write-Verbose "Compress-BackupCombined> Including $($Paths.Count) source paths"
 
-    if ($PSCmdlet.ShouldProcess($archivePath, 'Create combined backup archive'))
+    if ($PSCmdlet.ShouldProcess($fullCombinedArchivePath, 'Create combined backup archive'))
     {
         try
         {
             # Create the ZIP archive with all paths
-            Write-Verbose "Compress-BackupCombined> Compressing paths to: $archivePath"
-            Compress-Archive -Path $Paths -DestinationPath $archivePath -CompressionLevel Optimal -ErrorAction Stop
+            Write-Verbose "Compress-BackupCombined> Compressing paths to: $fullCombinedArchivePath"
+            Compress-Archive -Path $Paths -DestinationPath $fullCombinedArchivePath -CompressionLevel Optimal -ErrorAction Stop
 
             # Create metadata for combined archive - add each source path to manifest
             if (-not $NoHash)
             {
                 Write-Verbose 'Compress-BackupCombined> Adding metadata to manifest for combined archive'
-                foreach ($sourcePath in $Paths)
+                foreach ($currentSourcePath in $Paths)
                 {
-                    $pathType = Get-PathType -Path $sourcePath
-                    Add-BackupToManifest -SourcePath $sourcePath -BackupPath $archivePath.Replace('.zip', '') -PathType $pathType -DatePath $DestinationPath -NoHash:$NoHash
+                    $detectedPathType = Get-PathType -Path $currentSourcePath
+                    Add-BackupToManifest -SourcePath $currentSourcePath -BackupPath $fullCombinedArchivePath.Replace('.zip', '') -PathType $detectedPathType -DatePath $DestinationPath -NoHash:$NoHash
                 }
             }
             else
@@ -83,11 +83,11 @@ function Compress-BackupCombined
                 Write-Verbose 'Compress-BackupCombined> Skipping metadata creation (NoHash specified)'
             }
 
-            Write-Verbose "Compress-BackupCombined> Successfully created combined archive: $archivePath"
+            Write-Verbose "Compress-BackupCombined> Successfully created combined archive: $fullCombinedArchivePath"
         }
         catch
         {
-            Write-Warning "Compress-BackupCombined> Failed to create combined archive '$archivePath': $($_.Exception.Message)"
+            Write-Warning "Compress-BackupCombined> Failed to create combined archive '$fullCombinedArchivePath': $($_.Exception.Message)"
             throw
         }
     }

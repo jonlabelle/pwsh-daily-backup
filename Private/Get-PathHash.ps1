@@ -59,55 +59,55 @@ function Get-PathHash
         {
             # File hash - straightforward
             Write-Verbose "Get-PathHash> Computing $Algorithm hash for file: $Path"
-            $hash = Get-FileHash -Path $Path -Algorithm $Algorithm
-            return $hash.Hash
+            $calculatedFileHashObject = Get-FileHash -Path $Path -Algorithm $Algorithm
+            return $calculatedFileHashObject.Hash
         }
         else
         {
             # Directory hash - composite approach
             Write-Verbose "Get-PathHash> Computing $Algorithm composite hash for directory: $Path"
 
-            $files = Get-ChildItem -Path $Path -File -Recurse | Sort-Object FullName
-            if (-not $files)
+            $discoveredFiles = Get-ChildItem -Path $Path -File -Recurse | Sort-Object FullName
+            if (-not $discoveredFiles)
             {
                 Write-Verbose 'Get-PathHash> Empty directory, returning hash of empty string'
-                $emptyHash = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-                $hashBytes = $emptyHash.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(''))
-                $emptyHash.Dispose()
-                return [System.BitConverter]::ToString($hashBytes) -replace '-', ''
+                $emptyDirectoryHashAlgorithm = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
+                $emptyDirectoryHashBytes = $emptyDirectoryHashAlgorithm.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(''))
+                $emptyDirectoryHashAlgorithm.Dispose()
+                return [System.BitConverter]::ToString($emptyDirectoryHashBytes) -replace '-', ''
             }
 
-            $hashEntries = @()
-            $basePath = (Resolve-Path $Path).Path
+            $collectedHashEntries = @()
+            $resolvedBasePath = (Resolve-Path $Path).Path
 
-            foreach ($file in $files)
+            foreach ($currentFile in $discoveredFiles)
             {
                 try
                 {
-                    $relativePath = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
-                    $fileHash = Get-FileHash -Path $file.FullName -Algorithm $Algorithm
-                    $hashEntries += "${relativePath}:$($fileHash.Hash)"
+                    $calculatedRelativePath = $currentFile.FullName.Substring($resolvedBasePath.Length).TrimStart('\', '/')
+                    $currentFileHashObject = Get-FileHash -Path $currentFile.FullName -Algorithm $Algorithm
+                    $collectedHashEntries += "${calculatedRelativePath}:$($currentFileHashObject.Hash)"
                 }
                 catch
                 {
-                    Write-Warning "Get-PathHash> Failed to hash file $($file.FullName): $_"
+                    Write-Warning "Get-PathHash> Failed to hash file $($currentFile.FullName): $_"
                     # Include path with error marker for consistency
-                    $relativePath = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
-                    $hashEntries += "${relativePath}:ERROR"
+                    $calculatedRelativePath = $currentFile.FullName.Substring($resolvedBasePath.Length).TrimStart('\', '/')
+                    $collectedHashEntries += "${calculatedRelativePath}:ERROR"
                 }
             }
 
             # Create composite hash from sorted entries
-            $sortedEntries = $hashEntries | Sort-Object
-            $compositeString = $sortedEntries -join "`n"
+            $sortedHashEntries = $collectedHashEntries | Sort-Object
+            $combinedCompositeString = $sortedHashEntries -join "`n"
 
-            $hashAlgorithm = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-            $hashBytes = $hashAlgorithm.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($compositeString))
-            $hashAlgorithm.Dispose()
+            $finalHashAlgorithm = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
+            $finalHashBytes = $finalHashAlgorithm.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($combinedCompositeString))
+            $finalHashAlgorithm.Dispose()
 
-            $finalHash = [System.BitConverter]::ToString($hashBytes) -replace '-', ''
-            Write-Verbose "Get-PathHash> Computed composite hash from $($files.Count) files"
-            return $finalHash
+            $computedFinalHash = [System.BitConverter]::ToString($finalHashBytes) -replace '-', ''
+            Write-Verbose "Get-PathHash> Computed composite hash from $($discoveredFiles.Count) files"
+            return $computedFinalHash
         }
     }
     catch

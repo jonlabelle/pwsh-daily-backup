@@ -29,22 +29,22 @@ function Get-BackupMetadataInfo
 
     try
     {
-        $backupDir = Split-Path $BackupFilePath
-        $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
+        $parentBackupDirectory = Split-Path $BackupFilePath
+        $extractedBackupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
 
         # Read from backup manifest
-        $manifestPath = Join-Path $backupDir 'backup-manifest.json'
-        if (Test-Path $manifestPath)
+        $locatedManifestPath = Join-Path $parentBackupDirectory 'backup-manifest.json'
+        if (Test-Path $locatedManifestPath)
         {
             try
             {
-                $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-                $backup = $manifest.Backups | Where-Object { $_.ArchiveName -eq ([System.IO.Path]::GetFileName($BackupFilePath)) }
+                $loadedManifestObject = Get-Content $locatedManifestPath -Raw | ConvertFrom-Json
+                $matchingBackupEntry = $loadedManifestObject.Backups | Where-Object { $_.ArchiveName -eq ([System.IO.Path]::GetFileName($BackupFilePath)) }
 
-                if ($backup)
+                if ($matchingBackupEntry)
                 {
-                    Write-Verbose "Get-BackupMetadataInfo> Found metadata in backup manifest for $backupName"
-                    return $backup
+                    Write-Verbose "Get-BackupMetadataInfo> Found metadata in backup manifest for $extractedBackupName"
+                    return $matchingBackupEntry
                 }
             }
             catch
@@ -53,7 +53,7 @@ function Get-BackupMetadataInfo
             }
         }
 
-        Write-Verbose "Get-BackupMetadataInfo> No metadata found for $backupName"
+        Write-Verbose "Get-BackupMetadataInfo> No metadata found for $extractedBackupName"
         return $null
     }
     catch

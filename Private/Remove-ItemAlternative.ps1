@@ -67,54 +67,54 @@ function Remove-ItemAlternative
 
     if ($LiteralPath -and (Test-Path -LiteralPath $LiteralPath))
     {
-        $items = Get-ChildItem -LiteralPath $LiteralPath -Recurse
-        foreach ($item in $items)
+        $discoveredChildItems = Get-ChildItem -LiteralPath $LiteralPath -Recurse
+        foreach ($currentChildItem in $discoveredChildItems)
         {
-            if ($item.PSIsContainer -eq $false)
+            if ($currentChildItem.PSIsContainer -eq $false)
             {
                 try
                 {
-                    if ($PSCmdlet.ShouldProcess($item.Name))
+                    if ($PSCmdlet.ShouldProcess($currentChildItem.Name))
                     {
-                        $item.Delete()
+                        $currentChildItem.Delete()
                     }
                 }
                 catch
                 {
-                    Write-Warning "Remove-ItemAlternative> Couldn't delete $($item.FullName), error: $($_.Exception.Message)"
+                    Write-Warning "Remove-ItemAlternative> Couldn't delete $($currentChildItem.FullName), error: $($_.Exception.Message)"
                 }
             }
         }
 
-        $items = Get-ChildItem -LiteralPath $LiteralPath -Recurse
-        foreach ($item in $items)
+        $remainingChildItems = Get-ChildItem -LiteralPath $LiteralPath -Recurse
+        foreach ($currentRemainingItem in $remainingChildItems)
         {
             try
             {
-                if ($PSCmdlet.ShouldProcess($item.Name))
+                if ($PSCmdlet.ShouldProcess($currentRemainingItem.Name))
                 {
-                    $item.Delete()
+                    $currentRemainingItem.Delete()
                 }
             }
             catch
             {
-                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($currentRemainingItem.FullName)', Error: $($_.Exception.Message)"
             }
         }
 
         if (-not $SkipTopLevelFolder)
         {
-            $item = Get-Item -LiteralPath $LiteralPath
+            $topLevelFolderItem = Get-Item -LiteralPath $LiteralPath
             try
             {
-                if ($PSCmdlet.ShouldProcess($item.Name))
+                if ($PSCmdlet.ShouldProcess($topLevelFolderItem.Name))
                 {
-                    $item.Delete($true)
+                    $topLevelFolderItem.Delete($true)
                 }
             }
             catch
             {
-                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($item.FullName)', Error: $($_.Exception.Message)"
+                Write-Warning "Remove-ItemAlternative> Couldn't delete '$($topLevelFolderItem.FullName)', Error: $($_.Exception.Message)"
             }
         }
     }

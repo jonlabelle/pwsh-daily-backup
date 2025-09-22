@@ -51,43 +51,43 @@ function New-BackupPath
     )
 
     # Removes the drive part (e.g. 'C:')
-    $pathWithoutPrefix = (Split-Path -Path $Path -NoQualifier)
+    $sourcePathWithoutDrivePrefix = (Split-Path -Path $Path -NoQualifier)
 
     # Handle files vs directories differently for better naming
     if (Test-Path -Path $Path -PathType Leaf)
     {
         # For files, preserve more of the original structure in the name
-        $directory = Split-Path -Path $pathWithoutPrefix -Parent
-        $fileName = Split-Path -Path $pathWithoutPrefix -Leaf
-        $backupName = if ($directory)
+        $extractedDirectoryPortion = Split-Path -Path $sourcePathWithoutDrivePrefix -Parent
+        $extractedFileName = Split-Path -Path $sourcePathWithoutDrivePrefix -Leaf
+        $constructedBackupName = if ($extractedDirectoryPortion)
         {
-            ($directory -replace '[\\/]', '__') + '__' + $fileName
+            ($extractedDirectoryPortion -replace '[\\/]', '__') + '__' + $extractedFileName
         }
         else
         {
-            $fileName
+            $extractedFileName
         }
     }
     else
     {
         # For directories, use existing strategy
-        $backupName = ($pathWithoutPrefix -replace '[\\/]', '__').Trim('__')
+        $constructedBackupName = ($sourcePathWithoutDrivePrefix -replace '[\\/]', '__').Trim('__')
     }
 
-    $backupPath = Join-Path -Path $DestinationPath -ChildPath $backupName
+    $generatedBackupPath = Join-Path -Path $DestinationPath -ChildPath $constructedBackupName
 
-    if ((Test-Path -Path "$backupPath.zip"))
+    if ((Test-Path -Path "$generatedBackupPath.zip"))
     {
-        $randomFileName = (Get-RandomFileName)
-        $backupPath = ('{0}__{1}' -f $backupPath, $randomFileName)
+        $generatedRandomFileName = (Get-RandomFileName)
+        $generatedBackupPath = ('{0}__{1}' -f $generatedBackupPath, $generatedRandomFileName)
 
-        Write-Warning "New-BackupPath> A backup with the same filename '$backupName.zip' already exists in destination path '$DestinationPath', '$randomFileName' was automatically appended to the backup filename for uniqueness"
+        Write-Warning "New-BackupPath> A backup with the same filename '$constructedBackupName.zip' already exists in destination path '$DestinationPath', '$generatedRandomFileName' was automatically appended to the backup filename for uniqueness"
     }
 
-    if ($backupPath.Length -ge 255)
+    if ($generatedBackupPath.Length -ge 255)
     {
-        Write-Error "New-BackupPath> The backup file path '$backupPath' is greater than or equal the maximum allowed filename length (255)" -ErrorAction Stop
+        Write-Error "New-BackupPath> The backup file path '$generatedBackupPath' is greater than or equal the maximum allowed filename length (255)" -ErrorAction Stop
     }
 
-    return $backupPath
+    return $generatedBackupPath
 }

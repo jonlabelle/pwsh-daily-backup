@@ -83,16 +83,16 @@ function Add-BackupToManifest
             return
         }
 
-        $manifestPath = Join-Path -Path $DatePath -ChildPath 'backup-manifest.json'
-        $archiveName = [System.IO.Path]::GetFileName($BackupPath) + '.zip'
+        $backupManifestFilePath = Join-Path -Path $DatePath -ChildPath 'backup-manifest.json'
+        $generatedArchiveFileName = [System.IO.Path]::GetFileName($BackupPath) + '.zip'
 
         # Get module version dynamically
-        $moduleInfo = Get-Module -Name DailyBackup
-        $moduleVersion = if ($moduleInfo) { $moduleInfo.Version.ToString() } else { '1.0.0' }
+        $currentModuleInfo = Get-Module -Name DailyBackup
+        $detectedModuleVersion = if ($currentModuleInfo) { $currentModuleInfo.Version.ToString() } else { '1.0.0' }
 
         # Create backup entry
-        $backupEntry = @{
-            ArchiveName = $archiveName
+        $newBackupEntryObject = @{
+            ArchiveName = $generatedArchiveFileName
             SourcePath = $SourcePath
             PathType = $PathType
             BackupCreated = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffZ'
@@ -102,26 +102,26 @@ function Add-BackupToManifest
         if (-not $NoHash)
         {
             Write-Verbose "Add-BackupToManifest> Calculating source hash for: $SourcePath"
-            $sourceHash = Get-PathHash -Path $SourcePath -Algorithm $HashAlgorithm
+            $calculatedSourceHash = Get-PathHash -Path $SourcePath -Algorithm $HashAlgorithm
 
-            if ($sourceHash)
+            if ($calculatedSourceHash)
             {
-                $backupEntry.SourceHash = $sourceHash
-                $backupEntry.HashAlgorithm = $HashAlgorithm
-                Write-Verbose "Add-BackupToManifest> Source hash: $sourceHash"
+                $newBackupEntryObject.SourceHash = $calculatedSourceHash
+                $newBackupEntryObject.HashAlgorithm = $HashAlgorithm
+                Write-Verbose "Add-BackupToManifest> Source hash: $calculatedSourceHash"
 
                 # Calculate archive hash after it's created
-                $archiveFullPath = "$BackupPath.zip"
-                if (Test-Path $archiveFullPath)
+                $fullArchiveFilePath = "$BackupPath.zip"
+                if (Test-Path $fullArchiveFilePath)
                 {
-                    Write-Verbose "Add-BackupToManifest> Calculating archive hash for: $archiveFullPath"
-                    $archiveHash = Get-FileHash -Path $archiveFullPath -Algorithm $HashAlgorithm
-                    $backupEntry.ArchiveHash = $archiveHash.Hash
-                    Write-Verbose "Add-BackupToManifest> Archive hash: $($archiveHash.Hash)"
+                    Write-Verbose "Add-BackupToManifest> Calculating archive hash for: $fullArchiveFilePath"
+                    $calculatedArchiveHashObject = Get-FileHash -Path $fullArchiveFilePath -Algorithm $HashAlgorithm
+                    $newBackupEntryObject.ArchiveHash = $calculatedArchiveHashObject.Hash
+                    Write-Verbose "Add-BackupToManifest> Archive hash: $($calculatedArchiveHashObject.Hash)"
                 }
                 else
                 {
-                    Write-Warning "Add-BackupToManifest> Archive not found for hash calculation: $archiveFullPath"
+                    Write-Warning "Add-BackupToManifest> Archive not found for hash calculation: $fullArchiveFilePath"
                 }
             }
             else
@@ -133,76 +133,76 @@ function Add-BackupToManifest
         # Add file/directory specific metadata
         if (Test-Path -Path $SourcePath)
         {
-            $item = Get-Item -Path $SourcePath
-            $backupEntry.OriginalName = $item.Name
-            $backupEntry.LastWriteTime = $item.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
-            $backupEntry.Attributes = $item.Attributes.ToString()
+            $sourceFileOrDirectoryItem = Get-Item -Path $SourcePath
+            $newBackupEntryObject.OriginalName = $sourceFileOrDirectoryItem.Name
+            $newBackupEntryObject.LastWriteTime = $sourceFileOrDirectoryItem.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+            $newBackupEntryObject.Attributes = $sourceFileOrDirectoryItem.Attributes.ToString()
 
             if ($PathType -eq 'File')
             {
-                $backupEntry.Size = $item.Length
-                $backupEntry.Extension = $item.Extension
+                $newBackupEntryObject.Size = $sourceFileOrDirectoryItem.Length
+                $newBackupEntryObject.Extension = $sourceFileOrDirectoryItem.Extension
             }
         }
 
         # Load existing manifest or create new one
-        $manifest = $null
-        if (Test-Path $manifestPath)
+        $loadedManifestObject = $null
+        if (Test-Path $backupManifestFilePath)
         {
             try
             {
-                $content = Get-Content $manifestPath -Raw -ErrorAction Stop
-                if ($content -and $content.Trim())
+                $manifestFileContent = Get-Content $backupManifestFilePath -Raw -ErrorAction Stop
+                if ($manifestFileContent -and $manifestFileContent.Trim())
                 {
-                    $manifest = $content | ConvertFrom-Json -ErrorAction Stop
+                    $loadedManifestObject = $manifestFileContent | ConvertFrom-Json -ErrorAction Stop
 
                     # Validate manifest structure
-                    if (-not $manifest.PSObject.Properties['Backups'])
+                    if (-not $loadedManifestObject.PSObject.Properties['Backups'])
                     {
                         Write-Verbose 'Add-BackupToManifest> Adding missing Backups array to existing manifest'
-                        $manifest | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
+                        $loadedManifestObject | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
                     }
-                    elseif ($null -eq $manifest.Backups)
+                    elseif ($null -eq $loadedManifestObject.Backups)
                     {
-                        $manifest.Backups = @()
+                        $loadedManifestObject.Backups = @()
                     }
                 }
                 else
                 {
                     Write-Verbose 'Add-BackupToManifest> Manifest file is empty, creating new manifest'
-                    $manifest = $null
+                    $loadedManifestObject = $null
                 }
             }
             catch
             {
                 Write-Warning "Add-BackupToManifest> Failed to read existing manifest, creating new one: $_"
-                $manifest = $null
+                $loadedManifestObject = $null
             }
         }
 
         # Create new manifest structure if needed or validate existing one
-        if (-not $manifest)
+        if (-not $loadedManifestObject)
         {
-            $backupDate = Split-Path $DatePath -Leaf
-            $manifest = @{
-                BackupDate = $backupDate
+            $extractedBackupDate = Split-Path $DatePath -Leaf
+            $loadedManifestObject = @{
+                BackupDate = $extractedBackupDate
                 BackupVersion = '1.0'
-                ModuleVersion = $moduleVersion
+                ModuleVersion = $detectedModuleVersion
                 Backups = @()
             }
         }
-        elseif (-not $manifest.PSObject.Properties['Backups'] -or $null -eq $manifest.Backups)
+        elseif (-not $loadedManifestObject.PSObject.Properties['Backups'] -or $null -eq $loadedManifestObject.Backups)
         {
             # Ensure Backups array exists
-            $manifest | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
+            $loadedManifestObject | Add-Member -NotePropertyName 'Backups' -NotePropertyValue @() -Force
         }
 
         # Add new backup entry
-        $manifest.Backups += $backupEntry
+        $loadedManifestObject.Backups += $newBackupEntryObject
 
         # Save updated manifest
-        $manifest | ConvertTo-Json -Depth 4 | Out-File -FilePath $manifestPath -Encoding UTF8
-        Write-Verbose "Add-BackupToManifest> Added backup to manifest: $manifestPath"
+        $loadedManifestObject | ConvertTo-Json -Depth 4 | Out-File -FilePath $backupManifestFilePath -Encoding UTF8
+        Write-Verbose "Add-BackupToManifest> Added backup to manifest: $backupManifestFilePath"
     }
     catch
     {

@@ -61,25 +61,25 @@ function Restore-BackupFile
         throw "Backup file not found: $BackupFilePath"
     }
 
-    $backupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
+    $extractedBackupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
 
     # Get backup metadata
-    $metadata = Get-BackupMetadataInfo -BackupFilePath $BackupFilePath
-    if ($metadata)
+    $retrievedBackupMetadata = Get-BackupMetadataInfo -BackupFilePath $BackupFilePath
+    if ($retrievedBackupMetadata)
     {
-        Write-Verbose "Restore-BackupFile> Loaded metadata for $backupName"
+        Write-Verbose "Restore-BackupFile> Loaded metadata for $extractedBackupName"
     }
 
     # Determine restore destination
-    $finalDestination = if ($UseOriginalPath -and $metadata -and $metadata.SourcePath)
+    $determinedFinalDestination = if ($UseOriginalPath -and $retrievedBackupMetadata -and $retrievedBackupMetadata.SourcePath)
     {
-        if ($metadata.PathType -eq 'File')
+        if ($retrievedBackupMetadata.PathType -eq 'File')
         {
-            Split-Path $metadata.SourcePath
+            Split-Path $retrievedBackupMetadata.SourcePath
         }
         else
         {
-            $metadata.SourcePath
+            $retrievedBackupMetadata.SourcePath
         }
     }
     elseif ($DestinationPath)
@@ -91,15 +91,15 @@ function Restore-BackupFile
         throw 'Cannot determine destination path: UseOriginalPath is enabled but no metadata source path available, and no DestinationPath specified'
     }
 
-    Write-Verbose "Restore-BackupFile> Final destination determined as: $finalDestination"
+    Write-Verbose "Restore-BackupFile> Final destination determined as: $determinedFinalDestination"
 
     # Ensure destination exists
-    if (-not (Test-Path $finalDestination))
+    if (-not (Test-Path $determinedFinalDestination))
     {
-        if ($PSCmdlet.ShouldProcess($finalDestination, 'Create Directory'))
+        if ($PSCmdlet.ShouldProcess($determinedFinalDestination, 'Create Directory'))
         {
-            New-Item -Path $finalDestination -ItemType Directory -Force | Out-Null
-            Write-Verbose "Restore-BackupFile> Created destination directory: $finalDestination"
+            New-Item -Path $determinedFinalDestination -ItemType Directory -Force | Out-Null
+            Write-Verbose "Restore-BackupFile> Created destination directory: $determinedFinalDestination"
         }
     }
 
@@ -108,60 +108,60 @@ function Restore-BackupFile
     {
         try
         {
-            Write-Verbose "Restore-BackupFile> Extracting $BackupFilePath to $finalDestination"
+            Write-Verbose "Restore-BackupFile> Extracting $BackupFilePath to $determinedFinalDestination"
 
             if ($PreservePaths)
             {
-                Expand-Archive -Path $BackupFilePath -DestinationPath $finalDestination -Force
+                Expand-Archive -Path $BackupFilePath -DestinationPath $determinedFinalDestination -Force
             }
             else
             {
                 # Extract to a temp location first, then move files to preserve structure
-                $tempDir = if ($env:TEMP) { $env:TEMP } elseif ($env:TMP) { $env:TMP } elseif ($env:TMPDIR) { $env:TMPDIR } else { '/tmp' }
-                $tempPath = Join-Path $tempDir "DailyBackupRestore_$(Get-Random)"
-                Write-Verbose "Restore-BackupFile> Extracting to temp path: $tempPath"
-                Expand-Archive -Path $BackupFilePath -DestinationPath $tempPath -Force
+                $availableTempDirectory = if ($env:TEMP) { $env:TEMP } elseif ($env:TMP) { $env:TMP } elseif ($env:TMPDIR) { $env:TMPDIR } else { '/tmp' }
+                $generatedTempExtractionPath = Join-Path $availableTempDirectory "DailyBackupRestore_$(Get-Random)"
+                Write-Verbose "Restore-BackupFile> Extracting to temp path: $generatedTempExtractionPath"
+                Expand-Archive -Path $BackupFilePath -DestinationPath $generatedTempExtractionPath -Force
 
                 # Verify temp path exists and has content
-                if (-not (Test-Path $tempPath))
+                if (-not (Test-Path $generatedTempExtractionPath))
                 {
-                    throw "Extraction failed: temp path $tempPath does not exist"
+                    throw "Extraction failed: temp path $generatedTempExtractionPath does not exist"
                 }
 
-                Write-Verbose "Restore-BackupFile> Temp path contents: $(Get-ChildItem $tempPath -Name)"
+                Write-Verbose "Restore-BackupFile> Temp path contents: $(Get-ChildItem $generatedTempExtractionPath -Name)"
 
                 # Move extracted items to final destination
-                $extractedItems = Get-ChildItem $tempPath -Recurse
-                foreach ($item in $extractedItems)
+                $discoveredExtractedItems = Get-ChildItem $generatedTempExtractionPath -Recurse
+                foreach ($currentExtractedItem in $discoveredExtractedItems)
                 {
-                    if ($item.PSIsContainer)
+                    if ($currentExtractedItem.PSIsContainer)
                     {
-                        $targetDir = Join-Path $finalDestination $item.Name
-                        if (-not (Test-Path $targetDir))
+                        $targetDirectoryPath = Join-Path $determinedFinalDestination $currentExtractedItem.Name
+                        if (-not (Test-Path $targetDirectoryPath))
                         {
-                            New-Item -Path $targetDir -ItemType Directory -Force | Out-Null
+                            New-Item -Path $targetDirectoryPath -ItemType Directory -Force | Out-Null
                         }
                     }
                     else
                     {
-                        $targetFile = Join-Path $finalDestination $item.Name
-                        Copy-Item $item.FullName $targetFile -Force
+                        $targetFilePath = Join-Path $determinedFinalDestination $currentExtractedItem.Name
+                        Copy-Item $currentExtractedItem.FullName $targetFilePath -Force
                     }
                 }
 
                 # Clean up temp directory
-                Remove-Item $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+                Remove-Item $generatedTempExtractionPath -Recurse -Force -ErrorAction SilentlyContinue
             }
 
             # Attempt to restore metadata if available
-            if ($metadata -and $metadata.PathType -eq 'File' -and $metadata.LastWriteTime)
+            if ($retrievedBackupMetadata -and $retrievedBackupMetadata.PathType -eq 'File' -and $retrievedBackupMetadata.LastWriteTime)
             {
                 try
                 {
-                    $restoredFiles = Get-ChildItem $finalDestination -File -Recurse
-                    foreach ($file in $restoredFiles)
+                    $discoveredRestoredFiles = Get-ChildItem $determinedFinalDestination -File -Recurse
+                    foreach ($currentRestoredFile in $discoveredRestoredFiles)
                     {
-                        $file.LastWriteTime = [DateTime]::Parse($metadata.LastWriteTime)
+                        $currentRestoredFile.LastWriteTime = [DateTime]::Parse($retrievedBackupMetadata.LastWriteTime)
                     }
                     Write-Verbose 'Restore-BackupFile> Restored file timestamps'
                 }
@@ -174,9 +174,9 @@ function Restore-BackupFile
             return [PSCustomObject]@{
                 Success = $true
                 SourcePath = $BackupFilePath
-                DestinationPath = $finalDestination
-                Metadata = $metadata
-                Message = "Successfully restored $backupName"
+                DestinationPath = $determinedFinalDestination
+                Metadata = $retrievedBackupMetadata
+                Message = "Successfully restored $extractedBackupName"
             }
         }
         catch
@@ -184,9 +184,9 @@ function Restore-BackupFile
             return [PSCustomObject]@{
                 Success = $false
                 SourcePath = $BackupFilePath
-                DestinationPath = $finalDestination
-                Metadata = $metadata
-                Message = "Failed to restore $backupName : $_"
+                DestinationPath = $determinedFinalDestination
+                Metadata = $retrievedBackupMetadata
+                Message = "Failed to restore $extractedBackupName : $_"
             }
         }
     }
@@ -195,9 +195,9 @@ function Restore-BackupFile
         return [PSCustomObject]@{
             Success = $true
             SourcePath = $BackupFilePath
-            DestinationPath = $finalDestination
-            Metadata = $metadata
-            Message = "Dry-run: Would restore $backupName to $finalDestination"
+            DestinationPath = $determinedFinalDestination
+            Metadata = $retrievedBackupMetadata
+            Message = "Dry-run: Would restore $extractedBackupName to $determinedFinalDestination"
         }
     }
 }

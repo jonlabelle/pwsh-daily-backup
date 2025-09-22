@@ -59,31 +59,31 @@ function Remove-DailyBackupInternal
         [int] $BackupsToKeep
     )
 
-    $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
-    if ($qualifiedBackupDirs.Length -eq 0)
+    $discoveredQualifiedBackupDirectories = @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction 'SilentlyContinue' | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
+    if ($discoveredQualifiedBackupDirectories.Length -eq 0)
     {
         Write-Verbose "Remove-DailyBackupInternal> No qualified backup directories to delete were detected in: $Path"
         return
     }
 
     # Create a hashtable so we can sort backup directories based on their date-formatted folder name ('yyyy-MM-dd')
-    $backups = @{ }
-    foreach ($backupDir in $qualifiedBackupDirs)
+    $backupDirectoryDateMapping = @{ }
+    foreach ($currentBackupDirectory in $discoveredQualifiedBackupDirectories)
     {
-        $backups.Add($backupDir.FullName, [System.DateTime]$backupDir.Name)
+        $backupDirectoryDateMapping.Add($currentBackupDirectory.FullName, [System.DateTime]$currentBackupDirectory.Name)
     }
 
-    $sortedBackupPaths = ($backups.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
-    if ($sortedBackupPaths.Count -gt $BackupsToKeep)
+    $sortedBackupDirectoryPaths = ($backupDirectoryDateMapping.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
+    if ($sortedBackupDirectoryPaths.Count -gt $BackupsToKeep)
     {
-        for ($i = 0; $i -lt ($sortedBackupPaths.Count - $BackupsToKeep); $i++)
+        for ($currentDirectoryIndex = 0; $currentDirectoryIndex -lt ($sortedBackupDirectoryPaths.Count - $BackupsToKeep); $currentDirectoryIndex++)
         {
-            $backupPath = $sortedBackupPaths[$i]
-            if ($PSCmdlet.ShouldProcess($backupPath, 'Remove backup directory'))
+            $targetBackupDirectoryPath = $sortedBackupDirectoryPaths[$currentDirectoryIndex]
+            if ($PSCmdlet.ShouldProcess($targetBackupDirectoryPath, 'Remove backup directory'))
             {
-                Write-Verbose "Remove-DailyBackupInternal> Removing old backup directory: $backupPath"
-                Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference
-                Write-Verbose "Remove-DailyBackupInternal> Successfully removed: $backupPath"
+                Write-Verbose "Remove-DailyBackupInternal> Removing old backup directory: $targetBackupDirectoryPath"
+                Remove-ItemAlternative -LiteralPath $targetBackupDirectoryPath -WhatIf:$WhatIfPreference
+                Write-Verbose "Remove-DailyBackupInternal> Successfully removed: $targetBackupDirectoryPath"
             }
         }
     }

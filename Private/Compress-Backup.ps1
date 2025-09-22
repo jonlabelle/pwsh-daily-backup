@@ -56,31 +56,31 @@ function Compress-Backup
         [switch] $NoHash
     )
 
-    $backupPath = New-BackupPath -Path $Path -DestinationPath $DestinationPath
-    $pathType = Get-PathType -Path $Path
+    $generatedBackupPath = New-BackupPath -Path $Path -DestinationPath $DestinationPath
+    $detectedPathType = Get-PathType -Path $Path
 
-    if ($PSCmdlet.ShouldProcess("$backupPath.zip", 'Compress-Archive'))
+    if ($PSCmdlet.ShouldProcess("$generatedBackupPath.zip", 'Compress-Archive'))
     {
-        Write-Verbose "Compress-Backup> Compressing $($pathType.ToLower()) backup: $backupPath.zip"
+        Write-Verbose "Compress-Backup> Compressing $($detectedPathType.ToLower()) backup: $generatedBackupPath.zip"
 
         try
         {
-            Compress-Archive -LiteralPath $Path -DestinationPath "$backupPath.zip" -WhatIf:$WhatIfPreference -ErrorAction Stop
+            Compress-Archive -LiteralPath $Path -DestinationPath "$generatedBackupPath.zip" -WhatIf:$WhatIfPreference -ErrorAction Stop
 
             # Add backup to daily manifest
             if (-not $WhatIfPreference)
             {
-                $datePath = Split-Path $backupPath
-                Add-BackupToManifest -SourcePath $Path -BackupPath $backupPath -PathType $pathType -DatePath $datePath -NoHash:$NoHash
+                $parentDateDirectoryPath = Split-Path $generatedBackupPath
+                Add-BackupToManifest -SourcePath $Path -BackupPath $generatedBackupPath -PathType $detectedPathType -DatePath $parentDateDirectoryPath -NoHash:$NoHash
             }
         }
         catch
         {
-            Write-Warning "Compress-Backup> Failed to compress $($pathType.ToLower()) '$Path': $($_.Exception.Message)"
+            Write-Warning "Compress-Backup> Failed to compress $($detectedPathType.ToLower()) '$Path': $($_.Exception.Message)"
         }
     }
     else
     {
-        Write-Verbose "Compress-Backup> Dry-run only, $($pathType.ToLower()) backup '$backupPath.zip' will not be created"
+        Write-Verbose "Compress-Backup> Dry-run only, $($detectedPathType.ToLower()) backup '$generatedBackupPath.zip' will not be created"
     }
 }

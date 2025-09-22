@@ -45,7 +45,7 @@ function Add-BackupMetadataFile
 
     try
     {
-        $metadata = @{
+        $backupMetadataObject = @{
             SourcePath = $SourcePath
             BackupCreated = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffZ'
             PathType = $PathType
@@ -54,21 +54,21 @@ function Add-BackupMetadataFile
 
         if (Test-Path -Path $SourcePath)
         {
-            $item = Get-Item -Path $SourcePath
-            $metadata.OriginalName = $item.Name
-            $metadata.LastWriteTime = $item.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
-            $metadata.Attributes = $item.Attributes.ToString()
+            $sourceFileOrDirectoryItem = Get-Item -Path $SourcePath
+            $backupMetadataObject.OriginalName = $sourceFileOrDirectoryItem.Name
+            $backupMetadataObject.LastWriteTime = $sourceFileOrDirectoryItem.LastWriteTime.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+            $backupMetadataObject.Attributes = $sourceFileOrDirectoryItem.Attributes.ToString()
 
             if ($PathType -eq 'File')
             {
-                $metadata.Size = $item.Length
-                $metadata.Extension = $item.Extension
+                $backupMetadataObject.Size = $sourceFileOrDirectoryItem.Length
+                $backupMetadataObject.Extension = $sourceFileOrDirectoryItem.Extension
             }
         }
 
-        $metadataPath = "$BackupPath.metadata.json"
-        $metadata | ConvertTo-Json -Depth 3 | Out-File -FilePath $metadataPath -Encoding UTF8
-        Write-Verbose "Add-BackupMetadataFile> Metadata saved to: $metadataPath"
+        $generatedMetadataFilePath = "$BackupPath.metadata.json"
+        $backupMetadataObject | ConvertTo-Json -Depth 3 | Out-File -FilePath $generatedMetadataFilePath -Encoding UTF8
+        Write-Verbose "Add-BackupMetadataFile> Metadata saved to: $generatedMetadataFilePath"
     }
     catch
     {
