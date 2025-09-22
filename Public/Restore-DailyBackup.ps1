@@ -157,13 +157,13 @@ function Restore-DailyBackup
 
     process
     {
-        $backupInfo = Get-DailyBackup -BackupRoot $BackupRoot
+        $availableBackupInformation = Get-DailyBackup -BackupRoot $BackupRoot
         if ($Date)
         {
-            $backupInfo = $backupInfo | Where-Object { $_.Date -eq $Date }
+            $availableBackupInformation = $availableBackupInformation | Where-Object { $_.Date -eq $Date }
         }
 
-        if ($backupInfo.Count -eq 0)
+        if ($availableBackupInformation.Count -eq 0)
         {
             Write-Warning "No backups found in $BackupRoot$(if ($Date) { " for date $Date" })"
             return @()
@@ -172,115 +172,115 @@ function Restore-DailyBackup
         # Use most recent backup if no date specified
         if (-not $Date)
         {
-            $selectedBackup = $backupInfo | Sort-Object Date -Descending | Select-Object -First 1
-            Write-Verbose "Restore-DailyBackup> Using most recent backup from $($selectedBackup.Date)"
+            $targetBackupSession = $availableBackupInformation | Sort-Object Date -Descending | Select-Object -First 1
+            Write-Verbose "Restore-DailyBackup> Using most recent backup from $($targetBackupSession.Date)"
         }
         else
         {
-            $selectedBackup = $backupInfo | Where-Object { $_.Date -eq $Date } | Select-Object -First 1
-            if (-not $selectedBackup)
+            $targetBackupSession = $availableBackupInformation | Where-Object { $_.Date -eq $Date } | Select-Object -First 1
+            if (-not $targetBackupSession)
             {
                 throw "No backup found for date: $Date"
             }
         }
 
         # Filter backups by name pattern if specified
-        $backupsToRestore = @(if ($BackupName)
+        $filteredBackupFiles = @(if ($BackupName)
             {
-                $selectedBackup.Backups | Where-Object { $_.Name -like $BackupName }
+                $targetBackupSession.Backups | Where-Object { $_.Name -like $BackupName }
             }
             else
             {
-                $selectedBackup.Backups
+                $targetBackupSession.Backups
             })
 
-        if ($backupsToRestore.Count -eq 0)
+        if ($filteredBackupFiles.Count -eq 0)
         {
             Write-Warning 'No backup files match the specified criteria'
             return @()
         }
 
-        Write-Host "Found $($backupsToRestore.Count) backup file(s) to restore from $($selectedBackup.Date)" -ForegroundColor Green
+        Write-Host "Found $($filteredBackupFiles.Count) backup file(s) to restore from $($targetBackupSession.Date)" -ForegroundColor Green
 
         # Process each backup file
-        $results = @()
-        $totalBackups = $backupsToRestore.Count
-        $currentBackup = 0
+        $restoreOperationResults = @()
+        $totalBackupFilesToRestore = $filteredBackupFiles.Count
+        $currentBackupFileIndex = 0
 
-        foreach ($backup in $backupsToRestore)
+        foreach ($currentBackupFile in $filteredBackupFiles)
         {
-            $currentBackup++
-            Write-Progress -Activity 'Restoring Daily Backups' -Status "Restoring backup $currentBackup of $totalBackups" -PercentComplete (($currentBackup / $totalBackups) * 100)
+            $currentBackupFileIndex++
+            Write-Progress -Activity 'Restoring Daily Backups' -Status "Restoring backup $currentBackupFileIndex of $totalBackupFilesToRestore" -PercentComplete (($currentBackupFileIndex / $totalBackupFilesToRestore) * 100)
 
             try
             {
                 # Determine target for ShouldProcess
-                $target = if ($UseOriginalPaths -and $backup.Metadata -and $backup.Metadata.SourcePath)
+                $restoreTargetPath = if ($UseOriginalPaths -and $currentBackupFile.Metadata -and $currentBackupFile.Metadata.SourcePath)
                 {
-                    $backup.Metadata.SourcePath
+                    $currentBackupFile.Metadata.SourcePath
                 }
                 else
                 {
                     $DestinationPath
                 }
 
-                $operation = "Restore backup '$($backup.Name)'"
+                $restoreOperationDescription = "Restore backup '$($currentBackupFile.Name)'"
 
-                if ($PSCmdlet.ShouldProcess($target, $operation))
+                if ($PSCmdlet.ShouldProcess($restoreTargetPath, $restoreOperationDescription))
                 {
-                    $restoreParams = @{
-                        BackupFilePath = $backup.Path
+                    $backupFileRestoreParameters = @{
+                        BackupFilePath = $currentBackupFile.Path
                         UseOriginalPath = $UseOriginalPaths
                         PreservePaths = $PreservePaths
                     }
 
                     if ($DestinationPath)
                     {
-                        $restoreParams.DestinationPath = $DestinationPath
+                        $backupFileRestoreParameters.DestinationPath = $DestinationPath
                     }
 
                     if ($Force)
                     {
-                        $restoreParams.Force = $true
+                        $backupFileRestoreParameters.Force = $true
                     }
 
-                    $result = Restore-BackupFile @restoreParams
-                    $results += $result
+                    $individualRestoreResult = Restore-BackupFile @backupFileRestoreParameters
+                    $restoreOperationResults += $individualRestoreResult
 
-                    if ($result.Success)
+                    if ($individualRestoreResult.Success)
                     {
-                        Write-Host "[SUCCESS] $($result.Message)" -ForegroundColor Green
+                        Write-Host "[SUCCESS] $($individualRestoreResult.Message)" -ForegroundColor Green
                     }
                     else
                     {
-                        Write-Warning "[FAILED] $($result.Message)"
+                        Write-Warning "[FAILED] $($individualRestoreResult.Message)"
                     }
                 }
                 else
                 {
                     # Create a "what-if" result for skipped operations
-                    $whatIfResult = [PSCustomObject]@{
+                    $simulatedRestoreResult = [PSCustomObject]@{
                         Success = $true
-                        SourcePath = $backup.Path
-                        DestinationPath = $target
-                        Metadata = $backup.Metadata
-                        Message = "Would restore $($backup.Name) to $target"
+                        SourcePath = $currentBackupFile.Path
+                        DestinationPath = $restoreTargetPath
+                        Metadata = $currentBackupFile.Metadata
+                        Message = "Would restore $($currentBackupFile.Name) to $restoreTargetPath"
                     }
-                    $results += $whatIfResult
-                    Write-Host "[WHAT-IF] $($whatIfResult.Message)" -ForegroundColor Yellow
+                    $restoreOperationResults += $simulatedRestoreResult
+                    Write-Host "[WHAT-IF] $($simulatedRestoreResult.Message)" -ForegroundColor Yellow
                 }
             }
             catch
             {
-                $errorResult = [PSCustomObject]@{
+                $failedRestoreResult = [PSCustomObject]@{
                     Success = $false
-                    SourcePath = $backup.Path
+                    SourcePath = $currentBackupFile.Path
                     DestinationPath = $DestinationPath
-                    Metadata = $backup.Metadata
-                    Message = "Failed to restore $($backup.Name): $_"
+                    Metadata = $currentBackupFile.Metadata
+                    Message = "Failed to restore $($currentBackupFile.Name): $_"
                 }
-                $results += $errorResult
-                Write-Error $errorResult.Message -ErrorAction Continue
+                $restoreOperationResults += $failedRestoreResult
+                Write-Error $failedRestoreResult.Message -ErrorAction Continue
             }
         }
 
@@ -289,16 +289,16 @@ function Restore-DailyBackup
 
     end
     {
-        $successfulResults = @($results | Where-Object { $_.Success })
-        $successCount = $successfulResults.Count
-        $totalCount = $results.Count
+        $successfulRestoreOperations = @($restoreOperationResults | Where-Object { $_.Success })
+        $numberOfSuccessfulRestores = $successfulRestoreOperations.Count
+        $totalRestoreAttempts = $restoreOperationResults.Count
 
         Write-Host "`nRestore Summary:" -ForegroundColor Cyan
-        Write-Host "   Successful: $successCount" -ForegroundColor Green
-        Write-Host "   Failed: $($totalCount - $successCount)" -ForegroundColor Red
-        Write-Host "   Total: $totalCount" -ForegroundColor Blue
+        Write-Host "   Successful: $numberOfSuccessfulRestores" -ForegroundColor Green
+        Write-Host "   Failed: $($totalRestoreAttempts - $numberOfSuccessfulRestores)" -ForegroundColor Red
+        Write-Host "   Total: $totalRestoreAttempts" -ForegroundColor Blue
 
         Write-Verbose 'Restore-DailyBackup> Restore operation completed'
-        return $results
+        return $restoreOperationResults
     }
 }

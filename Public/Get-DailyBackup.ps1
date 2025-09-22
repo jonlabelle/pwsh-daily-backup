@@ -61,94 +61,94 @@ function Get-DailyBackup
         return @()
     }
 
-    $backupDates = if ($Date)
+    $availableBackupDates = if ($Date)
     {
-        $matchedDirs = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -eq $Date }
-        if ($matchedDirs) { @($matchedDirs) } else { @() }
+        $matchingDateDirectories = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -eq $Date }
+        if ($matchingDateDirectories) { @($matchingDateDirectories) } else { @() }
     }
     else
     {
-        $matchedDirs = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Descending
-        if ($matchedDirs) { @($matchedDirs) } else { @() }
+        $matchingDateDirectories = Get-ChildItem -Path $BackupRoot -Directory -Name | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Descending
+        if ($matchingDateDirectories) { @($matchingDateDirectories) } else { @() }
     }
 
-    $results = @()
-    foreach ($dateFolder in $backupDates)
+    $backupInformation = @()
+    foreach ($currentBackupDate in $availableBackupDates)
     {
-        if (-not $dateFolder) { continue }
+        if (-not $currentBackupDate) { continue }
 
-        $datePath = Join-Path $BackupRoot $dateFolder
-        if (-not (Test-Path $datePath -PathType Container)) { continue }
+        $backupDateDirectoryPath = Join-Path $BackupRoot $currentBackupDate
+        if (-not (Test-Path $backupDateDirectoryPath -PathType Container)) { continue }
 
-        $zipFiles = @(Get-ChildItem -Path $datePath -Filter '*.zip')
+        $backupArchiveFiles = @(Get-ChildItem -Path $backupDateDirectoryPath -Filter '*.zip')
 
         # Check for backup manifest
-        $manifestPath = Join-Path $datePath 'backup-manifest.json'
-        $manifestData = $null
+        $backupManifestFilePath = Join-Path $backupDateDirectoryPath 'backup-manifest.json'
+        $backupManifestContent = $null
 
-        if (Test-Path $manifestPath)
+        if (Test-Path $backupManifestFilePath)
         {
             try
             {
-                $manifestData = Get-Content $manifestPath -Raw | ConvertFrom-Json
-                Write-Verbose "Get-DailyBackup> Using backup manifest for $dateFolder"
+                $backupManifestContent = Get-Content $backupManifestFilePath -Raw | ConvertFrom-Json
+                Write-Verbose "Get-DailyBackup> Using backup manifest for $currentBackupDate"
             }
             catch
             {
-                Write-Warning "Failed to read backup manifest for $dateFolder : $_"
+                Write-Warning "Failed to read backup manifest for $currentBackupDate : $_"
             }
         }
 
-        $backups = @()
-        foreach ($zipFile in $zipFiles)
+        $individualBackupDetails = @()
+        foreach ($currentArchiveFile in $backupArchiveFiles)
         {
-            $backupInfo = [PSCustomObject]@{
-                Name = $zipFile.Name
-                Path = $zipFile.FullName
-                Size = $zipFile.Length
-                Created = $zipFile.CreationTime
+            $archiveFileInformation = [PSCustomObject]@{
+                Name = $currentArchiveFile.Name
+                Path = $currentArchiveFile.FullName
+                Size = $currentArchiveFile.Length
+                Created = $currentArchiveFile.CreationTime
                 Metadata = $null
             }
 
             # Try to get metadata from backup manifest
-            if ($manifestData -and $manifestData.Backups)
+            if ($backupManifestContent -and $backupManifestContent.Backups)
             {
-                $metadata = $manifestData.Backups | Where-Object { $_.ArchiveName -eq $zipFile.Name }
-                if ($metadata)
+                $manifestMetadata = $backupManifestContent.Backups | Where-Object { $_.ArchiveName -eq $currentArchiveFile.Name }
+                if ($manifestMetadata)
                 {
-                    $backupInfo.Metadata = $metadata
+                    $archiveFileInformation.Metadata = $manifestMetadata
                 }
             }
 
-            $backups += $backupInfo
+            $individualBackupDetails += $archiveFileInformation
         }
 
-        $totalSize = ($zipFiles | Measure-Object -Property Length -Sum).Sum
+        $totalBackupSize = ($backupArchiveFiles | Measure-Object -Property Length -Sum).Sum
 
         # Count metadata sources (manifest file)
-        $metadataCount = if ($manifestData) { 1 } else { 0 }
+        $availableMetadataCount = if ($backupManifestContent) { 1 } else { 0 }
 
-        $results += [PSCustomObject]@{
-            Date = $dateFolder
-            Path = $datePath
-            Backups = $backups
-            TotalSize = $totalSize
-            BackupCount = $zipFiles.Count
-            MetadataCount = $metadataCount
+        $backupInformation += [PSCustomObject]@{
+            Date = $currentBackupDate
+            Path = $backupDateDirectoryPath
+            Backups = $individualBackupDetails
+            TotalSize = $totalBackupSize
+            BackupCount = $backupArchiveFiles.Count
+            MetadataCount = $availableMetadataCount
         }
     }
 
     # Ensure we always return an array for PowerShell 5.1 compatibility
-    if (-not $results)
+    if (-not $backupInformation)
     {
         Write-Output @() -NoEnumerate
     }
-    elseif ($results.Count -eq 0)
+    elseif ($backupInformation.Count -eq 0)
     {
         Write-Output @() -NoEnumerate
     }
     else
     {
-        Write-Output @($results) -NoEnumerate
+        Write-Output @($backupInformation) -NoEnumerate
     }
 }

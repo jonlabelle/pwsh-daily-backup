@@ -196,102 +196,100 @@ function New-DailyBackup
         # Normalize and resolve the destination path
         $Destination = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
         $Destination = Resolve-UnverifiedPath -Path $Destination
-        $folderName = (Get-Date -Format $script:DefaultFolderDateFormat)
-        $datedDestinationDir = (Join-Path -Path $Destination -ChildPath $folderName)
+        $dateBasedBackupFolderName = (Get-Date -Format $script:DefaultFolderDateFormat)
+        $targetBackupDirectoryPath = (Join-Path -Path $Destination -ChildPath $dateBasedBackupFolderName)
 
-        if ((Test-Path -Path $datedDestinationDir -PathType Container))
+        if ((Test-Path -Path $targetBackupDirectoryPath -PathType Container))
         {
             if ($Force)
             {
-                Write-Verbose "New-DailyBackup> Force specified - removing existing backup destination directory: $datedDestinationDir"
-                if ($PSCmdlet.ShouldProcess($datedDestinationDir, 'Remove existing backup directory'))
+                Write-Verbose "New-DailyBackup> Force specified - removing existing backup destination directory: $targetBackupDirectoryPath"
+                if ($PSCmdlet.ShouldProcess($targetBackupDirectoryPath, 'Remove existing backup directory'))
                 {
-                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference
+                    Remove-ItemAlternative -LiteralPath $targetBackupDirectoryPath -WhatIf:$WhatIfPreference
                 }
             }
             else
             {
-                $confirmMessage = "Backup directory for $folderName already exists. Remove existing backup directory?"
-                if ($PSCmdlet.ShouldProcess($datedDestinationDir, $confirmMessage))
+                $existingDirectoryPrompt = "Backup directory for $dateBasedBackupFolderName already exists. Remove existing backup directory?"
+                if ($PSCmdlet.ShouldProcess($targetBackupDirectoryPath, $existingDirectoryPrompt))
                 {
-                    Write-Verbose "New-DailyBackup> User confirmed - removing existing backup destination directory: $datedDestinationDir"
-                    Remove-ItemAlternative -LiteralPath $datedDestinationDir -WhatIf:$WhatIfPreference
+                    Write-Verbose "New-DailyBackup> User confirmed - removing existing backup destination directory: $targetBackupDirectoryPath"
+                    Remove-ItemAlternative -LiteralPath $targetBackupDirectoryPath -WhatIf:$WhatIfPreference
                 }
                 elseif (-not $WhatIfPreference)
                 {
-                    throw "Backup directory for $folderName already exists at '$datedDestinationDir'. Use -Force to overwrite or choose a different destination."
+                    throw "Backup directory for $dateBasedBackupFolderName already exists at '$targetBackupDirectoryPath'. Use -Force to overwrite or choose a different destination."
                 }
             }
         }
 
-        Write-Verbose "New-DailyBackup> Creating backup destination directory: $datedDestinationDir"
-        New-Item -Path $datedDestinationDir -ItemType Directory -WhatIf:$WhatIfPreference -ErrorAction 'SilentlyContinue' | Out-Null
+        Write-Verbose "New-DailyBackup> Creating backup destination directory: $targetBackupDirectoryPath"
+        New-Item -Path $targetBackupDirectoryPath -ItemType Directory -WhatIf:$WhatIfPreference -ErrorAction 'SilentlyContinue' | Out-Null
     }
     process
     {
-        $currentPath = 0
-
         # Resolve all paths first
-        $allValidPaths = @()
-        foreach ($item in $Path)
+        $validatedSourcePaths = @()
+        foreach ($inputPath in $Path)
         {
             # Normalize and resolve the path
-            $item = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($item)
+            $inputPath = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputPath)
 
             try
             {
                 # Handle long paths on Windows
-                $pathToResolve = $item
-                if ($PSVersionTable.Platform -eq 'Win32NT' -and $item.Length -ge 260)
+                $normalizedInputPath = $inputPath
+                if ($PSVersionTable.Platform -eq 'Win32NT' -and $inputPath.Length -ge 260)
                 {
-                    Write-Verbose "New-DailyBackup> Long path detected ($($item.Length) characters), using extended path syntax"
-                    $pathToResolve = "\\?\$item"
+                    Write-Verbose "New-DailyBackup> Long path detected ($($inputPath.Length) characters), using extended path syntax"
+                    $normalizedInputPath = "\\?\$inputPath"
                 }
 
-                $resolvedPath = (Resolve-Path $pathToResolve -ErrorAction SilentlyContinue).ProviderPath
-                if ($null -eq $resolvedPath)
+                $validatedSourcePath = (Resolve-Path $normalizedInputPath -ErrorAction SilentlyContinue).ProviderPath
+                if ($null -eq $validatedSourcePath)
                 {
-                    Write-Warning "New-DailyBackup> Failed to resolve path for: $item"
+                    Write-Warning "New-DailyBackup> Failed to resolve path for: $inputPath"
                     continue
                 }
 
-                if ($resolvedPath.Count -gt 1)
+                if ($validatedSourcePath.Count -gt 1)
                 {
-                    $allValidPaths += $resolvedPath
+                    $validatedSourcePaths += $validatedSourcePath
                 }
                 else
                 {
-                    if (Test-Path -Path $resolvedPath -IsValid)
+                    if (Test-Path -Path $validatedSourcePath -IsValid)
                     {
-                        $allValidPaths += $resolvedPath
+                        $validatedSourcePaths += $validatedSourcePath
                     }
                     else
                     {
-                        Write-Warning "New-DailyBackup> Backup source path does not exist: $resolvedPath"
+                        Write-Warning "New-DailyBackup> Backup source path does not exist: $validatedSourcePath"
                     }
                 }
             }
             catch
             {
-                Write-Warning "New-DailyBackup> Error processing path '$item': $($_.Exception.Message)"
+                Write-Warning "New-DailyBackup> Error processing path '$inputPath': $($_.Exception.Message)"
             }
         }
 
-        if ($allValidPaths.Count -eq 0)
+        if ($validatedSourcePaths.Count -eq 0)
         {
             Write-Warning 'New-DailyBackup> No valid paths found to backup'
             return
         }
 
         # Determine effective backup mode
-        $effectiveMode = if ($FileBackupMode -eq 'Auto')
+        $selectedBackupMode = if ($FileBackupMode -eq 'Auto')
         {
             # Auto logic: Combined if all items are files and count > 3, otherwise Individual
-            $allFiles = $allValidPaths | ForEach-Object {
+            $allItemsAreFiles = $validatedSourcePaths | ForEach-Object {
                 Test-Path -Path $_ -PathType Leaf
             }
 
-            if (($allFiles -notcontains $false) -and ($allValidPaths.Count -gt 3))
+            if (($allItemsAreFiles -notcontains $false) -and ($validatedSourcePaths.Count -gt 3))
             {
                 'Combined'
             }
@@ -305,16 +303,16 @@ function New-DailyBackup
             $FileBackupMode
         }
 
-        Write-Verbose "New-DailyBackup> Using backup mode: $effectiveMode for $($allValidPaths.Count) paths"
+        Write-Verbose "New-DailyBackup> Using backup mode: $selectedBackupMode for $($validatedSourcePaths.Count) paths"
 
-        if ($effectiveMode -eq 'Combined')
+        if ($selectedBackupMode -eq 'Combined')
         {
             # Combined mode: Create single archive with all paths
             Write-Verbose 'New-DailyBackup> Creating combined archive for all paths'
 
             try
             {
-                Compress-BackupCombined -Paths $allValidPaths -DestinationPath $datedDestinationDir -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                Compress-BackupCombined -Paths $validatedSourcePaths -DestinationPath $targetBackupDirectoryPath -NoHash:$NoHash -WhatIf:$WhatIfPreference
             }
             catch
             {
@@ -326,19 +324,20 @@ function New-DailyBackup
             # Individual mode: Process each path separately
             Write-Verbose 'New-DailyBackup> Creating individual archives for each path'
 
-            foreach ($resolvedPath in $allValidPaths)
+            $currentPathIndex = 0
+            foreach ($validatedSourcePath in $validatedSourcePaths)
             {
-                $currentPath++
-                Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPath of $($allValidPaths.Count)" -PercentComplete (($currentPath / $allValidPaths.Count) * 100)
+                $currentPathIndex++
+                Write-Progress -Activity 'Creating Daily Backup' -Status "Processing path $currentPathIndex of $($validatedSourcePaths.Count)" -PercentComplete (($currentPathIndex / $validatedSourcePaths.Count) * 100)
 
-                Write-Verbose "New-DailyBackup> Processing individual item: $resolvedPath"
+                Write-Verbose "New-DailyBackup> Processing individual item: $validatedSourcePath"
                 try
                 {
-                    Compress-Backup -Path $resolvedPath -DestinationPath $datedDestinationDir -NoHash:$NoHash -WhatIf:$WhatIfPreference
+                    Compress-Backup -Path $validatedSourcePath -DestinationPath $targetBackupDirectoryPath -NoHash:$NoHash -WhatIf:$WhatIfPreference
                 }
                 catch
                 {
-                    Write-Warning "New-DailyBackup> Error compressing '$resolvedPath': $($_.Exception.Message)"
+                    Write-Warning "New-DailyBackup> Error compressing '$validatedSourcePath': $($_.Exception.Message)"
                 }
             }
         }

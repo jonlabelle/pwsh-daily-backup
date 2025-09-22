@@ -117,7 +117,7 @@ function Remove-DailyBackup
         # Validate input path first
         if ([string]::IsNullOrWhiteSpace($Path))
         {
-            Write-Error 'Remove-DailyBackup:Process> Path parameter cannot be null or empty'
+            Write-Error 'Remove-DailyBackup> Path parameter cannot be null or empty'
             return
         }
 
@@ -129,100 +129,100 @@ function Remove-DailyBackup
         # Resolve the path to ensure it exists
         try
         {
-            $resolvedPath = Resolve-Path -LiteralPath $Path -ErrorAction Stop
-            $backupRoot = $resolvedPath.Path
+            $validatedBackupRootPath = Resolve-Path -LiteralPath $Path -ErrorAction Stop
+            $normalizedBackupRootPath = $validatedBackupRootPath.Path
         }
         catch
         {
-            Write-Error "Remove-DailyBackup:Process> Cannot access path '$Path': $($_.Exception.Message)"
+            Write-Error "Remove-DailyBackup> Cannot access path '$Path': $($_.Exception.Message)"
             return
         }
 
-        Write-Verbose "Remove-DailyBackup> Processing backup root: $backupRoot"
+        Write-Verbose "Remove-DailyBackup> Processing backup root: $normalizedBackupRootPath"
 
         # Get qualified backup directories (matching yyyy-MM-dd pattern)
-        $qualifiedBackupDirs = @(Get-ChildItem -LiteralPath $backupRoot -Directory -ErrorAction SilentlyContinue |
+        $dateMatchingBackupDirectories = @(Get-ChildItem -LiteralPath $normalizedBackupRootPath -Directory -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}$' })
 
-        if ($qualifiedBackupDirs.Length -eq 0)
+        if ($dateMatchingBackupDirectories.Length -eq 0)
         {
-            Write-Verbose "Remove-DailyBackup> No qualified backup directories found in: $backupRoot"
+            Write-Verbose "Remove-DailyBackup> No qualified backup directories found in: $normalizedBackupRootPath"
             return
         }
 
-        Write-Verbose "Remove-DailyBackup> Found $($qualifiedBackupDirs.Length) qualified backup directories"
+        Write-Verbose "Remove-DailyBackup> Found $($dateMatchingBackupDirectories.Length) qualified backup directories"
 
         if ($PSCmdlet.ParameterSetName -eq 'SpecificDate')
         {
             # Remove specific date
-            $targetDir = $qualifiedBackupDirs | Where-Object { $_.Name -eq $Date }
-            if (-not $targetDir)
+            $specificDateBackupDirectory = $dateMatchingBackupDirectories | Where-Object { $_.Name -eq $Date }
+            if (-not $specificDateBackupDirectory)
             {
                 Write-Warning "Remove-DailyBackup> No backup found for date: $Date"
                 return
             }
 
-            $confirmMessage = "Remove backup directory for date $Date"
-            if ($Force -or $PSCmdlet.ShouldProcess($targetDir.FullName, $confirmMessage))
+            $removalConfirmationPrompt = "Remove backup directory for date $Date"
+            if ($Force -or $PSCmdlet.ShouldProcess($specificDateBackupDirectory.FullName, $removalConfirmationPrompt))
             {
-                Write-Verbose "Remove-DailyBackup> Removing backup directory: $($targetDir.FullName)"
+                Write-Verbose "Remove-DailyBackup> Removing backup directory: $($specificDateBackupDirectory.FullName)"
                 try
                 {
-                    Remove-ItemAlternative -LiteralPath $targetDir.FullName -WhatIf:$WhatIfPreference
-                    Write-Verbose "Remove-DailyBackup> Successfully removed: $($targetDir.FullName)"
+                    Remove-ItemAlternative -LiteralPath $specificDateBackupDirectory.FullName -WhatIf:$WhatIfPreference
+                    Write-Verbose "Remove-DailyBackup> Successfully removed: $($specificDateBackupDirectory.FullName)"
                 }
                 catch
                 {
-                    Write-Error "Remove-DailyBackup:Process> Failed to remove directory '$($targetDir.FullName)': $($_.Exception.Message)"
+                    Write-Error "Remove-DailyBackup> Failed to remove directory '$($specificDateBackupDirectory.FullName)': $($_.Exception.Message)"
                 }
             }
         }
         else
         {
             # Retention-based cleanup
-            if ($qualifiedBackupDirs.Length -le $Keep)
+            if ($dateMatchingBackupDirectories.Length -le $Keep)
             {
-                Write-Verbose "Remove-DailyBackup:Process> Current backup count ($($qualifiedBackupDirs.Length)) does not exceed retention limit ($Keep)"
+                Write-Verbose "Remove-DailyBackup> Current backup count ($($dateMatchingBackupDirectories.Length)) does not exceed retention limit ($Keep)"
                 return
             }
 
             # Create hashtable to sort backup directories by date
-            $backups = @{ }
-            foreach ($backupDir in $qualifiedBackupDirs)
+            $backupDirectoriesWithDates = @{ }
+            foreach ($currentBackupDirectory in $dateMatchingBackupDirectories)
             {
                 try
                 {
-                    $backups.Add($backupDir.FullName, [System.DateTime]::ParseExact($backupDir.Name, 'yyyy-MM-dd', $null))
+                    $backupDirectoriesWithDates.Add($currentBackupDirectory.FullName, [System.DateTime]::ParseExact($currentBackupDirectory.Name, 'yyyy-MM-dd', $null))
                 }
                 catch
                 {
-                    Write-Warning "Remove-DailyBackup> Skipping directory with invalid date format: $($backupDir.Name)"
+                    Write-Warning "Remove-DailyBackup> Skipping directory with invalid date format: $($currentBackupDirectory.Name)"
                 }
             }
 
             # Sort by date and remove oldest backups
-            $sortedBackupPaths = ($backups.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
-            $backupsToRemove = $sortedBackupPaths.Count - $Keep
+            $backupDirectoriesOrderedByDate = ($backupDirectoriesWithDates.GetEnumerator() | Sort-Object -Property Value | ForEach-Object { $_.Key })
+            $numberOfDirectoriesToRemove = $backupDirectoriesOrderedByDate.Count - $Keep
 
-            Write-Verbose "Remove-DailyBackup:Process> Will remove $backupsToRemove old backup directories (keeping $Keep)"
+            Write-Verbose "Remove-DailyBackup> Will remove $numberOfDirectoriesToRemove old backup directories (keeping $Keep)"
 
-            for ($i = 0; $i -lt $backupsToRemove; $i++)
+            for ($removalIndex = 0; $removalIndex -lt $numberOfDirectoriesToRemove; $removalIndex++)
             {
-                $backupPath = $sortedBackupPaths[$i]
-                $backupDate = Split-Path -Leaf $backupPath
+                $currentDirectoryPath = $backupDirectoriesOrderedByDate[$removalIndex]
+                $currentDirectoryDate = Split-Path -Leaf $currentDirectoryPath
 
-                $confirmMessage = "Remove old backup directory for date $backupDate"
-                if ($Force -or $PSCmdlet.ShouldProcess($backupPath, $confirmMessage))
+                $removalConfirmationPrompt = "Remove old backup directory for date $currentDirectoryDate"
+                if ($Force -or $PSCmdlet.ShouldProcess($currentDirectoryPath, $removalConfirmationPrompt))
                 {
-                    Write-Verbose "Remove-DailyBackup:Process> Removing old backup directory: $backupPath"
+                    Write-Verbose "Remove-DailyBackup> Removing old backup directory: $currentDirectoryPath"
                     try
                     {
-                        Remove-ItemAlternative -LiteralPath $backupPath -WhatIf:$WhatIfPreference
-                        Write-Verbose "Remove-DailyBackup:Process> Successfully removed: $backupPath"
+                        Remove-ItemAlternative -LiteralPath $currentDirectoryPath -WhatIf:$WhatIfPreference
+                        Write-Verbose "Remove-DailyBackup> Successfully removed: $currentDirectoryPath"
                     }
                     catch
                     {
-                        Write-Error "Remove-DailyBackup:Process> Failed to remove directory '$backupPath': $($_.Exception.Message)"
+                        Write-Error "Remove-DailyBackup> Failed to remove directory '$currentDirectoryPath': $($_.Exception.Message)"
                     }
                 }
             }
