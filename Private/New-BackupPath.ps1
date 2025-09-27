@@ -74,7 +74,7 @@ function New-BackupPath
         $constructedBackupName = ($sourcePathWithoutDrivePrefix -replace '[\\/]', '__').Trim('__')
     }
 
-    $generatedBackupPath = Join-Path -Path $DestinationPath -ChildPath $constructedBackupName
+    $generatedBackupPath = Join-MultiplePaths -Segments @($DestinationPath, $constructedBackupName)
 
     if ((Test-Path -Path "$generatedBackupPath.zip"))
     {

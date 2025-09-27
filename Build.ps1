@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Build and test script for the DailyBackup module.
@@ -42,12 +43,17 @@ param(
     [switch] $SkipTests
 )
 
+# Import the Join-MultiplePaths function
+$joinMultiplePathsScript = Join-Path -Path $PSScriptRoot -ChildPath 'Private'
+$joinMultiplePathsScript = Join-Path -Path $joinMultiplePathsScript -ChildPath 'Join-MultiplePaths.ps1'
+. $joinMultiplePathsScript
+
 # Script variables
 $ErrorActionPreference = 'Stop'
 $ModuleName = 'DailyBackup'
 $ProjectRoot = $PSScriptRoot
-$ModuleManifest = Join-Path $ProjectRoot "$ModuleName.psd1"
-$ModuleScript = Join-Path $ProjectRoot "$ModuleName.psm1"
+$ModuleManifest = Join-Path -Path $ProjectRoot -ChildPath "$ModuleName.psd1"
+$ModuleScript = Join-Path -Path $ProjectRoot -ChildPath "$ModuleName.psm1"
 
 # Helper functions
 function Write-BuildMessage
@@ -104,7 +110,7 @@ function Invoke-StaticAnalysis
 {
     Write-BuildMessage 'Running static analysis...'
 
-    $settingsPath = Join-Path $ProjectRoot 'PSScriptAnalyzerSettings.psd1'
+    $settingsPath = Join-Path -Path $ProjectRoot -ChildPath 'PSScriptAnalyzerSettings.psd1'
     $results = Invoke-ScriptAnalyzer -Path $ProjectRoot -Settings $settingsPath -Recurse
 
     if ($results)
@@ -134,7 +140,7 @@ function Invoke-UnitTest
 {
     Write-BuildMessage 'Running unit tests...'
 
-    $testPath = Join-Path $ProjectRoot 'Tests'
+    $testPath = Join-Path -Path $ProjectRoot -ChildPath 'Tests'
     if (!(Test-Path $testPath))
     {
         Write-BuildMessage 'No Tests directory found, skipping unit tests' -Type Warning
@@ -142,7 +148,7 @@ function Invoke-UnitTest
     }
 
     # Run focused test suites via RunAllTests.ps1
-    $testRunner = Join-Path $testPath 'RunAllTests.ps1'
+    $testRunner = Join-Path -Path $testPath -ChildPath 'RunAllTests.ps1'
 
     if (Test-Path $testRunner)
     {
@@ -172,7 +178,7 @@ function Invoke-IntegrationTest
 {
     Write-BuildMessage 'Running integration tests...'
 
-    $integrationTest = Join-Path $ProjectRoot 'Tests\IntegrationTests.ps1'
+    $integrationTest = Join-MultiplePaths -Segments @($ProjectRoot, 'Tests', 'IntegrationTests.ps1')
     if (Test-Path $integrationTest)
     {
         & $integrationTest -CleanupAfterTests:$true
@@ -197,16 +203,16 @@ function New-ModulePackage
     New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
 
     # Create the proper module directory structure for PSGallery
-    $modulePackagePath = Join-Path $OutputPath $ModuleName
+    $modulePackagePath = Join-Path -Path $OutputPath -ChildPath $ModuleName
     New-Item -Path $modulePackagePath -ItemType Directory -Force | Out-Null
 
     # Copy module files to the module subfolder
     $filesToCopy = @(
         $ModuleManifest,
         $ModuleScript,
-        (Join-Path $ProjectRoot 'README.md'),
-        (Join-Path $ProjectRoot 'LICENSE.txt'),
-        (Join-Path $ProjectRoot 'CHANGELOG.md')
+        (Join-Path -Path $ProjectRoot -ChildPath 'README.md'),
+        (Join-Path -Path $ProjectRoot -ChildPath 'LICENSE.txt'),
+        (Join-Path -Path $ProjectRoot -ChildPath 'CHANGELOG.md')
     )
 
     foreach ($file in $filesToCopy)
@@ -226,10 +232,10 @@ function New-ModulePackage
     $foldersToRecursiveCopy = @('Public', 'Private')
     foreach ($folder in $foldersToRecursiveCopy)
     {
-        $sourcePath = Join-Path $ProjectRoot $folder
+        $sourcePath = Join-Path -Path $ProjectRoot -ChildPath $folder
         if (Test-Path $sourcePath)
         {
-            $destinationPath = Join-Path $modulePackagePath $folder
+            $destinationPath = Join-Path -Path $modulePackagePath -ChildPath $folder
             Copy-Item -Path $sourcePath -Destination $destinationPath -Recurse -Force
             Write-BuildMessage "Copied folder: $folder"
         }
@@ -240,7 +246,7 @@ function New-ModulePackage
     }
 
     # Validate the module manifest
-    $packagedManifest = Join-Path $modulePackagePath "$ModuleName.psd1"
+    $packagedManifest = Join-Path -Path $modulePackagePath -ChildPath "$ModuleName.psd1"
     $manifest = Test-ModuleManifest $packagedManifest
     Write-BuildMessage "Module manifest validated. Name: $($manifest.Name), Version: $($manifest.Version)" -Type Success
 

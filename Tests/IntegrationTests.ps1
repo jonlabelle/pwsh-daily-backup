@@ -317,7 +317,7 @@ try
     Push-Location $projectRootDir
     try
     {
-        New-DailyBackup -Path '.\Tests\stubs\files-to-backup' -Destination (Join-Path $testDataDir 'RelativeTest') -WhatIf:$dryRun -ErrorAction SilentlyContinue
+        New-DailyBackup -Path (Join-Path '.' 'Tests' 'stubs' 'files-to-backup') -Destination (Join-Path $testDataDir 'RelativeTest') -WhatIf:$dryRun -ErrorAction SilentlyContinue
         Write-Host '[OK] Relative path handling working' -ForegroundColor Green
     }
     finally

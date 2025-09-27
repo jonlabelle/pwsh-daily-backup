@@ -197,7 +197,7 @@ function New-DailyBackup
         $Destination = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
         $Destination = Resolve-UnverifiedPath -Path $Destination
         $dateBasedBackupFolderName = (Get-Date -Format $script:DefaultFolderDateFormat)
-        $targetBackupDirectoryPath = (Join-Path -Path $Destination -ChildPath $dateBasedBackupFolderName)
+        $targetBackupDirectoryPath = (Join-MultiplePaths -Segments @($Destination, $dateBasedBackupFolderName))
 
         if ((Test-Path -Path $targetBackupDirectoryPath -PathType Container))
         {

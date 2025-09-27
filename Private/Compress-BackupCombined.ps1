@@ -55,7 +55,7 @@ function Compress-BackupCombined
 
     $currentTimestamp = Get-Date -Format 'HHmmss'
     $generatedCombinedArchiveName = "CombinedFiles_$currentTimestamp"
-    $fullCombinedArchivePath = Join-Path -Path $DestinationPath -ChildPath "$generatedCombinedArchiveName.zip"
+    $fullCombinedArchivePath = Join-MultiplePaths -Segments @($DestinationPath, "$generatedCombinedArchiveName.zip")
 
     Write-Verbose "Compress-BackupCombined> Creating combined archive: $fullCombinedArchivePath"
     Write-Verbose "Compress-BackupCombined> Including $($Paths.Count) source paths"

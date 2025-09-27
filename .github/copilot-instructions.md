@@ -114,6 +114,14 @@ $OutputPath = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath($O
 # Note: Does NOT require the target to exist.
 ```
 
+**Joining Multiple Path Segments:**
+
+Use the helper function `Join-MultiplePaths` to join multiple path segments in a cross-platform/edition manner:
+
+```powershell
+$fullPath = Join-MultiplePaths -Segments @($PSScriptRoot, 'SubDir', 'File.txt')
+```
+
 ### PowerShell Version Compatibility
 
 - **Array handling:** Use explicit null checks rather than `@()` wrapping

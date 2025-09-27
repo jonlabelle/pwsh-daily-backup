@@ -33,7 +33,7 @@ function Get-BackupMetadataInfo
         $extractedBackupName = [System.IO.Path]::GetFileNameWithoutExtension($BackupFilePath)
 
         # Read from backup manifest
-        $locatedManifestPath = Join-Path $parentBackupDirectory 'backup-manifest.json'
+        $locatedManifestPath = Join-MultiplePaths -Segments @($parentBackupDirectory, 'backup-manifest.json')
         if (Test-Path $locatedManifestPath)
         {
             try

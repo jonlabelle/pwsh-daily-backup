@@ -83,7 +83,7 @@ function Add-BackupToManifest
             return
         }
 
-        $backupManifestFilePath = Join-Path -Path $DatePath -ChildPath 'backup-manifest.json'
+        $backupManifestFilePath = Join-MultiplePaths -Segments @($DatePath, 'backup-manifest.json')
         $generatedArchiveFileName = [System.IO.Path]::GetFileName($BackupPath) + '.zip'
 
         # Get module version dynamically

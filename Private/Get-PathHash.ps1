@@ -31,10 +31,12 @@ function Get-PathHash
 
     .EXAMPLE
         PS > Get-PathHash -Path 'C:\Documents\report.pdf'
+
         Returns SHA-256 hash of the file
 
     .EXAMPLE
         PS > Get-PathHash -Path 'C:\Documents'
+
         Returns composite SHA-256 hash of the directory contents
     #>
     [CmdletBinding()]

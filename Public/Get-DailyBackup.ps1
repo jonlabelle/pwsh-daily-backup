@@ -77,13 +77,13 @@ function Get-DailyBackup
     {
         if (-not $currentBackupDate) { continue }
 
-        $backupDateDirectoryPath = Join-Path $BackupRoot $currentBackupDate
+        $backupDateDirectoryPath = Join-MultiplePaths -Segments @($BackupRoot, $currentBackupDate)
         if (-not (Test-Path $backupDateDirectoryPath -PathType Container)) { continue }
 
         $backupArchiveFiles = @(Get-ChildItem -Path $backupDateDirectoryPath -Filter '*.zip')
 
         # Check for backup manifest
-        $backupManifestFilePath = Join-Path $backupDateDirectoryPath 'backup-manifest.json'
+        $backupManifestFilePath = Join-MultiplePaths -Segments @($backupDateDirectoryPath, 'backup-manifest.json')
         $backupManifestContent = $null
 
         if (Test-Path $backupManifestFilePath)

@@ -33,16 +33,14 @@ $script:ProgressPreference = 'SilentlyContinue'
 
 # -----------------------------------------------
 # - Date format: yyyy-mm-dd
-# - Date range: 1900-01-01 through 2099-12-31
-# - Simple pattern for PowerShell 5.1 compatibility
 # -----------------------------------------------
 $script:DefaultFolderDateFormat = 'yyyy-MM-dd'
 $script:DefaultFolderDateRegex = '^\d{4}-\d{2}-\d{2}$'
 # -----------------------------------------------
 
 # Get public and private function definition files
-$PublicFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Public\*.ps1" -ErrorAction SilentlyContinue)
-$PrivateFunctions = @(Get-ChildItem -Path "$PSScriptRoot\Private\*.ps1" -ErrorAction SilentlyContinue)
+$PublicFunctions = @(Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Public') -Filter '*-*.ps1' -ErrorAction SilentlyContinue)
+$PrivateFunctions = @(Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Private') -Filter '*-*.ps1' -ErrorAction SilentlyContinue)
 
 # Dot source the functions
 foreach ($function in @($PublicFunctions + $PrivateFunctions))

@@ -118,7 +118,7 @@ function Restore-BackupFile
             {
                 # Extract to a temp location first, then move files to preserve structure
                 $availableTempDirectory = if ($env:TEMP) { $env:TEMP } elseif ($env:TMP) { $env:TMP } elseif ($env:TMPDIR) { $env:TMPDIR } else { '/tmp' }
-                $generatedTempExtractionPath = Join-Path $availableTempDirectory "DailyBackupRestore_$(Get-Random)"
+                $generatedTempExtractionPath = Join-MultiplePaths -Segments @($availableTempDirectory, "DailyBackupRestore_$(Get-Random)")
                 Write-Verbose "Restore-BackupFile> Extracting to temp path: $generatedTempExtractionPath"
                 Expand-Archive -Path $BackupFilePath -DestinationPath $generatedTempExtractionPath -Force
 
@@ -136,7 +136,7 @@ function Restore-BackupFile
                 {
                     if ($currentExtractedItem.PSIsContainer)
                     {
-                        $targetDirectoryPath = Join-Path $determinedFinalDestination $currentExtractedItem.Name
+                        $targetDirectoryPath = Join-MultiplePaths -Segments @($determinedFinalDestination, $currentExtractedItem.Name)
                         if (-not (Test-Path $targetDirectoryPath))
                         {
                             New-Item -Path $targetDirectoryPath -ItemType Directory -Force | Out-Null
@@ -144,7 +144,7 @@ function Restore-BackupFile
                     }
                     else
                     {
-                        $targetFilePath = Join-Path $determinedFinalDestination $currentExtractedItem.Name
+                        $targetFilePath = Join-MultiplePaths -Segments @($determinedFinalDestination, $currentExtractedItem.Name)
                         Copy-Item $currentExtractedItem.FullName $targetFilePath -Force
                     }
                 }

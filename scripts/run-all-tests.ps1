@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Run all tests for the DailyBackup module.
@@ -68,7 +69,7 @@ try
     # Disable progress bars for cleaner output
     $global:ProgressPreference = 'SilentlyContinue'
 
-    $pesterTestPath = Join-Path -Path $projectRoot -ChildPath 'test' -AdditionalChildPath "$moduleName.Tests.ps1"
+    $pesterTestPath = Join-Path -Path $projectRoot -ChildPath 'Tests' | Join-Path -ChildPath "$moduleName.Tests.ps1"
     if (Test-Path $pesterTestPath)
     {
         $testResults = Invoke-Pester $pesterTestPath -PassThru -Verbose:$verboseOutput
@@ -105,7 +106,7 @@ try
     # Disable progress bars for cleaner output
     $global:ProgressPreference = 'SilentlyContinue'
 
-    $integrationTestPath = Join-Path -Path $projectRoot -ChildPath 'test' -AdditionalChildPath 'IntegrationTests.ps1'
+    $integrationTestPath = Join-Path -Path $projectRoot -ChildPath 'Tests' | Join-Path -ChildPath 'IntegrationTests.ps1'
     if (Test-Path $integrationTestPath)
     {
         & $integrationTestPath -Verbose:$verboseOutput -CleanupAfterTests:$true
