@@ -26,8 +26,6 @@ Write-Host "=== Running All Tests for $moduleName ===" -ForegroundColor Cyan
 Write-Host "Project Root: $projectRoot" -ForegroundColor Gray
 Write-Host ''
 
-$totalErrors = 0
-
 # Test 1: PSScriptAnalyzer
 Write-Host '--- 1. Static Analysis (PSScriptAnalyzer) ---' -ForegroundColor Yellow
 $oldProgressPreference = $global:ProgressPreference
@@ -44,7 +42,8 @@ try
     {
         Write-Host "[FAILED] Static analysis found $($errors.Count) error(s) and $($warnings.Count) warning(s)" -ForegroundColor Red
         $errors | ForEach-Object { Write-Host "  ERROR: $_" -ForegroundColor Red }
-        $totalErrors += $errors.Count
+        $errors
+        exit 1
     }
     else
     {
@@ -54,7 +53,7 @@ try
 catch
 {
     Write-Host "[FAILED] Static analysis failed: $_" -ForegroundColor Red
-    $totalErrors++
+    throw $_
 }
 finally
 {
@@ -76,7 +75,7 @@ try
         if ($testResults.FailedCount -gt 0)
         {
             Write-Host "[FAILED] Unit tests failed: $($testResults.FailedCount) failed, $($testResults.PassedCount) passed" -ForegroundColor Red
-            $totalErrors += $testResults.FailedCount
+            exit 1
         }
         else
         {
@@ -91,7 +90,7 @@ try
 catch
 {
     Write-Host "[FAILED] Unit tests failed: $_" -ForegroundColor Red
-    $totalErrors++
+    throw $_
 }
 finally
 {
@@ -120,7 +119,7 @@ try
 catch
 {
     Write-Host "[FAILED] Integration tests failed: $_" -ForegroundColor Red
-    $totalErrors++
+    throw $_
 }
 finally
 {
@@ -129,13 +128,5 @@ finally
 
 # Summary
 Write-Host "`n=== Test Summary ===" -ForegroundColor Cyan
-if ($totalErrors -eq 0)
-{
-    Write-Host '[SUCCESS] All tests passed successfully!' -ForegroundColor Green
-    exit 0
-}
-else
-{
-    Write-Host "[FAILED] $totalErrors error(s) found across all tests" -ForegroundColor Red
-    exit 1
-}
+Write-Host '[SUCCESS] All tests passed successfully!' -ForegroundColor Green
+exit 0
